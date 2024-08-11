@@ -59,7 +59,7 @@ class ProfileManager:
                                 point to the activated profile's Kubeconfig file.
         """
 
-        logger.opt(ansi=True).info("Activating profile <magenta>{}</>.", profile_name)
+        logger.opt(ansi=True).info("Activating profile <magenta>{}</>...", profile_name)
 
         profile = self.config.profiles[profile_name]
 
