@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import os
 from pathlib import Path
 import time
@@ -9,8 +9,6 @@ from loguru import logger
 import requests
 import requests.adapters
 import urllib3
-
-from nyl import events
 
 from .tunnel import TunnelManager, TunnelSpec
 from .kubeconfig import KubeconfigManager
@@ -43,7 +41,6 @@ class ProfileManager:
     config: ProfileConfig
     tunnels: TunnelManager
     kubeconfig: KubeconfigManager
-    listener: events.EventListener = field(default_factory=lambda: events.wrap_event_listener(None))
 
     def __enter__(self) -> "ProfileManager":
         self.tunnels.__enter__()
@@ -62,8 +59,9 @@ class ProfileManager:
                                 point to the activated profile's Kubeconfig file.
         """
 
+        logger.opt(ansi=True).info("Activating profile <magenta>{}</>.", profile_name)
+
         profile = self.config.profiles[profile_name]
-        self.listener(events.ActivateProfile(profile_name, profile, "start", None))
 
         raw_kubeconfig = self.kubeconfig.get_raw_kubeconfig(profile_name, profile.kubeconfig)
 
@@ -96,34 +94,29 @@ class ProfileManager:
         )
 
         api_server = f"https://{raw_kubeconfig.api_host}:{raw_kubeconfig.api_port}"
-        logger.debug("Checking for API server connectivity ({}{})", api_server, tun_description)
-        self.listener(events.ActivateProfile(profile_name, profile, "wait-for-api-server", activated_profile))
+        logger.opt(ansi=True).info("Waiting for API server connectivity (<blue>{}{}</>)", api_server, tun_description)
         _wait_for_api_server(api_server, timeout)
 
         if update_process_env:
             logger.trace("Updating process environment with activated profile: {}", activated_profile.env)
             os.environ.update(activated_profile.env)
 
-        self.listener(events.ActivateProfile(profile_name, profile, "completed", activated_profile))
         return activated_profile
 
     @staticmethod
-    def load(listener: events.EventListener | None = None) -> "ProfileManager":
+    def load() -> "ProfileManager":
         """
         Load the profile manager from the default configuration file.
         """
 
-        listener = events.wrap_event_listener(listener)
-
         config = ProfileConfig.load()
         assert config.file is not None, "Profile configuration file must be set."
-        tunnels = TunnelManager(listener=listener)
+        tunnels = TunnelManager()
         kubeconfig = KubeconfigManager(
             cwd=config.file.parent,
             state_dir=config.file.with_name(".nyl") / "profiles",
-            listener=listener,
         )
-        return ProfileManager(config, tunnels, kubeconfig, listener=listener)
+        return ProfileManager(config, tunnels, kubeconfig)
 
 
 def _wait_for_api_server(url: str, timeout: float) -> None:
