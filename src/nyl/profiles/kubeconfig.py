@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import shlex
 import subprocess
 from typing import Any
 from urllib.parse import urlparse
 import yaml
+
+from nyl.tools.shell import pretty_cmd
 from .config import KubeconfigFromSsh, LocalKubeconfig
 from loguru import logger
 
@@ -55,42 +58,41 @@ class KubeconfigManager:
         match source:
             case LocalKubeconfig():
                 raw_kubeconfig = Path(os.getenv("KUBECONFIG", os.path.expanduser("~/.kube/config")))
-                if Path(raw_kubeconfig).exists():
+                if not raw_kubeconfig.exists():
                     raise FileNotFoundError(f"Kubeconfig file '{raw_kubeconfig}' does not exist.")
-                logger.info("Using local Kubeconfig file '{}'.", raw_kubeconfig)
+                logger.opt(ansi=True).info("Using kubeconfig <yellow>{}</>.", raw_kubeconfig)
 
             case KubeconfigFromSsh():
                 raw_kubeconfig = self._state_dir / profile_name / "kubeconfig.orig"
-                if not Path(raw_kubeconfig).exists() or force_refresh:
-                    logger.info(
-                        "Fetching Kubeconfig via SSH ({}@{}:{}).",
-                        source.user,
-                        source.host,
-                        source.path,
-                    )
-                    # Fetch the Kubeconfig file.
+
+                command = [
+                    "ssh",
+                    f"{source.user}@{source.host}",
+                    f"cat {shlex.quote(source.path)}",
+                ]
+                if source.identity_file:
+                    command[1:1] = ["-i", str(self._cwd / source.identity_file)]
+
+                # Fetch the Kubeconfig file.
+                if not raw_kubeconfig.exists() or force_refresh:
+                    logger.opt(ansi=True).info("Fetching kubeconfig with <yellow>$ {}</>.", pretty_cmd(command))
                     raw_kubeconfig.parent.mkdir(parents=True, exist_ok=True)
-                    command = [
-                        "ssh",
-                        f"{source.user}@{source.host}",
-                        "cat",
-                        source.path,
-                    ]
-                    if source.identity_file:
-                        command[1:1] = ["-i", str(self._cwd / source.identity_file)]
                     kubeconfig_content = subprocess.check_output(command, text=True)
                     Path(raw_kubeconfig).write_text(kubeconfig_content)
                 else:
-                    logger.debug("Reusing cached Kubeconfig ({}).", raw_kubeconfig)
+                    logger.opt(ansi=True).info(
+                        "Using <u>cached</> kubeconfig from <yellow>$ {}</>.", pretty_cmd(command)
+                    )
             case _:
                 raise ValueError(f"Unsupported Kubeconfig type: {source.__class__.__name__}")
 
         # Find the Kubernetes API host and port.
         kubeconfig_data = yaml.safe_load(raw_kubeconfig.read_text())
         kubeconfig_data = _trim_to_context(kubeconfig_data, source.context)
-        server = kubeconfig_data["clusters"][0]["cluster"]["server"]
-        api_host = urlparse(server).hostname
-        api_port = urlparse(server).port or 443
+        server: str = kubeconfig_data["clusters"][0]["cluster"]["server"]
+        api_host, api_port = (lambda parsed: (parsed.hostname, parsed.port or 443))(urlparse(server))
+        if api_host is None:
+            raise ValueError(f"no hostname in Kubeconfig server URL: {server!r}")
 
         raw_kubeconfig.chmod(0o600)
         return GetRawKubeconfigResult(

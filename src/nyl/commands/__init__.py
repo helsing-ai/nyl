@@ -26,6 +26,12 @@ app.add_typer(secrets.app)
 app.add_typer(tun.app)
 
 
+LOG_TIME_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>"
+LOG_LEVEL_FORAMT = "<level>{level: <8}</level>"
+LOG_DETAILS_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>"
+LOG_MESSAGE_FORMAT = "<level>{message}</level>"
+
+
 class LogLevel(str, Enum):
     TRACE = "trace"
     DEBUG = "debug"
@@ -38,6 +44,12 @@ class LogLevel(str, Enum):
 @app.callback()
 def _callback(
     log_level: LogLevel = Option(LogLevel.INFO, "--log-level", "-l", help="The log level to use."),
+    log_details: bool = Option(False, help="Include logger- and function names in the log message format."),
 ) -> None:
+    if log_details:
+        fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_DETAILS_FORMAT} | {LOG_MESSAGE_FORMAT}"
+    else:
+        fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_MESSAGE_FORMAT}"
+
     logger.remove()
-    logger.add(sys.stderr, level=log_level.name)
+    logger.add(sys.stderr, level=log_level.name, format=fmt)
