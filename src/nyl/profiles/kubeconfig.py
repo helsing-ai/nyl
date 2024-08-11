@@ -88,9 +88,10 @@ class KubeconfigManager:
         # Find the Kubernetes API host and port.
         kubeconfig_data = yaml.safe_load(raw_kubeconfig.read_text())
         kubeconfig_data = _trim_to_context(kubeconfig_data, source.context)
-        server = kubeconfig_data["clusters"][0]["cluster"]["server"]
-        api_host = urlparse(server).hostname
-        api_port = urlparse(server).port or 443
+        server: str = kubeconfig_data["clusters"][0]["cluster"]["server"]
+        api_host, api_port = (lambda parsed: (parsed.hostname, parsed.port or 443))(urlparse(server))
+        if api_host is None:
+            raise ValueError(f"no hostname in Kubeconfig server URL: {server!r}")
 
         raw_kubeconfig.chmod(0o600)
         return GetRawKubeconfigResult(
