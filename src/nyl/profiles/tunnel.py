@@ -9,6 +9,7 @@ from pathlib import Path
 from loguru import logger
 
 from stablehash import stablehash
+from nyl import events
 from nyl.tools.kvstore import JsonFileKvStore, SerializingStore
 
 
@@ -78,7 +79,7 @@ class TunnelManager:
 
     DEFAULT_STATE_DIR = Path.home() / ".nyl" / "tunnels"
 
-    def __init__(self, state_dir: Path | None = None) -> None:
+    def __init__(self, state_dir: Path | None = None, listener: events.EventListener | None = None) -> None:
         """
         Args:
             state_dir: Path to the directory where the tunnel manager stores its global state.
@@ -89,6 +90,7 @@ class TunnelManager:
             tuple[TunnelSpec, TunnelStatus],
             JsonFileKvStore(file=state_dir / "state.json", lockfile=state_dir / ".lock"),
         )
+        self._listener = events.wrap_event_listener(listener)
 
     def __enter__(self) -> "TunnelManager":
         self._store.__enter__()
@@ -170,10 +172,12 @@ class TunnelManager:
         spec_hash = stablehash(spec).hexdigest()
         if status is not None and status.status == "open" and status.spec_hash == spec_hash:
             logger.debug("Tunnel for '{}' is already open.", spec.locator)
+            self._listener(events.TunnelReused(spec, status))
             return status
 
         # Close the tunnel if it is open.
         if status is not None:
+            self._listener(events.TunnelStop(spec, status, "outdated"))
             self._close_tunnel(status)
             status = None
 
@@ -207,6 +211,7 @@ class TunnelManager:
             ssh_args.extend(["-i", spec.identity_file])
 
         logger.debug("Opening SSH tunnel for '{}': $ {}", spec.locator, " ".join(map(shlex.quote, ssh_args)))
+        self._listener(events.TunnelStart(spec, status, ssh_args, False))
         proc = subprocess.Popen(ssh_args)
 
         # Update the status.
@@ -214,6 +219,7 @@ class TunnelManager:
         status.ssh_pid = proc.pid
 
         self._store.set(str(spec.locator), (spec, status))
+        self._listener(events.TunnelStart(spec, status, ssh_args, True))
 
         return status
 
@@ -234,6 +240,7 @@ class TunnelManager:
         else:
             logger.debug("Tunnel for '{}' is already closed.", locator)
         # Always call close_tunnel to ensure the tunnel to ensure the state is transitioned to "closed".
+        self._listener(events.TunnelStop(spec, status, "requested"))
         self._close_tunnel(status)
         self._store.set(str(locator), (spec, status))
         return status

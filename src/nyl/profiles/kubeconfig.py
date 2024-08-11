@@ -5,6 +5,8 @@ import subprocess
 from typing import Any
 from urllib.parse import urlparse
 import yaml
+
+from nyl import events
 from .config import KubeconfigFromSsh, LocalKubeconfig
 from loguru import logger
 
@@ -26,9 +28,10 @@ class KubeconfigManager:
         state_dir: The directory where the Kubeconfig files are stored. Usually `.nyl/profiles`.
     """
 
-    def __init__(self, cwd: Path, state_dir: Path) -> None:
+    def __init__(self, cwd: Path, state_dir: Path, listener: events.EventListener | None = None) -> None:
         self._cwd = cwd
         self._state_dir = state_dir
+        self._listener = events.wrap_event_listener(listener)
 
     def get_raw_kubeconfig(
         self,
@@ -55,35 +58,59 @@ class KubeconfigManager:
         match source:
             case LocalKubeconfig():
                 raw_kubeconfig = Path(os.getenv("KUBECONFIG", os.path.expanduser("~/.kube/config")))
-                if Path(raw_kubeconfig).exists():
+                ev = events.OnGetRawKubeConfig(
+                    source=source,
+                    dest_path=raw_kubeconfig,
+                    command=None,
+                    force_refresh=force_refresh,
+                    skipped=False,
+                    phase="before",
+                )
+                self._listener(ev)
+                if not raw_kubeconfig.exists():
                     raise FileNotFoundError(f"Kubeconfig file '{raw_kubeconfig}' does not exist.")
                 logger.info("Using local Kubeconfig file '{}'.", raw_kubeconfig)
 
             case KubeconfigFromSsh():
                 raw_kubeconfig = self._state_dir / profile_name / "kubeconfig.orig"
-                if not Path(raw_kubeconfig).exists() or force_refresh:
+
+                command = [
+                    "ssh",
+                    f"{source.user}@{source.host}",
+                    "cat",
+                    source.path,
+                ]
+                if source.identity_file:
+                    command[1:1] = ["-i", str(self._cwd / source.identity_file)]
+
+                ev = events.OnGetRawKubeConfig(
+                    source=source,
+                    dest_path=raw_kubeconfig,
+                    command=command,
+                    force_refresh=force_refresh,
+                    skipped=bool(raw_kubeconfig.exists() and not force_refresh),
+                    phase="before",
+                )
+                self._listener(ev)
+
+                # Fetch the Kubeconfig file.
+                if not ev.skipped:
+                    raw_kubeconfig.parent.mkdir(parents=True, exist_ok=True)
                     logger.info(
                         "Fetching Kubeconfig via SSH ({}@{}:{}).",
                         source.user,
                         source.host,
                         source.path,
                     )
-                    # Fetch the Kubeconfig file.
-                    raw_kubeconfig.parent.mkdir(parents=True, exist_ok=True)
-                    command = [
-                        "ssh",
-                        f"{source.user}@{source.host}",
-                        "cat",
-                        source.path,
-                    ]
-                    if source.identity_file:
-                        command[1:1] = ["-i", str(self._cwd / source.identity_file)]
                     kubeconfig_content = subprocess.check_output(command, text=True)
                     Path(raw_kubeconfig).write_text(kubeconfig_content)
                 else:
                     logger.debug("Reusing cached Kubeconfig ({}).", raw_kubeconfig)
             case _:
                 raise ValueError(f"Unsupported Kubeconfig type: {source.__class__.__name__}")
+
+        ev.phase = "after"
+        self._listener(ev)
 
         # Find the Kubernetes API host and port.
         kubeconfig_data = yaml.safe_load(raw_kubeconfig.read_text())
