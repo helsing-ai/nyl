@@ -37,12 +37,12 @@ RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/s
     && ./get_helm.sh --version $HELM_VERSION
 
 FROM python:3.12-slim AS nyl-cmp
-COPY --chown=999:999 --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
+COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
 RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:999 /usr/local/bin/argocd-cmp-server
-USER 999
-COPY --chown=999:999 --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
-COPY --chown=999:999 --from=build /opt/nyl /opt/nyl
-COPY --chown=999:999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
+COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
+COPY --from=build /opt/nyl /opt/nyl
+COPY argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 ENV PATH="${PATH}:/opt/nyl/bin"
 VOLUME /home/argocd/cmp-server/plugins/
+USER 999
 ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]
