@@ -12,6 +12,15 @@ class Project:
     Configuration for a Nyl project that is stored in a `nyl-project.toml` file.
     """
 
+    automatic_applyset: bool = True
+    """
+    Automatically generate an ApplySet for every template file. The applyset will be named after the template file,
+    unless there is namespace defined in the template file, in which case the applyset will be named after the
+    namespace.
+
+    This option is turned on by default. Using Nyl without a `nyl-project.toml` file will have this option enabled.
+    """
+
     search_path: list[Path] = field(default_factory=list)
     """
     Search path for additional resources used by the project. Used for example when using the `chart.path` option on a

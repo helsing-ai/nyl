@@ -134,6 +134,22 @@ def template(
                 applyset = ApplySet.load(manifest)
                 source.manifests.remove(manifest)
 
+        if not applyset and project.config.automatic_applyset:
+            if len(namespaces) > 1:
+                logger.opt(ansi=True).error(
+                    "Multiple namespaces defined in <yellow>{}</>, but automatic ApplySet generation is enabled. "
+                    "There can only be one namespace per source in this case.",
+                    source.file,
+                )
+                exit(1)
+            elif len(namespaces) == 1:
+                applyset_name = next(iter(namespaces))
+            else:
+                applyset_name = source.file.stem
+
+            logger.opt(ansi=True).info("Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>)", source.file, applyset_name)
+            applyset = ApplySet.new(applyset_name)
+
         if applyset is not None:
             applyset.set_group_kinds(source.manifests)
             # HACK: Kubectl 1.30 can't create the custom resource, so we need to create it. But it will also reject

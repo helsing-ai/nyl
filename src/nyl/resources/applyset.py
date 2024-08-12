@@ -194,6 +194,19 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
         if self.contains_group_kinds is None:
             raise ValueError(f"ApplySet resource must have a {APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS!r} annotation")
 
+    @staticmethod
+    def new(name: str) -> "ApplySet":
+        """
+        Create a new ApplySet resource with the specified name.
+        """
+
+        return ApplySet(
+            metadata=ObjectMetadata(
+                name=name,
+                namespace=None,
+            )
+        )
+
 
 def calculate_applyset_id(*, name: str, namespace: str = "", group: str) -> str:
     """
