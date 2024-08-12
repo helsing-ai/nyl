@@ -1,0 +1,43 @@
+name: Docker
+
+on:
+  push:
+    branches: [ develop ]
+    tags: [ '*' ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+
+  argocd-cmp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          file: argocd-cmp/Dockerfile
+          tags: |
+            ghcr.io/niklasrosenstein/nyl/argocd-cmp:${{ github.sha }}
+          # ${{ startsWith(github.ref, 'refs/tags/') && 'ghcr.io/niklasrosenstein/nyl/argocd-cmp:' + github.ref_name }}
+          cache-from: |
+            type=registry,ref=ghcr.io/niklasrosenstein/nyl/argocd-cmp:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
