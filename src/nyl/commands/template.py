@@ -107,7 +107,7 @@ def template(
     )
 
     for source in load_manifests(paths):
-        logger.info("Rendering manifests from {}", source.file)
+        logger.opt(ansi=True).info("Rendering manifests from <blue>{}</>", source.file)
 
         source.manifests = cast(Manifests, template_engine.evaluate(source.manifests))
         source.manifests = reconcile_generator(
@@ -126,8 +126,8 @@ def template(
                 namespaces.add(manifest["metadata"]["name"])
             elif ApplySet.matches(manifest):
                 if applyset is not None:
-                    logger.error(
-                        "Multiple ApplySet resources defined in '{}', there can only be one per source.",
+                    logger.opt(ansi=True).error(
+                        "Multiple ApplySet resources defined in <yellow>{}</>, there can only be one per source.",
                         source.file,
                     )
                     exit(1)
@@ -160,7 +160,11 @@ def template(
 
             if apply:
                 # We need to ensure that ApplySet parent object exists before invoking `kubectl apply --applyset=...`.
-                logger.info("Kubectl-apply ApplySet resource '{}' from '{}'", applyset.reference, source.file)
+                logger.opt(ansi=True).info(
+                    "Kubectl-apply ApplySet resource <yellow>{}</> from <cyan>{}</>'",
+                    applyset.reference,
+                    source.file,
+                )
                 kubectl.apply(Manifests([applyset.dump()]), force_conflicts=True)
             else:
                 print("---")
