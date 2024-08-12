@@ -1,4 +1,3 @@
-import shlex
 from dataclasses import dataclass
 import os
 import random
@@ -10,6 +9,7 @@ from loguru import logger
 
 from stablehash import stablehash
 from nyl.tools.kvstore import JsonFileKvStore, SerializingStore
+from nyl.tools.shell import pretty_cmd
 
 
 @dataclass
@@ -169,7 +169,7 @@ class TunnelManager:
         # Check if the tunnel is open and up-to-date.
         spec_hash = stablehash(spec).hexdigest()
         if status is not None and status.status == "open" and status.spec_hash == spec_hash:
-            logger.debug("Tunnel for '{}' is already open.", spec.locator)
+            logger.opt(ansi=True).info("Reusing existing SSH tunnel.", spec.locator)
             return status
 
         # Close the tunnel if it is open.
@@ -206,7 +206,7 @@ class TunnelManager:
         if spec.identity_file is not None:
             ssh_args.extend(["-i", spec.identity_file])
 
-        logger.debug("Opening SSH tunnel for '{}': $ {}", spec.locator, " ".join(map(shlex.quote, ssh_args)))
+        logger.opt(ansi=True).info("Opening SSH tunnel with <yellow>$ {}</>.", pretty_cmd(ssh_args))
         proc = subprocess.Popen(ssh_args)
 
         # Update the status.

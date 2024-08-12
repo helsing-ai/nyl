@@ -59,7 +59,10 @@ class ProfileManager:
                                 point to the activated profile's Kubeconfig file.
         """
 
+        logger.opt(ansi=True).info("Activating profile <magenta>{}</>...", profile_name)
+
         profile = self.config.profiles[profile_name]
+
         raw_kubeconfig = self.kubeconfig.get_raw_kubeconfig(profile_name, profile.kubeconfig)
 
         if profile.tunnel:
@@ -80,10 +83,6 @@ class ProfileManager:
             tun_description = ""
             timeout = 2
 
-        api_server = f"https://{raw_kubeconfig.api_host}:{raw_kubeconfig.api_port}"
-        logger.debug("Checking for API server connectivity ({}{})", api_server, tun_description)
-        _wait_for_api_server(api_server, timeout)
-
         activated_profile = ActivatedProfile(
             kubeconfig=self.kubeconfig.get_updated_kubeconfig(
                 profile_name=profile_name,
@@ -93,6 +92,10 @@ class ProfileManager:
                 api_port=raw_kubeconfig.api_port,
             )
         )
+
+        api_server = f"https://{raw_kubeconfig.api_host}:{raw_kubeconfig.api_port}"
+        logger.opt(ansi=True).info("Waiting for API server connectivity (<blue>{}{}</>)", api_server, tun_description)
+        _wait_for_api_server(api_server, timeout)
 
         if update_process_env:
             logger.trace("Updating process environment with activated profile: {}", activated_profile.env)
@@ -109,7 +112,10 @@ class ProfileManager:
         config = ProfileConfig.load()
         assert config.file is not None, "Profile configuration file must be set."
         tunnels = TunnelManager()
-        kubeconfig = KubeconfigManager(cwd=config.file.parent, state_dir=config.file.with_name(".nyl") / "profiles")
+        kubeconfig = KubeconfigManager(
+            cwd=config.file.parent,
+            state_dir=config.file.with_name(".nyl") / "profiles",
+        )
         return ProfileManager(config, tunnels, kubeconfig)
 
 
