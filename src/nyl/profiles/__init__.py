@@ -104,17 +104,22 @@ class ProfileManager:
         return activated_profile
 
     @staticmethod
-    def load() -> "ProfileManager":
+    def load(required: bool = True) -> "ProfileManager":
         """
         Load the profile manager from the default configuration file.
+
+        Args:
+            required: Passed on to [`ProfileConfig.load()`]. If it is set to `False`, the Nyl state directory
+                is assumed relative to the current working directory (`./.nyl`).
         """
 
-        config = ProfileConfig.load()
-        assert config.file is not None, "Profile configuration file must be set."
+        config = ProfileConfig.load(required=required)
+        context_dir = config.file.parent if config.file else Path.cwd()
+
         tunnels = TunnelManager()
         kubeconfig = KubeconfigManager(
-            cwd=config.file.parent,
-            state_dir=config.file.with_name(".nyl") / "profiles",
+            cwd=context_dir,
+            state_dir=context_dir / ".nyl" / "profiles",
         )
         return ProfileManager(config, tunnels, kubeconfig)
 

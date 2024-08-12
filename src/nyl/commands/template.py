@@ -1,7 +1,7 @@
 import atexit
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
+from typing import Optional, cast
 from loguru import logger
 from structured_templates import TemplateEngine
 from typer import Argument, Option
@@ -20,6 +20,8 @@ from nyl.tools.types import Manifest, Manifests
 
 from . import app
 
+DEFAULT_PROFILE = "default"
+
 
 @dataclass
 class ManifestsWithSource:
@@ -34,7 +36,7 @@ class ManifestsWithSource:
 @app.command()
 def template(
     paths: list[Path] = Argument(..., help="The YAML file(s) to render. Can be a directory."),
-    profile: str = Option("default", envvar="NYL_PROFILE", help="The Nyl profile to use."),
+    profile: Optional[str] = Option(None, envvar="NYL_PROFILE", help="The Nyl profile to use."),
     in_cluster: bool = Option(
         False, help="Use the in-cluster Kubernetes configuration. The --profile option is ignored."
     ),
@@ -68,10 +70,18 @@ def template(
         logger.info("Using in-cluster configuration.")
         load_incluster_config()
     else:
-        with ProfileManager.load() as profiles:
-            active = profiles.activate_profile(profile)
-            logger.info(f"Using profile '{profile}' with kubeconfig '{active.kubeconfig}'.")
-            load_kube_config(str(active.kubeconfig))
+        with ProfileManager.load(required=False) as profiles:
+            # If no profile to activate is specified, and there are no profiles defined, we're not activating a
+            # a profile. It should be valid to use Nyl without a `nyl-profiles.yaml` file.
+            if profile is not None or profiles.config.profiles:
+                profile = profile or DEFAULT_PROFILE
+                active = profiles.activate_profile(profile)
+                load_kube_config(str(active.kubeconfig))
+            else:
+                logger.opt(ansi=True).info(
+                    "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
+                )
+                load_kube_config()
 
     project = ProjectConfig.load()
     if project.file:
