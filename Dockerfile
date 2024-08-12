@@ -7,7 +7,7 @@ WORKDIR /build
 RUN pip install pex
 COPY pyproject.toml README.md ./
 COPY src/ src/
-RUN ls -lha && pex -v -o /usr/local/bin/nyl ./ -c nyl --resolver-version=pip-2020-resolver
+RUN pex -v -o /usr/local/bin/nyl ./ -c nyl --resolver-version=pip-2020-resolver
 
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
