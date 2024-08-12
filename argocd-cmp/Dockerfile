@@ -3,11 +3,12 @@
 #: -----------------
 
 FROM python:3.12-slim AS build
-WORKDIR /build
-RUN pip install pex pdm
+WORKDIR /opt
+RUN pip install pdm uv
 COPY pyproject.toml pdm.lock pdm.toml README.md ./
 COPY src/ src/
-RUN pdm export > requirements.txt && (echo './' >> requirements.txt) && cat requirements.txt && pex -v -o /usr/local/bin/nyl -r requirements.txt -c nyl --resolver-version=pip-2020-resolver
+RUN pdm export > requirements.txt && uv nyl venv && uv pip install -r requirements.txt ./
+# RUN pdm export > requirements.txt && (echo './' >> requirements.txt) && cat requirements.txt && pex -v -o /usr/local/bin/nyl -r requirements.txt -c nyl --resolver-version=pip-2020-resolver
 
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
@@ -25,6 +26,8 @@ RUN \
 
 FROM python:3.12-slim AS nyl-cmp
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
-COPY --from=build /usr/local/bin/nyl /usr/local/bin/nyl
+# COPY --from=build /usr/local/bin/nyl /usr/local/bin/nyl
+COPY --from=build /opt/nyl /opt/nyl
 COPY argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
+ENV PATH="${PATH}:/opt/nyl/bin"
 ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]
