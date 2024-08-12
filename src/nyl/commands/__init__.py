@@ -3,6 +3,7 @@ Nyl is a flexible configuration management tool for Kubernetes resources that ca
 applications directly or integrate as an ArgoCD ConfigManagementPlugin.
 """
 
+from nyl import __version__
 from enum import Enum
 import sys
 from loguru import logger
@@ -53,3 +54,9 @@ def _callback(
 
     logger.remove()
     logger.add(sys.stderr, level=log_level.name, format=fmt)
+
+
+@app.command()
+def version() -> None:
+    print(f"Nyl v{__version__}")
+    sys.exit(0)
