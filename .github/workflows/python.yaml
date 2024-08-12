@@ -27,8 +27,7 @@ jobs:
       - name: Install PDM
         run: python -m pip install --upgrade pdm
 
-      - name: Cache Primes
-        id: cache-primes
+      - name: Cache Venv
         uses: actions/cache@v4
         with:
           path: .venv
