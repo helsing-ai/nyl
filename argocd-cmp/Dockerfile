@@ -15,7 +15,8 @@ RUN --mount=type=cache,id=uv-cache,target=/cache \
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
 
-FROM alpine/curl AS argocd-bin
+FROM alpine AS argocd-bin
+RUN apk add curl upx
 ARG ARGOCD_VERSION=v2.12.0
 RUN \
     case "$(uname -m)" in \
@@ -24,7 +25,8 @@ RUN \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
     curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-${BIN_ARCH} \
-    && chmod +x /usr/local/bin/argocd
+    && chmod +x /usr/local/bin/argocd \
+    && upx /usr/local/bin/argocd
 
 FROM python:3.12-slim AS nyl-cmp
 COPY --chown=999:999 --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
