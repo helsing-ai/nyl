@@ -9,7 +9,8 @@ COPY pyproject.toml pdm.lock pdm.toml README.md ./
 COPY src/ src/
 RUN pdm export > requirements.txt
 RUN uv venv /opt/nyl
-RUN uv pip install --python /opt/nyl/bin/python -r requirements.txt ./
+RUN --mount=type=cache,id=uv-cache,target=/cache \
+    uv pip install --cache-dir /cache --python /opt/nyl/bin/python  -r requirements.txt ./
 
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
