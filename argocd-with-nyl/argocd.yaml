@@ -1,0 +1,43 @@
+#
+# This is an example Kubernetes manifest that can be applied with Nyl to deploy ArgoCD with Nyl as a Config Management
+# Plugin.
+#
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+
+---
+apiVersion: inline.nyl.io/v1
+kind: HelmChart
+release:
+  name: argocd
+  namespace: argocd
+chart:
+  # Explore the chart at https://artifacthub.io/packages/helm/argo/argo-cd
+  repository: https://argoproj.github.io/argo-helm
+  name: argo-cd
+  version: "7.4.3"
+values:
+  dex:
+    enabled: false
+  repoServer:
+    extraContainers:
+      - name: nyl-v1
+        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:4247472837b8dadd34bea29565994c0cabf90b86
+        # TODO: https://github.com/NiklasRosenstein/nyl/issues/10
+        # securityContext:
+        #   runAsNonRoot: true
+        #   runAsUser: 999
+        volumeMounts:
+          - mountPath: /var/run/argocd
+            name: var-files
+          - mountPath: /home/argocd/cmp-server/plugins
+            name: plugins
+          - mountPath: /tmp
+            name: cmp-tmp
+    volumes:
+      - name: cmp-tmp
+        emptyDir: {}
