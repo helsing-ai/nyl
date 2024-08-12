@@ -22,7 +22,7 @@ spec:
       - -c
       - |
         nyl version >&2
-        argocd-cmp-server version >&2
+        argocd version --client >&2
 
   generate:
     command:
