@@ -42,12 +42,16 @@ class ProfileManager:
     tunnels: TunnelManager
     kubeconfig: KubeconfigManager
 
+    def __post_init__(self) -> None:
+        # We don't need to enter the TunnelsManager context manager until we actually need to open a tunnel.
+        self._tunnels_entered: bool = False
+
     def __enter__(self) -> "ProfileManager":
-        self.tunnels.__enter__()
         return self
 
     def __exit__(self, *args: Any) -> None:
-        self.tunnels.__exit__(*args)
+        if self._tunnels_entered:
+            self.tunnels.__exit__(*args)
 
     def activate_profile(self, profile_name: str, update_process_env: bool = True) -> ActivatedProfile:
         """
@@ -66,6 +70,11 @@ class ProfileManager:
         raw_kubeconfig = self.kubeconfig.get_raw_kubeconfig(profile_name, profile.kubeconfig)
 
         if profile.tunnel:
+            # If the tunnel manager has not been entered yet, do so now.
+            if not self._tunnels_entered:
+                self.tunnels.__enter__()
+                self._tunnels_entered = True
+
             forwardings = {"kubernetes": f"{raw_kubeconfig.api_host}:{raw_kubeconfig.api_port}"}
             assert self.config.file is not None, "Profile configuration file must be set."
             tun_spec = get_tunnel_spec(self.config.file, profile_name, profile.tunnel)
