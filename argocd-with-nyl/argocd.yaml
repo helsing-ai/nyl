@@ -41,3 +41,20 @@ values:
     volumes:
       - name: cmp-tmp
         emptyDir: {}
+
+# Self-manage ArgoCD with Nyl and this specific repository.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NiklasRosenstein/nyl.git
+    targetRevision: nr/argocd-cmp-test
+    path: argocd-with-nyl
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
