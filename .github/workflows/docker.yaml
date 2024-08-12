@@ -37,8 +37,7 @@ jobs:
           file: argocd-cmp/Dockerfile
           tags: |
             ghcr.io/niklasrosenstein/nyl/argocd-cmp:${{ github.sha }}
-            ghcr.io/niklasrosenstein/nyl/argocd-cmp:cache
           # ${{ startsWith(github.ref, 'refs/tags/') && 'ghcr.io/niklasrosenstein/nyl/argocd-cmp:' + github.ref_name }}
-          cache-from: |
-            type=registry,ref=ghcr.io/niklasrosenstein/nyl/argocd-cmp:cache
+          cache-to: ghcr.io/niklasrosenstein/nyl/argocd-cmp:cache
+          cache-from: type=registry,ref=ghcr.io/niklasrosenstein/nyl/argocd-cmp:cache
           platforms: linux/amd64,linux/arm64
