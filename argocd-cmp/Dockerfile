@@ -7,8 +7,7 @@ WORKDIR /build
 RUN pip install pex pdm
 COPY pyproject.toml pdm.lock pdm.toml README.md ./
 COPY src/ src/
-RUN pdm export > requirements.txt && cat requirements.txt && pex -v -o /usr/local/bin/nyl ./ -r requirements.txt -c nyl
-#--resolver-version=pip-2020-resolver
+RUN pdm export > requirements.txt && (echo './' >> requirements.txt) && cat requirements.txt && pex -v -o /usr/local/bin/nyl -r requirements.txt -c nyl --resolver-version=pip-2020-resolver
 
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
