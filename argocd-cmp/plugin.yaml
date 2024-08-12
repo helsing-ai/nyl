@@ -40,7 +40,7 @@ spec:
       command:
         - sh
         - -c
-        - find . -name nyl-project.yaml -o -name nyl-secrets.yml -o . -name nyl-profiles.yaml
+        - find . -name nyl-project.yaml -o -name nyl-secrets.yml -o -name nyl-profiles.yaml
   # The parameters config describes what parameters the UI should display for an Application. It is up to the user to
   # actually set parameters in the Application manifest (in spec.source.plugin.parameters). The announcements _only_
   # inform the "Parameters" tab in the App Details page of the UI.

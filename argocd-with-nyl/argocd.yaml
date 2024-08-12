@@ -26,7 +26,7 @@ values:
   repoServer:
     extraContainers:
       - name: nyl-v1
-        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:4247472837b8dadd34bea29565994c0cabf90b86
+        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:9a598a43a59702d9f9cb8a8e58ee8c6caa4135b1
         # TODO: https://github.com/NiklasRosenstein/nyl/issues/10
         # securityContext:
         #   runAsNonRoot: true
