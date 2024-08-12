@@ -28,7 +28,7 @@ RUN \
 
 FROM python:3.12-slim AS nyl-cmp
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
-RUN --mount=type=bind,from=build,source=/opt/nyl,target=/tmp/nyl cp -r --preserve=links /tmp/nyl /opt/nyl
+COPY --from=build /opt/nyl /opt/nyl
 COPY argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 ENV PATH="${PATH}:/opt/nyl/bin"
 ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]
