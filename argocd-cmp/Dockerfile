@@ -7,7 +7,7 @@ WORKDIR /opt
 RUN pip install pdm uv
 COPY pyproject.toml pdm.lock pdm.toml README.md ./
 COPY src/ src/
-RUN pdm export > requirements.txt && uv nyl venv && uv pip install -r requirements.txt ./
+RUN pdm export > requirements.txt && uv venv nyl && uv pip install -r requirements.txt ./
 # RUN pdm export > requirements.txt && (echo './' >> requirements.txt) && cat requirements.txt && pex -v -o /usr/local/bin/nyl -r requirements.txt -c nyl --resolver-version=pip-2020-resolver
 
 #: Build the ArgoCD CMP server image.
