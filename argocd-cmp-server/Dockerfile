@@ -4,10 +4,10 @@
 
 FROM python:3.12 AS build
 WORKDIR /build
-RUN pip install pex
+RUN pip install pex pdm
 COPY pyproject.toml README.md ./
 COPY src/ src/
-RUN pex -v -o /usr/local/bin/nyl ./ -c nyl --resolver-version=pip-2020-resolver
+RUN pex -v -o /usr/local/bin/nyl ./ -r <(pdm export) -c nyl --resolver-version=pip-2020-resolver
 
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
