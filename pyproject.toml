@@ -51,5 +51,8 @@ dev = [
     "types-requests>=2.32.0.20240712",
 ]
 
+[[tool.pdm.source]]
+name = "pypi"
+
 [tool.ruff]
 line-length = 120
