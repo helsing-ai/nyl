@@ -27,9 +27,10 @@ RUN \
     && chmod +x /usr/local/bin/argocd
 
 FROM python:3.12-slim AS nyl-cmp
-COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
-COPY --from=build /opt/nyl /opt/nyl
-COPY argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
+USER 999
+COPY --chown=999:999 --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
+COPY --chown=999:999 --from=build /opt/nyl /opt/nyl
+COPY --chown=999:999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 ENV PATH="${PATH}:/opt/nyl/bin"
 VOLUME /home/argocd/cmp-server/plugins/
 ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]

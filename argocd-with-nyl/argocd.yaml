@@ -55,6 +55,7 @@ spec:
     repoURL: https://github.com/NiklasRosenstein/nyl.git
     targetRevision: nr/argocd-cmp-test
     path: argocd-with-nyl
+    plugin: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
