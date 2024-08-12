@@ -2,7 +2,8 @@
 #: Build Nyl itself.
 #: -----------------
 
-FROM python:3.12 AS build
+FROM python:3.12-slim AS build
+SHELL ["/bin/bash"]
 WORKDIR /build
 RUN pip install pex pdm
 COPY pyproject.toml README.md ./
@@ -23,7 +24,7 @@ RUN \
     curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-${BIN_ARCH} \
     && chmod +x /usr/local/bin/argocd
 
-FROM python:3.12 AS nyl-cmp
+FROM python:3.12-slim AS nyl-cmp
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
 COPY --from=build /usr/local/bin/nyl /usr/local/bin/nyl
 COPY argocd-cmp-server/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
