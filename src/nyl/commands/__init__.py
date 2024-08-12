@@ -58,5 +58,9 @@ def _callback(
 
 @app.command()
 def version() -> None:
+    """
+    Print the version of Nyl.
+    """
+
     print(f"Nyl v{__version__}")
     sys.exit(0)
