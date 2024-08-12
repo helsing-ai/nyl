@@ -38,6 +38,6 @@ jobs:
           tags: |
             ghcr.io/niklasrosenstein/nyl/argocd-cmp:${{ github.sha }}
           # ${{ startsWith(github.ref, 'refs/tags/') && 'ghcr.io/niklasrosenstein/nyl/argocd-cmp:' + github.ref_name }}
-          cache-to: ghcr.io/niklasrosenstein/nyl/argocd-cmp:cache
+          cache-to: type=registry,ref=ghcr.io/niklasrosenstein/nyl/argocd-cmp:cache,mode=max
           cache-from: type=registry,ref=ghcr.io/niklasrosenstein/nyl/argocd-cmp:cache
           platforms: linux/amd64,linux/arm64
