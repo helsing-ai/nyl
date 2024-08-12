@@ -31,4 +31,5 @@ COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
 COPY --from=build /opt/nyl /opt/nyl
 COPY argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 ENV PATH="${PATH}:/opt/nyl/bin"
+VOLUME /home/argocd/cmp-server/plugins/
 ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]
