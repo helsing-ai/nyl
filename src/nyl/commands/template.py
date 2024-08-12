@@ -147,7 +147,9 @@ def template(
             else:
                 applyset_name = source.file.stem
 
-            logger.opt(ansi=True).info("Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>)", source.file, applyset_name)
+            logger.opt(ansi=True).info(
+                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>)", source.file, applyset_name
+            )
             applyset = ApplySet.new(applyset_name)
 
         if applyset is not None:
