@@ -3,7 +3,7 @@
 #: -----------------
 
 FROM python:3.12-slim AS build
-SHELL ["/bin/bash"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /build
 RUN pip install pex pdm
 COPY pyproject.toml README.md ./
