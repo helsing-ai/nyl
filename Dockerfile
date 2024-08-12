@@ -26,4 +26,4 @@ RUN \
 FROM python:3.12 AS nyl-cmp
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
 COPY --from=build /usr/local/bin/nyl /usr/local/bin/nyl
-ENTRYPOINT [ "/usr/local/bin/arogcd-cmp-server" ]
+ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]
