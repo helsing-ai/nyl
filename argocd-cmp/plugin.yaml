@@ -28,7 +28,7 @@ spec:
     command:
       - sh
       - -c
-      - nyl template .
+      - nyl --log-level=debug template .
 
   parameters: {}
 
