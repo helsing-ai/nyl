@@ -238,7 +238,13 @@ def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
     for path in paths:
         if path.is_dir():
             for item in path.iterdir():
-                if item.name.startswith("nyl-") or item.suffix != ".yaml" or not item.is_file():
+                if (
+                    item.name.startswith("nyl-")
+                    or item.name.startswith(".")
+                    or item.name.startswith("_")
+                    or item.suffix != ".yaml"
+                    or not item.is_file()
+                ):
                     continue
                 files.append(item)
         else:

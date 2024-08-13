@@ -1,0 +1,5 @@
+creation_rules:
+  # NOTE: If you need multiple recipients (e.g. one key per developer, and one for ArgoCD), you can supply multiple
+  #       keys in this list. Check out https://github.com/getsops/sops/issues/1078#issuecomment-2101089753 for an
+  #       example.
+  - age: age13e8qcv3hku3pw5nufw6p7m30zzl9rkgns7qmpc6p2laacddvgqlq6fh4t4

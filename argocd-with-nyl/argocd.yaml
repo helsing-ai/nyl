@@ -10,6 +10,16 @@ metadata:
   name: argocd
 
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-nyl-env
+  namespace: argocd
+type: Opaque
+stringData:
+  SOPS_AGE_KEY: ${{ secrets.get("SOPS_AGE_KEY") }}
+
+---
 apiVersion: inline.nyl.io/v1
 kind: HelmChart
 release:
@@ -21,12 +31,15 @@ chart:
   name: argo-cd
   version: "7.4.3"
 values:
+  configs:
+    secret:
+      argocdServerAdminPassword: ${{ bcrypt(secrets.get("ARGOCD_ADMIN_PASSWORD")) }}
   dex:
     enabled: false
   repoServer:
     extraContainers:
       - name: nyl-v1
-        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:feda6eeba11e3fdf6b807f21e5300489dbb397bd
+        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:222a6d97c418fe162e657f0835050067665434ea
         securityContext:
           runAsNonRoot: true
           runAsUser: 999
@@ -37,6 +50,9 @@ values:
             name: plugins
           - mountPath: /tmp
             name: cmp-tmp
+        envFrom:
+          - secretRef:
+              name: argocd-nyl-env
     volumes:
       - name: cmp-tmp
         emptyDir: {}
@@ -52,7 +68,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/NiklasRosenstein/nyl.git
-    targetRevision: HEAD
+    targetRevision: nr/argocd-with-nyl-sops
     path: argocd-with-nyl
   destination:
     server: https://kubernetes.default.svc
