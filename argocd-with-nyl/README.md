@@ -1,6 +1,6 @@
 # nyl/argocd-with-nyl
 
-This is a simple Nyl Kubernetes manifests to install ArgoCD with Nyl as a Config Management Plugin. The `argocd.yaml`
+This is a simple Nyl Kubernetes manifest to install ArgoCD with Nyl as a Config Management Plugin. The `argocd.yaml`
 file here should serve as a starting point for bootstrapping your own ArgoCD instance.
 
 ## Goals
@@ -8,6 +8,7 @@ file here should serve as a starting point for bootstrapping your own ArgoCD ins
 * Bootstrap an ArgoCD instance with Nyl as a Config Management Plugin from zero to fully functional in a single command.
 * Have ArgoCD immediately own its own installation after bootstrapping.
 * If anything goes wrong, be able to easily re-run the command to get back to a fully functional state.
+* Demonstrate using SOPS to inject secrets into manifests and Helm chart values.
 
 ## Usage
 
