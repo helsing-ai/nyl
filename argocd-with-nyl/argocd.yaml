@@ -26,7 +26,7 @@ values:
   repoServer:
     extraContainers:
       - name: nyl-v1
-        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:9a598a43a59702d9f9cb8a8e58ee8c6caa4135b1
+        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:feda6eeba11e3fdf6b807f21e5300489dbb397bd
         securityContext:
           runAsNonRoot: true
           runAsUser: 999
@@ -54,7 +54,6 @@ spec:
     repoURL: https://github.com/NiklasRosenstein/nyl.git
     targetRevision: nr/argocd-cmp-test
     path: argocd-with-nyl
-    plugin: {}
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
