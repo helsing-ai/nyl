@@ -68,7 +68,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/NiklasRosenstein/nyl.git
-    targetRevision: nr/argocd-with-nyl-sops
+    targetRevision: HEAD
     path: argocd-with-nyl
   destination:
     server: https://kubernetes.default.svc
