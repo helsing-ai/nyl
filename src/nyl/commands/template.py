@@ -107,7 +107,7 @@ def template(
     )
 
     for source in load_manifests(paths):
-        logger.opt(ansi=True).info("Rendering manifests from <blue>{}</>", source.file)
+        logger.opt(ansi=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
         source.manifests = cast(Manifests, template_engine.evaluate(source.manifests))
         source.manifests = reconcile_generator(
@@ -147,7 +147,9 @@ def template(
             else:
                 applyset_name = source.file.stem
 
-            logger.opt(ansi=True).info("Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>)", source.file, applyset_name)
+            logger.opt(ansi=True).info(
+                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).", source.file, applyset_name
+            )
             applyset = ApplySet.new(applyset_name)
 
         if applyset is not None:
@@ -161,7 +163,7 @@ def template(
             if apply:
                 # We need to ensure that ApplySet parent object exists before invoking `kubectl apply --applyset=...`.
                 logger.opt(ansi=True).info(
-                    "Kubectl-apply ApplySet resource <yellow>{}</> from <cyan>{}</>'",
+                    "Kubectl-apply ApplySet resource <yellow>{}</> from <cyan>{}</>.",
                     applyset.reference,
                     source.file,
                 )

@@ -26,11 +26,10 @@ values:
   repoServer:
     extraContainers:
       - name: nyl-v1
-        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:4247472837b8dadd34bea29565994c0cabf90b86
-        # TODO: https://github.com/NiklasRosenstein/nyl/issues/10
-        # securityContext:
-        #   runAsNonRoot: true
-        #   runAsUser: 999
+        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:feda6eeba11e3fdf6b807f21e5300489dbb397bd
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
         volumeMounts:
           - mountPath: /var/run/argocd
             name: var-files
@@ -41,3 +40,20 @@ values:
     volumes:
       - name: cmp-tmp
         emptyDir: {}
+
+# Self-manage ArgoCD with Nyl and this specific repository.
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/NiklasRosenstein/nyl.git
+    targetRevision: nr/argocd-cmp-test
+    path: argocd-with-nyl
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd

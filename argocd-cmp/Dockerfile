@@ -15,7 +15,9 @@ RUN --mount=type=cache,id=uv-cache,target=/cache \
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
 
-FROM alpine/curl AS argocd-bin
+FROM alpine AS argocd-bin
+RUN apk add curl upx
+# Find ArgoCD releases at https://github.com/argoproj/argo-cd/releases
 ARG ARGOCD_VERSION=v2.12.0
 RUN \
     case "$(uname -m)" in \
@@ -24,12 +26,26 @@ RUN \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
     curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-${BIN_ARCH} \
-    && chmod +x /usr/local/bin/argocd
+    && chmod +x /usr/local/bin/argocd \
+    && upx /usr/local/bin/argocd
+
+FROM alpine/curl AS helm-bin
+# Find Helm releases at https://github.com/helm/helm/releases
+ARG HELM_VERSION=v3.15.3
+RUN apk add bash openssl \
+    && curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+    && chmod 700 get_helm.sh \
+    && ./get_helm.sh --version $HELM_VERSION
 
 FROM python:3.12-slim AS nyl-cmp
-COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server
+COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
+RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:999 /usr/local/bin/argocd-cmp-server
+COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
 COPY --from=build /opt/nyl /opt/nyl
-COPY argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
+COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 ENV PATH="${PATH}:/opt/nyl/bin"
+RUN useradd -u 999 -m argocd
+USER argocd
+WORKDIR /home/argocd
 VOLUME /home/argocd/cmp-server/plugins/
 ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]
