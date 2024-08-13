@@ -39,7 +39,7 @@ values:
   repoServer:
     extraContainers:
       - name: nyl-v1
-        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:222a6d97c418fe162e657f0835050067665434ea
+        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:0.0.4
         securityContext:
           runAsNonRoot: true
           runAsUser: 999
