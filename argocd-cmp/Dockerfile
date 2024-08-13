@@ -12,46 +12,54 @@ RUN uv venv /opt/nyl
 RUN --mount=type=cache,id=uv-cache,target=/cache \
     uv pip install --cache-dir /cache --python /opt/nyl/bin/python  -r requirements.txt ./
 
-#: Build the ArgoCD CMP server image.
-#: ----------------------------------
 
-FROM alpine AS argocd-bin
+#: Base stage in which we'll fetch binaries from third-party tools.
+#: ----------------------------------------------------------------
+
+FROM alpine as fetch-bin-base
 RUN apk add curl upx
-# Find ArgoCD releases at https://github.com/argoproj/argo-cd/releases
-ARG ARGOCD_VERSION=v2.12.0
 RUN \
     case "$(uname -m)" in \
         x86_64) BIN_ARCH='amd64' ;; \
         aarch64) BIN_ARCH='arm64' ;; \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
-    esac && \
-    curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-${BIN_ARCH} \
+    esac \
+    && printf "%s" "$BIN_ARCH" > /BINARY_ARCH
+
+
+#: Fetch binaries for ArgoCD, Helm and SOPS.
+#: -----------------------------------------
+
+FROM fetch-bin-base AS argocd-bin
+# Find ArgoCD releases at https://github.com/argoproj/argo-cd/releases
+ARG ARGOCD_VERSION=v2.12.0
+RUN source /etc/environment \
+    && curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-$(cat /BINARY_ARCH) \
     && chmod +x /usr/local/bin/argocd \
     && upx /usr/local/bin/argocd \
     && argocd version --client
 
-FROM alpine/curl AS helm-bin
+FROM fetch-bin-base AS helm-bin
 # Find Helm releases at https://github.com/helm/helm/releases
 ARG HELM_VERSION=v3.15.3
-RUN apk add bash openssl \
+RUN apk add bash openssl upx \
     && curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
     && chmod 700 get_helm.sh \
     && ./get_helm.sh --version $HELM_VERSION \
+    && upx /usr/local/bin/helm \
     && helm version
 
-FROM alpine/curl AS sops-bin
+FROM fetch-bin-base AS sops-bin
 # Find SOPS releases at https://github.com/getsops/sops/releases
 ARG SOPS_VERSION=v3.9.0
-RUN \
-    case "$(uname -m)" in \
-        x86_64) BIN_ARCH='amd64' ;; \
-        aarch64) BIN_ARCH='arm64' ;; \
-        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
-    esac && \
-    curl -LO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.${BIN_ARCH} \
-    && mv sops-${SOPS_VERSION}.linux.${BIN_ARCH} /usr/local/bin/sops \
+RUN curl -LO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) \
+    && mv sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) /usr/local/bin/sops \
     && chmod +x /usr/local/bin/sops \
     && sops --version
+
+
+#: Build the ArgoCD CMP server image.
+#: ----------------------------------
 
 FROM python:3.12-slim AS nyl-cmp
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
