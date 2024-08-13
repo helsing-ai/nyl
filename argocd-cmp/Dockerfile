@@ -16,7 +16,7 @@ RUN --mount=type=cache,id=uv-cache,target=/cache \
 #: Base stage in which we'll fetch binaries from third-party tools.
 #: ----------------------------------------------------------------
 
-FROM alpine as fetch-bin-base
+FROM alpine AS fetch-bin-base
 RUN apk add bash curl openssl upx
 RUN \
     case "$(uname -m)" in \
@@ -33,8 +33,7 @@ RUN \
 FROM fetch-bin-base AS argocd-bin
 # Find ArgoCD releases at https://github.com/argoproj/argo-cd/releases
 ARG ARGOCD_VERSION=v2.12.0
-RUN source /etc/environment \
-    && curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-$(cat /BINARY_ARCH) \
+RUN curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-$(cat /BINARY_ARCH) \
     && chmod +x /usr/local/bin/argocd \
     && upx /usr/local/bin/argocd \
     && argocd version --client
