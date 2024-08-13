@@ -31,6 +31,9 @@ chart:
   name: argo-cd
   version: "7.4.3"
 values:
+  configs:
+    secret:
+      argocdServerAdminPassword: ${{ bcrypt(secrets.get("ARGOCD_ADMIN_PASSWORD")) }}
   dex:
     enabled: false
   repoServer:
