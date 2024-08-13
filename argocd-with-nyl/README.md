@@ -21,6 +21,7 @@ You may want to modify the file to suit your needs before proceeding, for exampl
 
 Once you are ready, run the following command to bootstrap ArgoCD:
 
+    $ nyl crds | kubectl apply -f -
     $ nyl template argocd.yaml --apply
 
 Note that the `nyl-project.yaml` is empty here, but it helps ArgoCD to automatically detect that the Nyl Config
