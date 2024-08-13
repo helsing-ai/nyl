@@ -49,7 +49,7 @@ RUN \
         *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
     esac && \
     curl -LO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.${BIN_ARCH} \
-    && mv sops-${SOPS_VERSION}.linux.amd64 /usr/local/bin/sops \
+    && mv sops-${SOPS_VERSION}.linux.${BIN_ARCH} /usr/local/bin/sops \
     && chmod +x /usr/local/bin/sops \
     && sops --version
 
