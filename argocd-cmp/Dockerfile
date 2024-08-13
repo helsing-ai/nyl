@@ -42,9 +42,10 @@ COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
 RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:999 /usr/local/bin/argocd-cmp-server
 COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
 COPY --from=build /opt/nyl /opt/nyl
-COPY argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
+COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 ENV PATH="${PATH}:/opt/nyl/bin"
-VOLUME /home/argocd/cmp-server/plugins/
-RUN useradd -u 999 -m -d /home/argocd argocd
+RUN useradd -u 999 -m argocd
 USER argocd
+WORKDIR /home/argocd
+VOLUME /home/argocd/cmp-server/plugins/
 ENTRYPOINT [ "/usr/local/bin/argocd-cmp-server" ]
