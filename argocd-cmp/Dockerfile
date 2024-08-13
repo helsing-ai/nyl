@@ -55,6 +55,7 @@ ARG SOPS_VERSION=v3.9.0
 RUN curl -LO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) \
     && mv sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) /usr/local/bin/sops \
     && chmod +x /usr/local/bin/sops \
+    && upx /usr/local/bin/sops \
     && sops --version
 
 
