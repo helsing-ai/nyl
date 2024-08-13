@@ -17,7 +17,7 @@ RUN --mount=type=cache,id=uv-cache,target=/cache \
 #: ----------------------------------------------------------------
 
 FROM alpine as fetch-bin-base
-RUN apk add curl upx
+RUN apk add bash curl openssl upx
 RUN \
     case "$(uname -m)" in \
         x86_64) BIN_ARCH='amd64' ;; \
@@ -42,8 +42,7 @@ RUN source /etc/environment \
 FROM fetch-bin-base AS helm-bin
 # Find Helm releases at https://github.com/helm/helm/releases
 ARG HELM_VERSION=v3.15.3
-RUN apk add bash openssl upx \
-    && curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
     && chmod 700 get_helm.sh \
     && ./get_helm.sh --version $HELM_VERSION \
     && upx /usr/local/bin/helm \
