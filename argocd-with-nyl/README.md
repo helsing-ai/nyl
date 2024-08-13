@@ -25,3 +25,24 @@ Once you are ready, run the following command to bootstrap ArgoCD:
 
 Note that the `nyl-project.yaml` is empty here, but it helps ArgoCD to automatically detect that the Nyl Config
 Management Plugin should be used for this application.
+
+## Project layout
+
+The ArgoCD plugin will run `nyl template .` in this directory to generate the manifests for ArgoCD to apply. Nyl will
+consider all YAML files (with the `.yaml` suffix, not `.yml`) in the directory (not recursively) as part of the project,
+_excluding_ any files that begin with `nyl-`, `.` or `_`.
+
+```
+.envrc              -- Exports the SOPS_AGE_KEY so you can decrypt the secrets locally.
+                       IMPORTANT: This specific setup is for demonstration purposes only. Do not use this in production.
+                       Keep your secrets safe!
+.secrets.yaml       -- Encrypted secrets file for SOPS. This file is encrypted with the SOPS_AGE_KEY in .envrc.
+.sops.yaml          -- SOPS configuration file to specify the encryption method and the public key to use.
+argocd.yaml         -- The main Nyl manifest file for ArgoCD that creates the argocd Namespace, the argocd-nyl-env
+                       Secret, instantiates the ArgoCD Helm chart and creates the ArgoCD application to manage itself
+                       after bootstrapping.
+nyl-project.yaml    -- Empty file that signals to ArgoCD that the Nyl Config Management Plugin should be used for this
+                       application. This may have some project-specific configuration, but in this case it is empty.
+nyl-secrets.yaml    -- Tells Nyl to lookup secrets in the .secrets.yaml via SOPS when rendering the manifests that call
+                       the `secrets.get(<key>)` function.
+```
