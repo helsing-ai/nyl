@@ -28,7 +28,7 @@ spec:
     command:
       - sh
       - -c
-      - nyl --log-level=debug template --in-cluster .
+      - nyl --log-level=debug template --in-cluster --no-automatic-applyset .
 
   parameters: {}
 

@@ -48,9 +48,10 @@ def template(
     ),
     automatic_applyset: Optional[bool] = Option(
         None,
-        help="Specify whether an automatic ApplySet should be generated for the template files. If the option is not "
-        "specified, the option will be derived from the `nyl-project.yaml`, or alternative, fall back to the global "
-        "default (which is `true`).",
+        help="Specify the default value for the `automatic_applyset` option in the configuration that is loaded from "
+        "the `nyl-project.yaml` configuration file. If the configuration is not set, it will default to this option. "
+        "If the option is not set, the default will be `true`. Note that you need the Nyl `ApplySet` CRD installed in "
+        "order to use Nyl's applyset support.",
     ),
     applyset_part_of: bool = Option(
         True,
@@ -90,8 +91,16 @@ def template(
                 load_kube_config()
 
     project = ProjectConfig.load()
-    if automatic_applyset is None:
-        automatic_applyset = project.config.automatic_applyset
+    if project.config.automatic_applyset is None:
+        if automatic_applyset is None:
+            automatic_applyset = True
+        project.config.automatic_applyset = True
+    elif automatic_applyset is not None:
+        logger.opt(ansi=True).warning(
+            "<yellow>nyl-project.yaml</> sets <green>automatic_applyset: {}</>, the <cyan>--[no-]automatic-applyset</>"
+            "will be ignored.",
+            str(project.config.automatic_applyset).lower(),
+        )
 
     if project.file:
         state_dir = project.file.parent / ".nyl"
@@ -143,7 +152,7 @@ def template(
                 applyset = ApplySet.load(manifest)
                 source.manifests.remove(manifest)
 
-        if not applyset and automatic_applyset:
+        if not applyset and project.config.automatic_applyset:
             if len(namespaces) > 1:
                 logger.opt(ansi=True).error(
                     "Multiple namespaces defined in <yellow>{}</>, but automatic ApplySet generation is enabled. "
