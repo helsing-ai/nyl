@@ -46,6 +46,12 @@ def template(
         "Implies `--no-applyset-part-of`. When an ApplySet is defined in the source file, it will be applied "
         "separately. Note that this option implies `kubectl --prune`.",
     ),
+    automatic_applyset: Optional[bool] = Option(
+        None,
+        help="Specify whether an automatic ApplySet should be generated for the template files. If the option is not "
+        "specified, the option will be derived from the `nyl-project.yaml`, or alternative, fall back to the global "
+        "default (which is `true`).",
+    ),
     applyset_part_of: bool = Option(
         True,
         help="Add the 'applyset.kubernetes.io/part-of' label to all resources belonging to an ApplySet (if declared). "
@@ -84,6 +90,9 @@ def template(
                 load_kube_config()
 
     project = ProjectConfig.load()
+    if automatic_applyset is None:
+        automatic_applyset = project.config.automatic_applyset
+
     if project.file:
         state_dir = project.file.parent / ".nyl"
     else:
@@ -134,7 +143,7 @@ def template(
                 applyset = ApplySet.load(manifest)
                 source.manifests.remove(manifest)
 
-        if not applyset and project.config.automatic_applyset:
+        if not applyset and automatic_applyset:
             if len(namespaces) > 1:
                 logger.opt(ansi=True).error(
                     "Multiple namespaces defined in <yellow>{}</>, but automatic ApplySet generation is enabled. "
