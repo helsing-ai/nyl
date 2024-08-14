@@ -14,7 +14,7 @@ spec:
       command:
         - sh
         - -c
-        - find . -name nyl-project.yaml -o -name nyl-secrets.yml -o -name nyl-profiles.yaml
+        - find . -name nyl-project.yaml -o -name nyl-secrets.yaml -o -name nyl-profiles.yaml
 
   init:
     command:
