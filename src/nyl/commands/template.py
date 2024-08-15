@@ -283,7 +283,7 @@ def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
 
     result = []
     for file in files:
-        manifests = Manifests(list(map(Manifest, yaml.safe_load_all(file.read_text()))))
+        manifests = Manifests(list(map(Manifest, filter(None, yaml.safe_load_all(file.read_text())))))
         result.append(ManifestsWithSource(manifests, file))
 
     return result
