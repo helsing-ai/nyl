@@ -51,6 +51,7 @@ class SecretProvider(ABC):
 class SecretsConfig:
     FILENAME = "nyl-secrets.yaml"
 
+    file: Path | None
     provider: SecretProvider
 
     @staticmethod
@@ -67,9 +68,9 @@ class SecretsConfig:
         if file is None:
             file = find_config_file(SecretsConfig.FILENAME, required=False)
         if file is None:
-            return SecretsConfig(NullSecretsProvider())
+            return SecretsConfig(None, NullSecretsProvider())
         else:
             logger.debug("Loading secrets configuration from '{}'", file)
             provider = deser(safe_load(file.read_text()), SecretProvider, filename=str(file))
             provider.init(file)
-            return SecretsConfig(provider)
+            return SecretsConfig(file, provider)

@@ -15,6 +15,7 @@ from nyl.tools.typer import new_typer
 app = new_typer(help=__doc__)
 
 
+from . import argocd  # noqa: E402
 from . import crds  # noqa: F401,E402
 from . import new  # noqa: E402
 from . import profile  # noqa: E402
@@ -22,6 +23,7 @@ from . import secrets  # noqa: E402
 from . import template  # noqa: F401,E402
 from . import tun  # noqa: E402
 
+app.add_typer(argocd.app)
 app.add_typer(new.app)
 app.add_typer(profile.app)
 app.add_typer(secrets.app)

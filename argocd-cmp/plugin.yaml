@@ -11,10 +11,7 @@ spec:
 
   discover:
     find:
-      command:
-        - sh
-        - -c
-        - find . -name nyl-project.yaml -o -name nyl-secrets.yaml -o -name nyl-profiles.yaml
+      command: [nyl, argocd, discovery]
 
   init:
     command:
