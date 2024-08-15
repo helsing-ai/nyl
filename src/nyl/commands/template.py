@@ -13,6 +13,7 @@ from kubernetes.config.incluster_config import load_incluster_config
 from kubernetes.config.kube_config import load_kube_config
 from kubernetes.client.api_client import ApiClient
 from nyl.project.config import ProjectConfig
+from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
 from nyl.secrets.config import SecretsConfig
 from nyl.tools.kubectl import Kubectl
@@ -59,6 +60,7 @@ def template(
         "This option must be disabled when passing the generated manifests to `kubectl apply --applyset=...`, as it "
         "would otherwise cause an error due to the label being present on the input data.",
     ),
+    inline: bool = Option(True, help="Evaluate Nyl inlined resources."),
 ) -> None:
     """
     Render a package template into full Kubernetes resources.
@@ -128,11 +130,12 @@ def template(
         logger.opt(ansi=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
         source.manifests = cast(Manifests, template_engine.evaluate(source.manifests))
-        source.manifests = reconcile_generator(
-            generator,
-            source.manifests,
-            on_generated=lambda m: cast(Manifest, template_engine.evaluate(m)),
-        )
+        if inline:
+            source.manifests = reconcile_generator(
+                generator,
+                source.manifests,
+                on_generated=lambda m: cast(Manifest, template_engine.evaluate(m)),
+            )
 
         # Find the namespaces that are defined in the file. If we find any manifests without a namespace, we will
         # inject that namespace name into them.
@@ -193,6 +196,12 @@ def template(
         # Find all manifests without a namespace and inject the namespace name into them.
         # If there is an applyset, ensure they are marked as part of the applyset.
         for manifest in source.manifests:
+            # Inline resources often don't have metadata and they are not persisted to the cluster, hence
+            # we don't need to process them here.
+            if NylResource.matches(manifest, API_VERSION_INLINE):
+                assert not inline, "Inline resources should have been processed by this timepdm lint."
+                continue
+
             if applyset is not None and applyset_part_of:
                 if APPLYSET_LABEL_PART_OF not in (labels := manifest["metadata"].setdefault("labels", {})):
                     labels[APPLYSET_LABEL_PART_OF] = applyset.id
@@ -231,7 +240,9 @@ def template(
                     manifest["metadata"]["namespace"],
                 )
 
-            if not apply:
+        if not apply:
+            # If we're not going to be applying the manifests immediately via `kubectl`, we print them to stdout.
+            for manifest in source.manifests:
                 print("---")
                 print(yaml.safe_dump(manifest))
 

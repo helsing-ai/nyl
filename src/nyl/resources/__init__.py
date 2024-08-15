@@ -4,7 +4,7 @@ This package contains Nyl's own Kubernetes-esque resources.
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import ClassVar, cast
+from typing import ClassVar, Collection, cast
 from typing_extensions import Self
 from databind.json import load as deser, dump as ser
 
@@ -81,13 +81,18 @@ class NylResource(ABC):
         return None
 
     @classmethod
-    def matches(cls, manifest: Manifest) -> bool:
+    def matches(cls, manifest: Manifest, apiVersion: str | Collection[str] | None = None) -> bool:
         """
         Check if the manifest is a NylResource of the correct `apiVersion` and possibly `kind` (if called on a
         `NylResource` subclass).
         """
 
-        if manifest.get("apiVersion") not in (API_VERSION_K8S, API_VERSION_INLINE):
+        if apiVersion is None:
+            apiVersion = {API_VERSION_K8S, API_VERSION_INLINE}
+        elif isinstance(apiVersion, str):
+            apiVersion = {apiVersion}
+
+        if manifest.get("apiVersion") not in apiVersion:
             return False
 
         if cls is not NylResource and manifest["kind"] != cls.KIND:
