@@ -94,7 +94,7 @@ def template(
     if project.config.automatic_applyset is None:
         if automatic_applyset is None:
             automatic_applyset = True
-        project.config.automatic_applyset = True
+        project.config.automatic_applyset = automatic_applyset
     elif automatic_applyset is not None:
         logger.opt(ansi=True).warning(
             "<yellow>nyl-project.yaml</> sets <green>automatic_applyset: {}</>, the <cyan>--[no-]automatic-applyset</>"
