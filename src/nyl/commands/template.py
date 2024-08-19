@@ -1,6 +1,7 @@
 import atexit
 from dataclasses import dataclass
 from pathlib import Path
+from textwrap import indent
 from typing import Optional, cast
 from loguru import logger
 from structured_templates import TemplateEngine
@@ -201,6 +202,14 @@ def template(
             if NylResource.matches(manifest, API_VERSION_INLINE):
                 assert not inline, "Inline resources should have been processed by this timepdm lint."
                 continue
+
+            if "metadata" not in manifest:
+                logger.opt(ansi=True).error(
+                    "Manifest in <yellow>'{}'</> has no <cyan>metadata</> key:\n\n{}",
+                    source.file,
+                    indent(yaml.safe_dump(manifest), "  "),
+                )
+                exit(1)
 
             if applyset is not None and applyset_part_of:
                 if APPLYSET_LABEL_PART_OF not in (labels := manifest["metadata"].setdefault("labels", {})):
