@@ -12,14 +12,11 @@ class Project:
     Configuration for a Nyl project that is stored in a `nyl-project.toml` file.
     """
 
-    automatic_applyset: bool | None = None
+    generate_applysets: bool = False
     """
     If enabled, automatically generate an ApplySet for every template file. The applyset will be named after the
     template file, unless there is namespace defined in the template file, in which case the applyset will be named
     after the namespace.
-
-    If the option is not set, it will usually default to `True`, but that default may be overwritten with the
-    `--[no-]automatic-applyset` option to `nyl template`.
     """
 
     search_path: list[Path] = field(default_factory=list)

@@ -48,12 +48,9 @@ def template(
         "Implies `--no-applyset-part-of`. When an ApplySet is defined in the source file, it will be applied "
         "separately. Note that this option implies `kubectl --prune`.",
     ),
-    automatic_applyset: Optional[bool] = Option(
+    generate_applysets: Optional[bool] = Option(
         None,
-        help="Specify the default value for the `automatic_applyset` option in the configuration that is loaded from "
-        "the `nyl-project.yaml` configuration file. If the configuration is not set, it will default to this option. "
-        "If the option is not set, the default will be `true`. Note that you need the Nyl `ApplySet` CRD installed in "
-        "order to use Nyl's applyset support.",
+        help="Override the `generate_applysets` setting from the project configuration.",
     ),
     applyset_part_of: bool = Option(
         True,
@@ -94,16 +91,8 @@ def template(
                 load_kube_config()
 
     project = ProjectConfig.load()
-    if project.config.automatic_applyset is None:
-        if automatic_applyset is None:
-            automatic_applyset = True
-        project.config.automatic_applyset = automatic_applyset
-    elif automatic_applyset is not None:
-        logger.opt(ansi=True).warning(
-            "<yellow>nyl-project.yaml</> sets <green>automatic_applyset: {}</>, the <cyan>--[no-]automatic-applyset</>"
-            "will be ignored.",
-            str(project.config.automatic_applyset).lower(),
-        )
+    if generate_applysets is not None:
+        project.config.generate_applysets = generate_applysets
 
     if project.file:
         state_dir = project.file.parent / ".nyl"
@@ -156,7 +145,7 @@ def template(
                 applyset = ApplySet.load(manifest)
                 source.manifests.remove(manifest)
 
-        if not applyset and project.config.automatic_applyset:
+        if not applyset and project.config.generate_applysets:
             if len(namespaces) > 1:
                 logger.opt(ansi=True).error(
                     "Multiple namespaces defined in <yellow>{}</>, but automatic ApplySet generation is enabled. "
