@@ -24,7 +24,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
     @staticmethod
     def default(
         *,
-        git_repo_cache_dir: Path,
+        cache_dir: Path,
         search_path: list[Path],
         working_dir: Path,
         client: ApiClient,
@@ -34,7 +34,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
         Create a new DispatchingGenerator with the default set of generators.
 
         Args:
-            git_repo_cache_dir: A directory that Git repositories are cloned into.
+            cache_dir: A directory where caches can be stored.
             search_path: A list of directories to search for Helm charts in if the chart path is not explicitly
                          absolute or relative.
             working_dir: The working directory to consider relative paths relative to.
@@ -54,7 +54,8 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
         return DispatchingGenerator(
             generators={
                 "HelmChart": HelmChartGenerator(
-                    git_repo_cache_dir=git_repo_cache_dir,
+                    git_repo_cache_dir=cache_dir / "git-repos",
+                    chart_cache_dir=cache_dir / "helm-charts",
                     search_path=search_path,
                     working_dir=working_dir,
                     kube_version=kube_version,

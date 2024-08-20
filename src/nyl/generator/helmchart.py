@@ -11,13 +11,19 @@ from loguru import logger
 import yaml
 from nyl.generator import Generator
 from nyl.resources.helmchart import HelmChart
+from nyl.tools.shell import pretty_cmd
 from nyl.tools.types import Manifests
+
+ChartAndRepository = tuple[str | None, str | None]
 
 
 @dataclass
 class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
     git_repo_cache_dir: Path
     """ A directory that Git repositories are cloned into. """
+
+    chart_cache_dir: Path
+    """ A directory where Helm charts are cached."""
 
     search_path: list[Path]
     """ A list of directories to search for Helm charts in if the chart path is not explicitly absolute or relative. """
@@ -31,7 +37,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
     as, for example, picking the right apiVersion for Ingress resources).
     """
 
-    def generate(self, /, res: HelmChart) -> Manifests:
+    def _materialize_chart(self, res: HelmChart) -> ChartAndRepository:
         repository: str | None = None
         chart: str | None = None
 
@@ -48,6 +54,37 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             else:
                 chart = res.chart.name
                 repository = res.chart.repository
+
+            parsed = urlparse(res.chart.repository)
+            cache_dir = (
+                self.chart_cache_dir / f"{parsed.scheme}-{parsed.hostname}-{parsed.path.replace('/', '-').lstrip('-')}"
+            )
+            command = ["helm", "pull", chart]
+            if repository:
+                command.extend(["--repo", repository])
+            if res.chart.version:
+                command.extend(["--version", res.chart.version, "--devel"])
+                cache_dir = cache_dir / res.chart.version
+            else:
+                cache_dir = cache_dir / "latest"
+
+            # TODO: Optimize the cache layout (we can determine the final filename if we have a version, otherwise
+            #       we could consider querying the repository or allow for some kind of chartPullPolicy.
+            if not cache_dir.is_dir() or not any(cache_dir.iterdir()):
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                logger.opt(ansi=True).debug(
+                    "Pulling Helm chart '{}' from repository '{}' with command $ <yellow>{}</>",
+                    chart,
+                    repository,
+                    pretty_cmd(command),
+                )
+                logger.opt(ansi=True).trace("Using cache directory <yellow>{}</>", cache_dir)
+                subprocess.check_call(command, cwd=cache_dir)
+            else:
+                logger.opt(ansi=True).debug("Using cached Helm chart '{}' from repository '{}'", chart, repository)
+
+            chart = str(cache_dir / next(cache_dir.iterdir()))
+            repository = None
 
         elif res.chart.git:
             if res.chart.name:
@@ -97,10 +134,12 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
         else:
             raise ValueError("Either `chart.repository`, `chart.git` or `chart.path` must be set.")
 
-        # if repository and repository.startswith("nyl://"):
-        #     # Find in the Nyl packages index.
-        #     assert isinstance(chart, str)
-        #     chart = project.find_package((repository[len("nyl://") :] + "/@charts/" + chart).lstrip("/"))
+        return (repository, chart)
+
+    # Generator
+
+    def generate(self, /, res: HelmChart) -> Manifests:
+        repository, chart = self._materialize_chart(res)
 
         with TemporaryDirectory() as tmp:
             values_file = Path(tmp) / "values.yaml"
@@ -138,7 +177,9 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             #     command.append("--set")
             #     command.append(f"{key}={json.dumps(value)}")
 
-            logger.debug("Generating manifests with Helm: $ {}", " ".join(map(shlex.quote, command)))
+            logger.opt(ansi=True).debug(
+                "Generating manifests with Helm: $ <yellow>{}</>", " ".join(map(shlex.quote, command))
+            )
             try:
                 result = subprocess.run(command, capture_output=True, check=True)
             except subprocess.CalledProcessError as e:

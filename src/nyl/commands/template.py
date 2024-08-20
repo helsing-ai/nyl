@@ -110,7 +110,7 @@ def template(
     )
 
     generator = DispatchingGenerator.default(
-        git_repo_cache_dir=state_dir / "repo-cache",
+        cache_dir=state_dir / "cache",
         search_path=project.config.search_path,
         working_dir=Path.cwd(),
         client=ApiClient(),
