@@ -50,6 +50,9 @@ values:
             name: plugins
           - mountPath: /tmp
             name: cmp-tmp
+        env:
+          - name: NYL_CACHE_DIR
+            value: /tmp/nyl
         envFrom:
           - secretRef:
               name: argocd-nyl-env

@@ -59,6 +59,14 @@ def template(
         "would otherwise cause an error due to the label being present on the input data.",
     ),
     inline: bool = Option(True, help="Evaluate Nyl inlined resources."),
+    state_dir: Optional[Path] = Option(
+        None, help="The directory to store state in (such as kubeconfig files).", envvar="NYL_STATE_DIR"
+    ),
+    cache_dir: Optional[Path] = Option(
+        None,
+        help="The directory to store cache data in. If not set, a directory in the --state-dir is used.",
+        envvar="NYL_CACHE_DIR",
+    ),
 ) -> None:
     """
     Render a package template into full Kubernetes resources.
@@ -94,10 +102,11 @@ def template(
     if generate_applysets is not None:
         project.config.generate_applysets = generate_applysets
 
-    if project.file:
-        state_dir = project.file.parent / ".nyl"
-    else:
-        state_dir = Path(".nyl")
+    if state_dir is None:
+        state_dir = project.file.parent / ".nyl" if project.file else Path(".nyl")
+
+    if cache_dir is None:
+        cache_dir = state_dir / "cache"
 
     secrets = SecretsConfig.load()
 
@@ -110,7 +119,7 @@ def template(
     )
 
     generator = DispatchingGenerator.default(
-        cache_dir=state_dir / "cache",
+        cache_dir=cache_dir,
         search_path=project.config.search_path,
         working_dir=Path.cwd(),
         client=ApiClient(),
