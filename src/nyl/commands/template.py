@@ -4,7 +4,6 @@ from pathlib import Path
 from textwrap import indent
 from typing import Optional, cast
 from loguru import logger
-from structured_templates import TemplateEngine
 from typer import Argument, Option
 import yaml
 from nyl.generator import reconcile_generator
@@ -17,6 +16,7 @@ from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
 from nyl.secrets.config import SecretsConfig
+from nyl.templating import NylTemplateEngine
 from nyl.tools.kubectl import Kubectl
 from nyl.tools.types import Manifest, Manifests
 
@@ -110,13 +110,7 @@ def template(
 
     secrets = SecretsConfig.load()
 
-    template_engine = TemplateEngine(
-        globals_={
-            "secrets": secrets.provider,
-            "random_password": _random_password,
-            "bcrypt": _bcrypt,
-        }
-    )
+    template_engine = NylTemplateEngine(secrets.provider)
 
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,
@@ -337,26 +331,6 @@ def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
     #         if skip_resource:
     #             continue
     #         manifest = Reference.sub(manifest, lambda ref: resolves[str(ref)])
-
-
-def _random_password(length: int = 32) -> str:
-    """
-    Generate a random password.
-    """
-
-    import secrets
-
-    return secrets.token_urlsafe(length)
-
-
-def _bcrypt(password: str) -> str:
-    """
-    Hash a password using bcrypt.
-    """
-
-    import bcrypt
-
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def is_namespace_resource(manifest: Manifest) -> bool:
