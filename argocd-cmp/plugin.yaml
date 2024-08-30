@@ -11,21 +11,26 @@ spec:
 
   discover:
     find:
-      command: [nyl, argocd, discovery]
+      command:
+        - nyl
+        - argocd
+        - discovery
 
-  init:
-    command:
-      - sh
-      - -c
-      - |
-        nyl version >&2
-        argocd version --client >&2
+  # init:
+  #   command:
+  #     - sh
+  #     - -c
+  #     - |
+  #       nyl version >&2
+  #       argocd version --client >&2
 
   generate:
     command:
-      - sh
-      - -c
-      - nyl --log-level=debug template --in-cluster .
+      - nyl
+      - --log-level=debug
+      - template
+      - --in-cluster
+      - .
 
   parameters: {}
 
