@@ -109,14 +109,15 @@ def template(
         cache_dir = state_dir / "cache"
 
     secrets = SecretsConfig.load()
+    client = ApiClient()
 
-    template_engine = NylTemplateEngine(secrets.provider)
+    template_engine = NylTemplateEngine(secrets.provider, client)
 
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,
         search_path=project.config.search_path,
         working_dir=Path.cwd(),
-        client=ApiClient(),
+        client=client,
     )
 
     for source in load_manifests(paths):
