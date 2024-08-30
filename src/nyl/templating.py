@@ -50,6 +50,28 @@ def bcrypt(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
+@register()
+def b64decode(data: str) -> str:
+    """
+    Decode base64 data and then from UTF-8.
+    """
+
+    import base64
+
+    return base64.b64decode(data).decode("utf-8")
+
+
+@register()
+def b64encode(data: str) -> str:
+    """
+    Encode data to base64 from UTF-8 and then to ASCII.
+    """
+
+    import base64
+
+    return base64.b64encode(data.encode("utf-8")).decode("ascii")
+
+
 class NylTemplateEngine(_TemplateEngine):
     """
     Nyl's structured template engine.
