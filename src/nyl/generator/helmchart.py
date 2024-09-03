@@ -121,6 +121,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 for path in self.search_path:
                     chart_path = path / res.chart.path
                     if chart_path.exists():
+                        chart = str(chart_path)
                         break
                 else:
                     raise ValueError(f"Chart '{res.chart.path}' not found in search path {self.search_path}")
@@ -128,8 +129,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 chart_path = self.working_dir / res.chart.path
                 if not chart_path.exists():
                     raise ValueError(f"Chart path '{res.chart.path}' not found")
-
-            chart = str(chart_path)
+                chart = str(chart_path)
 
         else:
             raise ValueError("Either `chart.repository`, `chart.git` or `chart.path` must be set.")
