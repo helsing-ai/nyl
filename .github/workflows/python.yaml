@@ -7,6 +7,9 @@ on:
   pull_request:
     branches: [ develop ]
 
+env:
+  KRAKENW_USE: UV
+
 jobs:
   test:
     runs-on: ubuntu-latest
