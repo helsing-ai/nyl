@@ -35,7 +35,6 @@ build-backend = "pdm.backend"
 distribution = true
 
 [tool.pdm.scripts]
-lint = "bash -c 'ruff format && ruff check --fix && mypy src' && pytest"
 docs = "bash -c 'cd docs && mkdocs serve'"
 
 [tool.pdm.dev-dependencies]
@@ -44,9 +43,7 @@ dev = [
     "mkdocs-material>=9.5.28",
     "mkdocs>=1.6.0",
     "mkdocstrings[python]>=0.25.1",
-    "mypy>=1.10.0",
     "pytest>=8.2.2",
-    "ruff>=0.4.8",
     "types-pyyaml>=6.0.12.20240311",
     "types-requests>=2.32.0.20240712",
 ]
@@ -54,6 +51,3 @@ dev = [
 [[tool.pdm.source]]
 name = "pypi"
 url = "https://pypi.org/simple"
-
-[tool.ruff]
-line-length = 120
