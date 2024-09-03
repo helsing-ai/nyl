@@ -45,7 +45,7 @@ class Kubectl:
 
     def __init__(self) -> None:
         self.env: dict[str, str] = {}
-        self.tempdir: TemporaryDirectory | None = None
+        self.tempdir: TemporaryDirectory[str] | None = None
 
     def __del__(self) -> None:
         if hasattr(self, "tempdir") and self.tempdir is not None:
@@ -134,6 +134,5 @@ class Kubectl:
         raise KubectlError(status.returncode, status.stderr)
 
     def version(self) -> KubectlVersion:
-        return json.loads(subprocess.check_output(["kubectl", "version", "-o", "json", "--client=true"], text=True))[
-            "clientVersion"
-        ]
+        output = subprocess.check_output(["kubectl", "version", "-o", "json", "--client=true"], text=True)
+        return json.loads(output)["clientVersion"]  # type: ignore[no-any-return]

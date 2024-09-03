@@ -11,7 +11,7 @@ from structured_templates.context import Context
 from kubernetes.dynamic.client import DynamicClient
 from nyl.secrets.config import SecretProvider
 
-T_Callable = TypeVar("T_Callable", bound=Callable)
+T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 registered_functions: dict[str, Callable[..., Any]] = {}
 RESERVED_NAMES = {"secrets"}
 

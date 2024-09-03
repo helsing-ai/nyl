@@ -19,7 +19,7 @@ class Generator(ABC, Generic[T]):
 
     resource_type: ClassVar[type[Any]]
 
-    def __init_subclass__(cls, resource_type: type[T], **kwargs):
+    def __init_subclass__(cls, resource_type: type[T], **kwargs: Any) -> None:
         cls.resource_type = resource_type
         super().__init_subclass__(**kwargs)
 
@@ -33,7 +33,7 @@ class Generator(ABC, Generic[T]):
 
 
 def reconcile_generator(
-    generator: Generator,
+    generator: Generator[Manifest],
     manifests: Manifests,
     on_generated: Callable[[Manifest], Manifest],
 ) -> Manifests:

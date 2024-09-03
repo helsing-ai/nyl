@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 from nyl.generator import Generator
@@ -18,7 +19,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
     processed. Any other resources will be returned as-is.
     """
 
-    generators: dict[str, Generator] = field(default_factory=dict)
+    generators: dict[str, Generator[Any]] = field(default_factory=dict)
     """ Collection of generators to dispatch to based on the resource kind. """
 
     @staticmethod
