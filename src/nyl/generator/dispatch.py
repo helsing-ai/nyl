@@ -5,6 +5,7 @@ from typing import Any
 from loguru import logger
 from nyl.generator import Generator
 from nyl.resources import NylResource
+from nyl.tools.kubernetes import discover_kubernetes_api_versions
 from nyl.tools.types import Manifest, Manifests
 from kubernetes.client import VersionApi
 from kubernetes.client.api_client import ApiClient
@@ -60,6 +61,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
                     search_path=search_path,
                     working_dir=working_dir,
                     kube_version=kube_version,
+                    api_versions=discover_kubernetes_api_versions(client),
                 ),
                 "StatefulSecret": StatefulSecretGenerator(client),
             }

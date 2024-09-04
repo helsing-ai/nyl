@@ -37,6 +37,13 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
     as, for example, picking the right apiVersion for Ingress resources).
     """
 
+    api_versions: set[str]
+    """
+    A set of `Capabilities.APIVersions` to pass to the `helm template` function. This must be a complete set to ensure
+    the latest capabilities can be used by the Helm chart. Helm would usually look this up automatically with the
+    `--validate` flag.
+    """
+
     def _materialize_chart(self, res: HelmChart) -> ChartAndRepository:
         repository: str | None = None
         chart: str | None = None
@@ -163,6 +170,8 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 # are not actually installed Kubernetes CRDs, as well as generating custom resources before they are
                 # installed.
                 # "--validate",
+                "--api-versions",
+                ",".join(sorted(self.api_versions)),
             ]
             if repository:
                 command.extend(["--repo", repository])
