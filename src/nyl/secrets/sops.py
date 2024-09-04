@@ -74,8 +74,10 @@ class SopsFile(SecretProvider):
     def get(self, key: str) -> SecretValue:
         parts = key.split(".")
         value = self._load()
-        for part in parts:
+        for idx, part in enumerate(parts):
             if not isinstance(value, dict):
-                raise KeyError(key)
+                raise KeyError(".".join(parts[:idx+1]))
+            if part not in value:
+                raise KeyError(".".join(parts[:idx+1]))
             value = value[part]
         return value
