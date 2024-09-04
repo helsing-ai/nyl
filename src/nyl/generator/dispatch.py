@@ -49,7 +49,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
 
         if kube_version is None:
             version_info = VersionApi(client).get_code()
-            kube_version = f"{version_info.major}.{version_info.minor}"
+            kube_version = f"{version_info.major}.{version_info.minor.rstrip('+')}"
             logger.debug("Determined Kubernetes version: {}", kube_version)
 
         return DispatchingGenerator(
