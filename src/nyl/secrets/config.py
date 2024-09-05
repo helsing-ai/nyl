@@ -6,6 +6,7 @@ from databind.core import Union
 from loguru import logger
 
 from nyl.tools.fs import find_config_file
+from nyl.tools.loads import loadf
 
 SecretValue = dict[str, Any] | list[Any] | str | int | float | bool | None
 """
@@ -49,7 +50,7 @@ class SecretProvider(ABC):
 
 @dataclass
 class SecretsConfig:
-    FILENAME = "nyl-secrets.yaml"
+    FILENAMES = ["nyl-secrets.yaml", "nyl-secrets.toml", "nyl-secrets.json"]
 
     file: Path | None
     provider: SecretProvider
@@ -62,15 +63,15 @@ class SecretsConfig:
         """
 
         from databind.json import load as deser
-        from yaml import safe_load
         from nyl.secrets.null import NullSecretsProvider
 
         if file is None:
-            file = find_config_file(SecretsConfig.FILENAME, required=False)
+            file = find_config_file(SecretsConfig.FILENAMES, required=False)
         if file is None:
+            logger.debug("Found no Nyl secrets configuration file.")
             return SecretsConfig(None, NullSecretsProvider())
         else:
-            logger.debug("Loading secrets configuration from '{}'", file)
-            provider = deser(safe_load(file.read_text()), SecretProvider, filename=str(file))
+            logger.debug("Loading secrets configuration from '{}'.", file)
+            provider = deser(loadf(file), SecretProvider, filename=str(file))
             provider.init(file)
             return SecretsConfig(file, provider)

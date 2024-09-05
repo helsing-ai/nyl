@@ -47,3 +47,5 @@ nyl-project.yaml    -- Empty file that signals to ArgoCD that the Nyl Config Man
 nyl-secrets.yaml    -- Tells Nyl to lookup secrets in the .secrets.yaml via SOPS when rendering the manifests that call
                        the `secrets.get(<key>)` function.
 ```
+
+Note that configuration files may also be formatted as TOML (`.toml`) or JSON (`.json`).

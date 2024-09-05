@@ -6,6 +6,7 @@ from typing import Literal
 from loguru import logger
 
 from nyl.tools.fs import find_config_file
+from nyl.tools.loads import loadf
 
 
 @dataclass
@@ -104,8 +105,8 @@ class SshTunnel:
 
 @dataclass
 class ProfileConfig:
-    FILENAME = "nyl-profiles.yaml"
-    FALLBACK_PATH = Path.home() / ".config" / "nyl" / FILENAME
+    FILENAMES = ["nyl-profiles.yaml", "nyl-profiles.toml", "nyl-profiles.json"]
+    GLOBAL_CONFIG_DIR = Path.home() / ".config" / "nyl"
     STATE_DIRNAME = ".nyl"
 
     file: Path | None
@@ -120,21 +121,20 @@ class ProfileConfig:
         """
 
         from databind.json import load as deser
-        from yaml import safe_load
 
         if file is None:
-            file = find_config_file(ProfileConfig.FILENAME, required=False)
-            if file is None and ProfileConfig.FALLBACK_PATH.exists():
-                file = ProfileConfig.FALLBACK_PATH.absolute()
+            file = find_config_file(ProfileConfig.FILENAMES, required=False)
+            if file is None:
+                file = find_config_file(ProfileConfig.FILENAMES, ProfileConfig.GLOBAL_CONFIG_DIR, required=False)
 
         if file is None:
             if required:
                 raise FileNotFoundError(
-                    f"Configuration file '{ProfileConfig.FILENAME}' not found in '{Path.cwd()}', "
-                    f"any of its parent directories or '{ProfileConfig.FALLBACK_PATH.parent}'"
+                    f"Configuration file '{ProfileConfig.FILENAMES}' not found in '{Path.cwd()}', "
+                    f"any of its parent directories or '{ProfileConfig.GLOBAL_CONFIG_DIR}'"
                 )
             return ProfileConfig(None, {})
 
         logger.debug("Loading profiles configuration from '{}'", file)
-        profiles = deser(safe_load(file.read_text()), dict[str, Profile], filename=str(file))
+        profiles = deser(loadf(file), dict[str, Profile], filename=str(file))
         return ProfileConfig(file, profiles)

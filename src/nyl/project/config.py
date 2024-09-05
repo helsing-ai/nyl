@@ -4,12 +4,13 @@ from venv import logger
 from pathlib import Path
 
 from nyl.tools.fs import find_config_file
+from nyl.tools.loads import loadf
 
 
 @dataclass
 class Project:
     """
-    Configuration for a Nyl project that is stored in a `nyl-project.toml` file.
+    Configuration for a Nyl project that is stored in a `nyl-project.yaml` file.
     """
 
     generate_applysets: bool = False
@@ -19,10 +20,11 @@ class Project:
     after the namespace.
     """
 
-    search_path: list[Path] = field(default_factory=list)
+    search_path: list[Path] = field(default_factory=lambda: ["."])
     """
     Search path for additional resources used by the project. Used for example when using the `chart.path` option on a
-    `HelmChart` resource.
+    `HelmChart` resource. Relative paths specified here are considered relative to the `nyl-project.yaml` configuration
+    file.
     """
 
 
@@ -32,7 +34,7 @@ class ProjectConfig:
     Wrapper for the project configuration file.
     """
 
-    FILENAME = "nyl-project.yaml"
+    FILENAMES = ["nyl-project.yaml", "nyl-project.toml", "nyl-project.json"]
 
     file: Path | None
     config: Project
@@ -45,15 +47,15 @@ class ProjectConfig:
         """
 
         from databind.json import load as deser
-        from yaml import safe_load
 
         if file is None:
-            file = find_config_file(ProjectConfig.FILENAME, required=False)
+            file = find_config_file(ProjectConfig.FILENAMES, required=False)
+
         if file is None:
             return ProjectConfig(None, Project())
 
         logger.debug("Loading project configuration from '{}'", file)
-        project = deser(safe_load(file.read_text()), Project, filename=str(file))
+        project = deser(loadf(file), Project, filename=str(file))
 
         for idx, path in enumerate(project.search_path):
             if not path.is_absolute():
