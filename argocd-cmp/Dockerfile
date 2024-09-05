@@ -6,7 +6,7 @@
 
 FROM python:3.12 AS build
 WORKDIR /build
-RUN apt-get update && apt-get install -y ccache
+RUN apt-get update && apt-get install -y ccache patchelf
 RUN pip install pdm uv
 COPY pyproject.toml pdm.lock pdm.toml README.md ./
 COPY src/ src/
