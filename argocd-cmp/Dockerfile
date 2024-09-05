@@ -16,6 +16,7 @@ RUN --mount=type=cache,target=/tmp/uv-cache \
     uv pip install --cache-dir /tmp/uv-cache --python /opt/nyl/bin/python  -r requirements.txt ./
 RUN --mount=type=cache,target=/tmp/nuitka-cache \
     export NUITKA_CACHE_DIR=/tmp/nuitka-cache && \
+    (echo 'from nyl.commands import app; app()' > main.py) && \
     uv run nuitka --assume-yes-for-downloads --standalone main.py --output-filename=nyl
 
 #: Base stage in which we'll fetch binaries from third-party tools.
