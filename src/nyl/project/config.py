@@ -20,7 +20,7 @@ class Project:
     after the namespace.
     """
 
-    search_path: list[Path] = field(default_factory=lambda: ["."])
+    search_path: list[Path] = field(default_factory=lambda: [Path(".")])
     """
     Search path for additional resources used by the project. Used for example when using the `chart.path` option on a
     `HelmChart` resource. Relative paths specified here are considered relative to the `nyl-project.yaml` configuration
