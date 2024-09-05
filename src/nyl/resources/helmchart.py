@@ -51,5 +51,17 @@ class HelmChart(NylResource, api_version=API_VERSION_INLINE):
     release: ReleaseMetadata
     """ Metadata for the release. """
 
+    hooksEnabled: bool = False
+    """
+    If set to `False`, pass the `--no-hooks` option to `helm template`. This is often required when deploying Helm
+    charts via ArgoCD:
+
+    > Argo CD cannot know if it is running a first-time "install" or an "upgrade" - every operation is a "sync'.
+    > This means that, by default, apps that have pre-install and pre-upgrade will have those hooks run at the same
+    > time.
+
+    For consistency with ArgoCD, this field defaults to `False`.
+    """
+
     values: dict[str, Any] = field(default_factory=dict)
     """ Values for the Helm chart. """
