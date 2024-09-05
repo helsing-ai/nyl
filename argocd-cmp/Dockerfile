@@ -11,7 +11,7 @@ RUN pip install pdm uv
 COPY pyproject.toml pdm.lock pdm.toml README.md ./
 COPY src/ src/
 RUN pdm export --prod > requirements.txt
-RUN uv venv /opt/nyl && uv pip install nuitka
+RUN uv venv /opt/nyl && uv pip install nuitka==2.4.8
 RUN --mount=type=cache,target=/tmp/uv-cache \
     uv pip install --cache-dir /tmp/uv-cache --python /opt/nyl/bin/python  -r requirements.txt ./
 RUN --mount=type=cache,target=/tmp/nuitka-cache \
