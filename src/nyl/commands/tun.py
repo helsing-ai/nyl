@@ -2,6 +2,7 @@
 Access SSH tunnels globally managed by Nyl.
 """
 
+from pathlib import Path
 from loguru import logger
 from typer import Argument
 from rich.console import Console
@@ -10,6 +11,7 @@ from rich.table import Table
 from nyl.profiles import get_tunnel_spec
 from nyl.profiles.config import ProfileConfig
 from nyl.profiles.tunnel import TunnelManager, TunnelSpec, TunnelStatus
+from nyl.tools.fs import shorter_path
 from nyl.tools.typer import new_typer
 
 
@@ -25,11 +27,14 @@ def status(all: bool = False) -> None:
     config = ProfileConfig.load(required=False)
 
     table = Table()
+    table.add_column("Source", style="blue")
     table.add_column("Profile", justify="right", style="cyan")
     table.add_column("Tunnel ID")
     table.add_column("Status")
     table.add_column("Proxy")
     table.add_column("Forwardings")
+
+    print(f"Showing tunnels from '{config.file}'" + (" an all other known tunnels." if all else "."))
 
     with TunnelManager() as manager:
         tunnels = list(manager.get_tunnels())
@@ -57,13 +62,12 @@ def status(all: bool = False) -> None:
                 continue
 
             profile_name = spec.locator.profile
-            if all:
-                profile_name = f"{profile_name} ({spec.locator.config_file})"
 
             forwardings = ", ".join(
                 f"localhost:{status.local_ports.get(k, '?')} → {v.host}:{v.port}" for k, v in spec.forwardings.items()
             )
             table.add_row(
+                str(shorter_path(Path(spec.locator.config_file))),
                 profile_name,
                 status.id,
                 status.status,

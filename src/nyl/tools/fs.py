@@ -1,3 +1,4 @@
+import os
 from typing import Literal, overload
 from pathlib import Path
 
@@ -27,3 +28,12 @@ def find_config_file(filename: str, cwd: Path | None = None, required: bool = Tr
         raise FileNotFoundError(f"Could not find '{filename}' in '{Path.cwd()}' or any of its parent directories.")
 
     return None
+
+
+def shorter_path(path: Path, cwd: Path | None = None) -> Path:
+    """Returns the relative path if it's shorter."""
+
+    new_path = Path(os.path.relpath(path, cwd or Path.cwd()))
+    if len(str(new_path)) < len(str(path)):
+        return new_path
+    return path
