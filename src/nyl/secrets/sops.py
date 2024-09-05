@@ -76,8 +76,8 @@ class SopsFile(SecretProvider):
         value = self._load()
         for idx, part in enumerate(parts):
             if not isinstance(value, dict):
-                raise KeyError(".".join(parts[:idx+1]))
+                raise KeyError(".".join(parts[: idx + 1]))
             if part not in value:
-                raise KeyError(".".join(parts[:idx+1]))
+                raise KeyError(".".join(parts[: idx + 1]))
             value = value[part]
         return value

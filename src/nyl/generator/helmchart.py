@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path, PosixPath
 import shlex
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 from textwrap import indent
 from urllib.parse import parse_qs, urlparse
@@ -86,7 +87,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                     pretty_cmd(command),
                 )
                 logger.opt(ansi=True).trace("Using cache directory <yellow>{}</>", cache_dir)
-                subprocess.check_call(command, cwd=cache_dir)
+                subprocess.check_call(command, cwd=cache_dir, stdout=sys.stderr)
             else:
                 logger.opt(ansi=True).debug("Using cached Helm chart '{}' from repository '{}'", chart, repository)
 
@@ -110,7 +111,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 logger.debug("Cloning {} to {}", without_query_params, clone_dir)
                 command = ["git", "clone", without_query_params, str(clone_dir)]
                 cwd = None
-            subprocess.check_call(command, cwd=cwd)
+            subprocess.check_call(command, cwd=cwd, stdout=sys.stderr)
 
             # todo: What if multiple HelmCharts refer to the same directory? Probably better to have a
             #       worktree per instance that refers to a ref of the repository.
@@ -118,7 +119,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             if "ref" in query:
                 logger.debug("Checking out ref {}", query["ref"][0])
                 command = ["git", "checkout", query["ref"][0]]
-                subprocess.check_call(command, cwd=clone_dir)
+                subprocess.check_call(command, cwd=clone_dir, stdout=sys.stderr)
 
             chart = str(clone_dir / (res.chart.path or ""))
 
