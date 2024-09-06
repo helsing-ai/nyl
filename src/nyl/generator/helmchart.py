@@ -178,11 +178,17 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 command.extend(["--repo", repository])
             if res.chart.version:
                 command.extend(["--version", res.chart.version, "--devel"])
-            if not res.hooksEnabled:
+
+            # Note: Support deprecated field `hooksEnabled` for a while.
+            if res.hooksEnabled is None and res.options.noHooks:
                 command.append("--no-hooks")
+            elif res.hooksEnabled is not None and res.hooksEnabled:
+                command.append("--no-hooks")
+
             command.extend(["--values", str(values_file)])
             if res.release.namespace:
                 command.extend(["--namespace", res.release.namespace])
+            command.extend(res.options.additionalArgs)
             command.extend([res.release.name, str(chart)])
 
             # for key, value in res.set.items():

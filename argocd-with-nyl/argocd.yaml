@@ -60,6 +60,11 @@ values:
       - name: cmp-tmp
         emptyDir: {}
 
+    # HACK: Allow argocd-repo-server to read all Kubernetes resources. This is used by Helm and Nyl lookups.
+    #       However, this only works in-cluster and not with other clusters.
+    clusterRoleRules:
+      enabled: true
+
 # Self-manage ArgoCD with Nyl and this specific repository.
 ---
 apiVersion: argoproj.io/v1alpha1
