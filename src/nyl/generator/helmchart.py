@@ -182,8 +182,10 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             # Note: Support deprecated field `hooksEnabled` for a while.
             if res.hooksEnabled is None and res.options.noHooks:
                 command.append("--no-hooks")
-            elif res.hooksEnabled is not None and res.hooksEnabled:
-                command.append("--no-hooks")
+            elif res.hooksEnabled is not None:
+                logger.warning("HelmChart resources uses deprecated field `hooksEnabled`, upgrade to `config.noHooks`")
+                if res.hooksEnabled:
+                    command.append("--no-hooks")
 
             command.extend(["--values", str(values_file)])
             if res.release.namespace:
