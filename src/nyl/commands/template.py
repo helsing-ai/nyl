@@ -1,5 +1,6 @@
 import atexit
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from textwrap import indent
 from typing import Optional, cast
@@ -90,6 +91,10 @@ def template(
     kubectl.env["KUBECTL_APPLYSET"] = "true"
     atexit.register(kubectl.cleanup)
 
+    # TODO: Allow that no Kubernetes configuration is available. This is needed if you want to run Nyl as an ArgoCD
+    #       plugin without granting it access to the Kubernetes API. Most relevant bits of information that Nyl requires
+    #       about the cluster are passed via the environment variables.
+    #       See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
     if in_cluster:
         logger.info("Using in-cluster configuration.")
         load_incluster_config()
@@ -127,6 +132,8 @@ def template(
         search_path=project.config.search_path,
         working_dir=Path.cwd(),
         client=client,
+        kube_version=os.getenv("KUBE_VERSION"),
+        kube_api_versions=os.getenv("KUBE_API_VERSIONS"),
     )
 
     for source in load_manifests(paths):

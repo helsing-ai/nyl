@@ -31,6 +31,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
         working_dir: Path,
         client: ApiClient,
         kube_version: str | None = None,
+        kube_api_versions: set[str] | str | None = None,
     ) -> "DispatchingGenerator":
         """
         Create a new DispatchingGenerator with the default set of generators.
@@ -43,6 +44,8 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
             client: The Kubernetes API client to use for interacting with the Kubernetes API.
             kube_version: The Kubernetes API version to generate manifests for. If not specified, the version will be
                           determined from the Kubernetes API server.
+            kube_api_versions: The Kubernetes API versions supported by the cluster. If not specified, the versions
+                               will be determined from the Kubernetes API server.
         """
 
         from nyl.generator.helmchart import HelmChartGenerator
@@ -53,6 +56,12 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
             kube_version = f"{version_info.major}.{version_info.minor.rstrip('+')}"
             logger.debug("Determined Kubernetes version: {}", kube_version)
 
+        if kube_api_versions is None:
+            kube_api_versions = discover_kubernetes_api_versions(client)
+        else:
+            if isinstance(kube_api_versions, str):
+                kube_api_versions = set(kube_api_versions.split(","))
+
         return DispatchingGenerator(
             generators={
                 "HelmChart": HelmChartGenerator(
@@ -61,7 +70,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
                     search_path=search_path,
                     working_dir=working_dir,
                     kube_version=kube_version,
-                    api_versions=discover_kubernetes_api_versions(client),
+                    api_versions=kube_api_versions,
                 ),
                 "StatefulSecret": StatefulSecretGenerator(client),
             }
