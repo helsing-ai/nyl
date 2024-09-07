@@ -14,7 +14,7 @@ spec:
       command:
         - sh
         - -c
-        - 'nyl --log-level=info --log-file=/var/log/nyl-${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log argocd discovery'
+        - 'nyl --log-level=info --log-file=/var/log/nyl/${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log argocd discovery'
 
   # init:
   #   command:
@@ -28,7 +28,7 @@ spec:
     command:
       - sh
       - -c
-      - 'nyl --log-level=info --log-file=/var/log/nyl-${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log template --in-cluster'
+      - 'nyl --log-level=info --log-file=/var/log/nyl/${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log template --in-cluster'
 
   parameters: {}
 

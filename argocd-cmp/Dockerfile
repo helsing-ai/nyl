@@ -77,8 +77,13 @@ COPY --from=build /opt/nyl /opt/nyl
 RUN ln -s /opt/nyl/.venv/bin/nyl /usr/local/bin/nyl
 COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 
-# Validate Nyl can be run.
-RUN nyl version && addgroup -S argocd && adduser -u 999 argocd -G argocd -D
+# Validate Nyl can be run, plus various setup steps.
+RUN nyl version \
+    && addgroup -S argocd \
+    && adduser -u 999 argocd -G argocd -D \
+    && mkdir -p /var/log/nyl \
+    && chown -R argocd:argocd /var/log/nyl
+
 USER argocd
 WORKDIR /home/argocd
 VOLUME /home/argocd/cmp-server/plugins/
