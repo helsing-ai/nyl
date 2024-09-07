@@ -106,7 +106,7 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
         """
 
         return calculate_applyset_id(
-            name=self.metadata.name, namespace=self.metadata.namespace or "", group=API_VERSION_K8S.split("/")[0]
+            name=self.metadata.name, namespace=self.metadata.namespace or "", group=self.API_VERSION.split("/")[0]
         )
 
     @property
