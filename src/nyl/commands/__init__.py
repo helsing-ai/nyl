@@ -4,6 +4,7 @@ applications directly or integrate as an ArgoCD ConfigManagementPlugin.
 """
 
 from pathlib import Path
+from typing import Optional
 from nyl import __version__
 from enum import Enum
 import sys
@@ -49,6 +50,7 @@ class LogLevel(str, Enum):
 def _callback(
     log_level: LogLevel = Option(LogLevel.INFO, "--log-level", "-l", help="The log level to use."),
     log_details: bool = Option(False, help="Include logger- and function names in the log message format."),
+    log_file: Optional[Path] = Option(None, help="Additionally log to the given file."),
 ) -> None:
     if log_details:
         fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_DETAILS_FORMAT} | {LOG_MESSAGE_FORMAT}"
@@ -57,6 +59,8 @@ def _callback(
 
     logger.remove()
     logger.add(sys.stderr, level=log_level.name, format=fmt)
+    if log_file:
+        logger.add(log_file, level=log_level.name, format=fmt)
     logger.opt(ansi=True).debug("Nyl v{} run from <yellow>{}</>.", __version__, Path.cwd())
 
 
