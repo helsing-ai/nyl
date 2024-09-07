@@ -1271,10 +1271,13 @@ optional.</p>
 <h2 id="kubernetes-api-versions">Kubernetes API versions</h2>
 <p>When Nyl invokes <code>helm template</code>, it must pass along a full list of all available API versions in the cluster to
 allow the chart to generate appropriate manifests for all the latest resources it supports via the <code>--api-versions</code>
-and <code>--kube-version</code> flags.</p>
-<p>Note that when used from ArgoCD, the <code>KUBE_VERSION</code> and <code>KUBE_API_VERSIONS</code> environment variables are set by ArgoCD
-and Nyl will use them if available to avoid making an extra query to the Kubernetes API server. For more information,
-see <a href="https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/">ArgoCD Build Environment</a>.</p>
+flag.</p>
+<p>This is a fundamental requirement, which, to an extend, <em>unfortunately</em>, requires that Nyl has access to the Kubernetes
+API server, even when used as an ArgoCD plugin. When using <code>helm install</code>, it will be Helm to make that query to the
+Kubernetes API server to discover all API versions. When instantiating a Helm chart via ArgoCD, it is ArgoCD that will
+make that request.</p>
+<p>TODO: Implement connectivity to alternative destination clusters when run in ArgoCD and document how that works/what
+extra steps must be done to configure Nyl+ArgoCD to work in such a setup.</p>
 <h2 id="lookups">Lookups</h2>
 <p>Nyl provides a <code>lookup()</code> function that allows the Helm chart to query the Kubernetes API server for an existing
 resource to use in the chart. This is an optional feature that your manifests may simply decide not to rely on,

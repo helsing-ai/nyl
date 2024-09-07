@@ -1197,21 +1197,7 @@
 <li><code>NYL_STATE_DIR</code> &ndash; The directory where Nyl stores its state, such as current profile data, which may include
   fetched Kubeconfig files, downloaded Helm charts and cloned repositories, etc. Defaults to <code>.nyl</code> relative to the
   <code>nyl-project.yaml</code> or the current working directory. Used by: <code>nyl template</code>.</li>
-<li><code>KUBE_VERSION</code> &ndash; The version of the Kubernetes cluster. If this is not set, Nyl will try to query the Kubernetes
-  API server to determine the version. When used as an ArgoCD plugin, this variable is usually available
-  <sup id="fnref:ArgoBuildEnv"><a class="footnote-ref" href="#fn:ArgoBuildEnv">1</a></sup>. Used by: <code>nyl template</code>.</li>
-<li><code>KUBE_API_VERSIONS</code> &ndash; A comma-separated list of all available API versions in the cluster. If this is not set,
-  Nyl will try to query the Kubernetes API server to determine the versions. When used as an ArgoCD plugin, this
-  variable is usually available <sup id="fnref2:ArgoBuildEnv"><a class="footnote-ref" href="#fn:ArgoBuildEnv">1</a></sup>. Used by: <code>nyl template</code>.</li>
 </ul>
-<div class="footnote">
-<hr />
-<ol>
-<li id="fn:ArgoBuildEnv">
-<p>See <a href="https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/">ArgoCD Build Environment</a>.&#160;<a class="footnote-backref" href="#fnref:ArgoBuildEnv" title="Jump back to footnote 1 in the text">&#8617;</a><a class="footnote-backref" href="#fnref2:ArgoBuildEnv" title="Jump back to footnote 1 in the text">&#8617;</a></p>
-</li>
-</ol>
-</div>
 
 
 
