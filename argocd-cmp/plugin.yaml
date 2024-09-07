@@ -12,7 +12,7 @@ spec:
   discover:
     find:
       command:
-        - bash
+        - sh
         - -c
         - 'nyl --log-level=info --log-file=/var/log/nyl-${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log argocd discovery'
 
@@ -26,7 +26,7 @@ spec:
 
   generate:
     command:
-      - bash
+      - sh
       - -c
       - 'nyl --log-level=info --log-file=/var/log/nyl-${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log template --in-cluster'
 
