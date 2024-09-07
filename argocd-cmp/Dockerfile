@@ -2,7 +2,7 @@
 #: Build Nyl itself.
 #: -----------------
 
-FROM python:3.12-slim AS build
+FROM python:3.12-alpine AS build
 COPY --from=ghcr.io/astral-sh/uv:0.4.7 /uv /bin/uv
 
 WORKDIR /opt/nyl
@@ -67,13 +67,8 @@ RUN curl -LO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/s
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
 
-FROM python:3.12-slim AS nyl-cmp
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
+FROM python:3.12-alpine AS nyl-cmp
+RUN apk add git
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
 RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:999 /usr/local/bin/argocd-cmp-server
 COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
@@ -83,7 +78,7 @@ RUN ln -s /opt/nyl/.venv/bin/nyl /usr/local/bin/nyl
 COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 
 # Validate Nyl can be run.
-RUN nyl version && useradd -u 999 -m argocd
+RUN nyl version && addgroup -S argocd && adduser -u 999 argocd -G argocd -D
 USER argocd
 WORKDIR /home/argocd
 VOLUME /home/argocd/cmp-server/plugins/
