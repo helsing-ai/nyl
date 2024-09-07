@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../argocd-debuging/">
+        <link rel="prev" href="../argocd-plugin/">
       
       
         <link rel="next" href="../environment/">
@@ -244,7 +244,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../argocd-debuging/" class="md-tabs__link">
+        <a href="../argocd-plugin/" class="md-tabs__link">
           
   
   Reference
@@ -1106,11 +1106,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../argocd-debuging/" class="md-nav__link">
+      <a href="../argocd-plugin/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    ArgoCD plugin debugging
+    ArgoCD Plugin
   </span>
   
 
@@ -1289,6 +1289,9 @@
 <h1 id="cluster-connectivity">Cluster connectivity</h1>
 <p>Nyl may need to reach out to the Kubernetes API for various reasons, some of which are fundamental and others are
 optional.</p>
+<p>When using Nyl as an ArgoCD plugin, to enable the plugin to reach out to the Kubernetes API, you must configure the
+<code>argocd-repo-server</code> service account with the necessary permissions. See <a href="../argocd-plugin/">ArgoCD Plugin</a> for more
+information.</p>
 <h2 id="kubernetes-api-versions">Kubernetes API versions</h2>
 <p>When Nyl invokes <code>helm template</code>, it must pass along a full list of all available API versions in the cluster to
 allow the chart to generate appropriate manifests for all the latest resources it supports via the <code>--api-versions</code>
