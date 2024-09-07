@@ -125,6 +125,7 @@ class ProfileManager:
         config = ProfileConfig.load(required=required)
         context_dir = config.file.parent if config.file else Path.cwd()
 
+        # TODO: Use NYL_STATE_DIR if set.
         tunnels = TunnelManager()
         kubeconfig = KubeconfigManager(
             cwd=context_dir,
