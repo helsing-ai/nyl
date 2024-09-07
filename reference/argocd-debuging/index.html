@@ -1273,6 +1273,8 @@
 <p>The ArgoCD plugin produces per-project/application logs in the <code>/var/log</code> directory of the <code>nyl-v1</code> container in the
 <code>argocd-repo-server</code> pod. These logs are often much easier to inspect than the output the template rendering fails
 and ArgoCD reports stderr to the UI.</p>
+<p>At the start of each invokation of Nyl, the command will debug-log relevant environment variables (such that start
+with <code>ARGOCD_</code>, <code>NYL_</code> and <code>KUBE_</code>).</p>
 
 
 
