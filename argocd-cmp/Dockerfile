@@ -5,12 +5,11 @@
 FROM python:3.12-slim AS build
 WORKDIR /build
 RUN pip install pdm uv
-COPY pyproject.toml pdm.lock pdm.toml README.md ./
+COPY pyproject.toml uv.lock README.md ./
 COPY src/ src/
-RUN pdm export --prod > requirements.txt
 RUN uv venv /opt/nyl
 RUN --mount=type=cache,id=uv-cache,target=/cache \
-    uv pip install --cache-dir /cache --python /opt/nyl/bin/python  -r requirements.txt ./
+    uv sync --cache-dir /cache --python /opt/nyl/bin/python
 
 
 #: Base stage in which we'll fetch binaries from third-party tools.
