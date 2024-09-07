@@ -2,15 +2,17 @@ from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
-import shlex
 import subprocess
 from tempfile import TemporaryDirectory
 import time
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 import yaml
 from loguru import logger
 
+from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.tools.logging import lazy_str
+from nyl.tools.shell import pretty_cmd
 from nyl.tools.types import Manifests
 
 
@@ -108,9 +110,48 @@ class Kubectl:
         if force_conflicts:
             command.append("--force-conflicts")
 
-        logger.debug("Applying manifests with command: $ {command}", command=" ".join(map(shlex.quote, command)))
+        logger.debug("Applying manifests with command: $ {command}", command=lazy_str(pretty_cmd, command))
         status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **env})
         if status.returncode:
+            raise KubectlError(status.returncode)
+
+    def diff(
+        self,
+        manifests: Manifests,
+        applyset: ApplySet | None = None,
+        on_error: Literal["raise", "return"] = "raise",
+    ) -> Literal["no-diff", "diff", "error"]:
+        """
+        Diff the given manifests against the cluster.
+
+        Args:
+            manifests: The input manifests.
+            on_error: What to do if the diff command fails. If "raise", raise a KubectlError. If "return", return the
+                status code.
+            applyset: The applyset to use for the diff. This can only be combined with the `prune` option.
+            prune: Include resources that would be deleted by pruning.
+        """
+
+        match_labels = {}
+
+        # As of kubectl 1.31, the --prune flag is not supported with --applyset. This is a workaround to allow the
+        # user to specify the applyset reference and the prune option at the same time.
+        if applyset:
+            match_labels[APPLYSET_LABEL_PART_OF] = applyset.id
+
+        command = ["kubectl", "diff", "-f", "-"]
+        if match_labels:
+            command.extend(["-l", ",".join(f"{k}={v}" for k, v in match_labels.items())])
+
+        logger.debug("Diffing manifests with command: $ {command}", command=lazy_str(pretty_cmd, command))
+        status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True)
+        if status.returncode == 1:
+            return "diff"
+        elif status.returncode == 0:
+            return "no-diff"
+        elif on_error == "return":
+            return "error"
+        else:
             raise KubectlError(status.returncode)
 
     def cluster_info(self, retries: int = 0, retry_interval_seconds: int = 10) -> str:

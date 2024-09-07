@@ -48,6 +48,11 @@ def template(
         "Implies `--no-applyset-part-of`. When an ApplySet is defined in the source file, it will be applied "
         "separately. Note that this option implies `kubectl --prune`.",
     ),
+    diff: bool = Option(
+        False,
+        help="Run `kubectl diff` on the rendered manifests, once for each source file. Cannot be combined with "
+        "`--apply`. Note that this does not generally ",
+    ),
     generate_applysets: Optional[bool] = Option(
         None,
         help="Override the `generate_applysets` setting from the project configuration.",
@@ -76,6 +81,10 @@ def template(
         # When running with --apply, we must ensure that the --applyset-part-of option is disabled, as it would cause
         # an error when passing the generated manifests to `kubectl apply --applyset=...`.
         applyset_part_of = False
+
+    if apply and diff:
+        logger.error("The --apply and --diff options cannot be combined.")
+        exit(1)
 
     kubectl = Kubectl()
     kubectl.env["KUBECTL_APPLYSET"] = "true"
@@ -183,6 +192,8 @@ def template(
                     source.file,
                 )
                 kubectl.apply(Manifests([applyset.dump()]), force_conflicts=True)
+            elif diff:
+                kubectl.diff(Manifests([applyset.dump()]))
             else:
                 print("---")
                 print(yaml.safe_dump(applyset.dump()))
@@ -242,12 +253,6 @@ def template(
                     manifest["metadata"]["namespace"],
                 )
 
-        if not apply:
-            # If we're not going to be applying the manifests immediately via `kubectl`, we print them to stdout.
-            for manifest in source.manifests:
-                print("---")
-                print(yaml.safe_dump(manifest))
-
         if apply:
             logger.info("Kubectl-apply {} manifest(s) from '{}'", len(source.manifests), source.file)
             kubectl.apply(
@@ -256,6 +261,14 @@ def template(
                 prune=True if applyset else False,
                 force_conflicts=True,
             )
+        elif diff:
+            logger.info("Kubectl-diff {} manifest(s) from '{}'", len(source.manifests), source.file)
+            kubectl.diff(manifests=source.manifests, applyset=applyset)
+        else:
+            # If we're not going to be applying the manifests immediately via `kubectl`, we print them to stdout.
+            for manifest in source.manifests:
+                print("---")
+                print(yaml.safe_dump(manifest))
 
 
 def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
