@@ -3,6 +3,10 @@
 Nyl may need to reach out to the Kubernetes API for various reasons, some of which are fundamental and others are
 optional.
 
+When using Nyl as an ArgoCD plugin, to enable the plugin to reach out to the Kubernetes API, you must configure the
+`argocd-repo-server` service account with the necessary permissions. See [ArgoCD Plugin](./argocd-plugin.md) for more
+information.
+
 ## Kubernetes API versions
 
 When Nyl invokes `helm template`, it must pass along a full list of all available API versions in the cluster to
