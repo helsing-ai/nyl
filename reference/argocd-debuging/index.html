@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../argocd-debuging/">
+        <link rel="prev" href="../../provisional/templating/resources/Package/">
       
       
-        <link rel="next" href="../environment/">
+        <link rel="next" href="../cluster-connectivity/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Cluster connectivity - nyl</title>
+        <title>ArgoCD plugin debugging - nyl</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cluster-connectivity" class="md-skip">
+        <a href="#argocd-plugin-debugging" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Cluster connectivity
+              ArgoCD plugin debugging
             
           </span>
         </div>
@@ -244,7 +244,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../argocd-debuging/" class="md-tabs__link">
+        <a href="./" class="md-tabs__link">
           
   
   Reference
@@ -1103,27 +1103,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../argocd-debuging/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ArgoCD plugin debugging
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1140,7 +1119,7 @@
           
   
   <span class="md-ellipsis">
-    Cluster connectivity
+    ArgoCD plugin debugging
   </span>
   
 
@@ -1151,7 +1130,7 @@
         
   
   <span class="md-ellipsis">
-    Cluster connectivity
+    ArgoCD plugin debugging
   </span>
   
 
@@ -1173,18 +1152,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kubernetes-api-versions" class="md-nav__link">
+  <a href="#logging" class="md-nav__link">
     <span class="md-ellipsis">
-      Kubernetes API versions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lookups" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lookups
+      Logging
     </span>
   </a>
   
@@ -1194,6 +1164,27 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cluster-connectivity/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cluster connectivity
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1254,18 +1245,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#kubernetes-api-versions" class="md-nav__link">
+  <a href="#logging" class="md-nav__link">
     <span class="md-ellipsis">
-      Kubernetes API versions
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#lookups" class="md-nav__link">
-    <span class="md-ellipsis">
-      Lookups
+      Logging
     </span>
   </a>
   
@@ -1286,22 +1268,11 @@
                   
 
 
-<h1 id="cluster-connectivity">Cluster connectivity</h1>
-<p>Nyl may need to reach out to the Kubernetes API for various reasons, some of which are fundamental and others are
-optional.</p>
-<h2 id="kubernetes-api-versions">Kubernetes API versions</h2>
-<p>When Nyl invokes <code>helm template</code>, it must pass along a full list of all available API versions in the cluster to
-allow the chart to generate appropriate manifests for all the latest resources it supports via the <code>--api-versions</code>
-and <code>--kube-version</code> flags.</p>
-<p>Note that when used from ArgoCD, the <code>KUBE_VERSION</code> and <code>KUBE_API_VERSIONS</code> environment variables are set by ArgoCD
-and Nyl will use them if available to avoid making an extra query to the Kubernetes API server. For more information,
-see <a href="https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/">ArgoCD Build Environment</a>.</p>
-<h2 id="lookups">Lookups</h2>
-<p>Nyl provides a <code>lookup()</code> function that allows the Helm chart to query the Kubernetes API server for an existing
-resource to use in the chart. This is an optional feature that your manifests may simply decide not to rely on,
-however it is a powerful feature to pass and transform values from existing resources.</p>
-<p>TODO: Implement security to prevent lookups for resources that the corresponding ArgoCD project has no access to.
-This will require a safe evaluation language instead of Python <code>eval()</code>.</p>
+<h1 id="argocd-plugin-debugging">ArgoCD plugin debugging</h1>
+<h2 id="logging">Logging</h2>
+<p>The ArgoCD plugin produces per-project/application logs in the <code>/var/log</code> directory of the <code>nyl-v1</code> container in the
+<code>argocd-repo-server</code> pod. These logs are often much easier to inspect than the output the template rendering fails
+and ArgoCD reports stderr to the UI.</p>
 
 
 
