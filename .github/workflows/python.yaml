@@ -44,10 +44,13 @@ jobs:
     environment: release
     permissions:
       id-token: write
-    # if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Get tags
+        run: git fetch --tags origin
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v2
@@ -57,11 +60,10 @@ jobs:
       - name: Install Kraken-wrapper
         run: python -m pip install kraken-wrapper
 
-      - name: Inject version number ${{ github.ref_name }} into pyproject.toml
-        run: sed -i "s/version = .*/version = \"${{ github.ref_name }}\"/" pyproject.toml
-
       - name: Build the package
         run: krakenw run build
 
-      # - name: Publish
-      #   uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: build/python-dist/

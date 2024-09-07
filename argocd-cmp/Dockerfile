@@ -3,15 +3,22 @@
 #: -----------------
 
 FROM python:3.12-slim AS build
-WORKDIR /build
-RUN pip install uv==0.4.7
-COPY pyproject.toml uv.lock README.md ./
-COPY src/ src/
-RUN uv venv /opt/nyl
-RUN --mount=type=cache,target=/tmp/uv-cache \
-    uv export > requirements.txt \
-    && uv pip install --cache-dir /tmp/uv-cache --link-mode=copy --python=/opt/nyl --requirement=requirements.txt \
-    && /opt/nyl/bin/nyl version
+COPY --from=ghcr.io/astral-sh/uv:0.4.7 /uv /bin/uv
+
+WORKDIR /opt/nyl
+
+# Install dependencies
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --link-mode=copy --compile-bytecode
+
+ADD src /opt/nyl
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=README.md,target=README.md \
+    uv sync --frozen --link-mode=copy --compile-bytecode
 
 #: Base stage in which we'll fetch binaries from third-party tools.
 #: ----------------------------------------------------------------
@@ -72,7 +79,7 @@ RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:99
 COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
 COPY --from=sops-bin /usr/local/bin/sops /usr/local/bin/sops
 COPY --from=build /opt/nyl /opt/nyl
-RUN ln -s /opt/nyl/bin/nyl /usr/local/bin/nyl
+RUN ln -s /opt/nyl/.venv/bin/nyl /usr/local/bin/nyl
 COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 
 # Validate Nyl can be run.
