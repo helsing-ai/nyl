@@ -19,6 +19,7 @@ theme:
     # - toc.integrate
 markdown_extensions:
 - admonition
+- footnotes
 # https://squidfunk.github.io/mkdocs-material/reference/code-blocks/
 - pymdownx.highlight:
     anchor_linenums: true
