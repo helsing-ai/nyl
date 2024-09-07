@@ -20,6 +20,9 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
     processed. Any other resources will be returned as-is.
     """
 
+    kube_version: str
+    """ The Kubernetes API version. """
+
     generators: dict[str, Generator[Any]] = field(default_factory=dict)
     """ Collection of generators to dispatch to based on the resource kind. """
 
@@ -63,6 +66,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
                 kube_api_versions = set(kube_api_versions.split(","))
 
         return DispatchingGenerator(
+            kube_version=kube_version,
             generators={
                 "HelmChart": HelmChartGenerator(
                     git_repo_cache_dir=cache_dir / "git-repos",
@@ -73,7 +77,7 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
                     api_versions=kube_api_versions,
                 ),
                 "StatefulSecret": StatefulSecretGenerator(client),
-            }
+            },
         )
 
     # Generator implementation
