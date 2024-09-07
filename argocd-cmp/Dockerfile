@@ -72,9 +72,11 @@ RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:99
 COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
 COPY --from=sops-bin /usr/local/bin/sops /usr/local/bin/sops
 COPY --from=build /opt/nyl /opt/nyl
+RUN ln -s /opt/nyl/bin/nyl /usr/local/bin/nyl
 COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
-ENV PATH="${PATH}:/opt/nyl/bin"
-RUN useradd -u 999 -m argocd
+
+# Validate Nyl can be run.
+RUN nyl version && useradd -u 999 -m argocd
 USER argocd
 WORKDIR /home/argocd
 VOLUME /home/argocd/cmp-server/plugins/
