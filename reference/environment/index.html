@@ -1217,8 +1217,10 @@
 <li><code>NYL_PROFILE</code> &ndash; The name of the profile to use as defined in the closest <code>nyl-profiles.yaml</code> configuration file.
   Used by: <code>nyl profile</code>, <code>nyl template</code>, <code>nyl tun</code>.</li>
 <li><code>NYL_STATE_DIR</code> &ndash; The directory where Nyl stores its state, such as current profile data, which may include
-  fetched Kubeconfig files, downloaded Helm charts and cloned repositories, etc. Defaults to <code>.nyl</code> relative to the
-  <code>nyl-project.yaml</code> or the current working directory. Used by: <code>nyl template</code>.</li>
+  fetched Kubeconfig file. Defaults to <code>.nyl</code> relative to the <code>nyl-project.yaml</code> or the current working directory.
+  Used by: <code>nyl profile</code>, <code>nyl template</code>, <code>nyl tun</code>.</li>
+<li><code>NYL_CACHE_DIR</code> &ndash; The directory where Nyl stores its cache, such as downloaded Helm charts and cloned
+  repositories. Defaults to <code>cache/</code> relative to the <code>NYL_STATE_DIR</code>. Used by <code>nyl template</code>.</li>
 <li><code>KUBE_VERSION</code> &ndash; The version of the Kubernetes cluster. If this is not set, Nyl will try to query the Kubernetes
   API server to determine the version. When used as an ArgoCD plugin, this variable is usually available
   <sup id="fnref:ArgoBuildEnv"><a class="footnote-ref" href="#fn:ArgoBuildEnv">1</a></sup>. Used by: <code>nyl template</code>.</li>
