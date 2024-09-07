@@ -4,13 +4,14 @@
 
 FROM python:3.12-slim AS build
 WORKDIR /build
-RUN pip install pdm uv
+RUN pip install uv==0.4.7
 COPY pyproject.toml uv.lock README.md ./
 COPY src/ src/
 RUN uv venv /opt/nyl
-RUN --mount=type=cache,id=uv-cache,target=/cache \
-    uv sync --cache-dir /cache --python /opt/nyl/bin/python
-
+RUN --mount=type=cache,target=/tmp/uv-cache \
+    uv export > requirements.txt \
+    && uv pip install --cache-dir /tmp/uv-cache --link-mode=copy --python=/opt/nyl --requirement=requirements.txt \
+    && /opt/nyl/bin/nyl version
 
 #: Base stage in which we'll fetch binaries from third-party tools.
 #: ----------------------------------------------------------------
