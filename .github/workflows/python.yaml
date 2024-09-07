@@ -27,22 +27,13 @@ jobs:
           python-version: "${{ matrix.python-version }}"
 
       - name: Install PDM
-        run: python -m pip install --upgrade pipx
-
-      - name: Install PDM
-        run: pipx install pdm
-
-      - name: Install Kraken-wrapper
-        run: pipx install kraken-wrapper
+        run: python -m pip install --upgrade pipx && pipx install kraken-wrapper
 
       - name: Cache Venv
         uses: actions/cache@v4
         with:
           path: .venv
           key: ${{ runner.os }}-${{ hashFiles('pdm.lock') }}-pdm-${{ matrix.python-version }}
-
-      # - name: Install project
-      #   run: pdm install --frozen-lockfile
 
       - name: Run ${{ matrix.step }}
         run: krakenw run fmt lint
@@ -53,7 +44,7 @@ jobs:
     environment: release
     permissions:
       id-token: write
-    if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
+    # if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
@@ -63,14 +54,14 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install PDM
-        run: python -m pip install --upgrade pdm
+      - name: Install Kraken-wrapper
+        run: python -m pip install kraken-wrapper
 
       - name: Inject version number ${{ github.ref_name }} into pyproject.toml
         run: sed -i "s/version = .*/version = \"${{ github.ref_name }}\"/" pyproject.toml
 
       - name: Build the package
-        run: pdm build
+        run: krakenw run build
 
-      - name: Publish
-        uses: pypa/gh-action-pypi-publish@release/v1
+      # - name: Publish
+      #   uses: pypa/gh-action-pypi-publish@release/v1
