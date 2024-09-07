@@ -83,10 +83,11 @@ def _callback(
     logger.debug("Nyl-relevant environment variables: {}", lazy_str(json.dumps, log_env, indent=2))
 
     atexit.register(
-        lambda *a: logger.debug(*a),  # HACK: Otherwise Loguru fails with "ValueError: call stack is not deep enough"
+        # HACK: If we don't wrap it in a lambda, Loguru fails with "ValueError: call stack is not deep enough".
+        # But we also need to wrap it so we capture the right end time.
+        lambda *a: logger.debug(*a, time.perf_counter() - start_time),
         "Finished (nyl {}) in {:.2f}s",
         lazy_str(pretty_cmd, sys.argv),
-        time.perf_counter() - start_time,
     )
 
 
