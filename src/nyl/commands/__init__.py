@@ -13,6 +13,7 @@ import sys
 from loguru import logger
 from typer import Option
 from nyl.tools.logging import lazy_str
+from nyl.tools.shell import pretty_cmd
 from nyl.tools.typer import new_typer
 
 
@@ -51,7 +52,9 @@ class LogLevel(str, Enum):
 
 @app.callback()
 def _callback(
-    log_level: LogLevel = Option(LogLevel.INFO, "--log-level", "-l", help="The log level to use."),
+    log_level: LogLevel = Option(
+        LogLevel.INFO, "--log-level", "-l", help="The log level to use.", envvar="NYL_LOG_LEVEL"
+    ),
     log_details: bool = Option(False, help="Include logger- and function names in the log message format."),
     log_file: Optional[Path] = Option(None, help="Additionally log to the given file."),
 ) -> None:
@@ -66,7 +69,9 @@ def _callback(
         logger.add(log_file, level=log_level.name, format=fmt)
     logger.opt(ansi=True).debug("Nyl v{} run from <yellow>{}</>.", __version__, Path.cwd())
 
-    # For debugging purposes, log all environment variables that start with ARGOCD_, NYL_, or KUBE_.
+    # Log some helpful information for debugging purposes.
+    logger.debug("Used command-line arguments: {}", lazy_str(pretty_cmd, sys.argv))
+    logger.debug("Current working directory: {}", Path.cwd())
     log_env = {}
     for key, value in os.environ.items():
         if key.startswith("ARGOCD_") or key.startswith("NYL_") or key.startswith("KUBE_"):

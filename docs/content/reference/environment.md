@@ -2,6 +2,7 @@
 
 This page summarizes all environment variables that are used by Nyl.
 
+- `NYL_LOG_LEVEL` &ndash; The log level to use if `--log-level` is not specified. Defaults to `info`. Used by: `nyl`.
 - `NYL_PROFILE` &ndash; The name of the profile to use as defined in the closest `nyl-profiles.yaml` configuration file.
   Used by: `nyl profile`, `nyl template`, `nyl tun`.
 - `NYL_STATE_DIR` &ndash; The directory where Nyl stores its state, such as current profile data, which may include
