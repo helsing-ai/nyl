@@ -26,6 +26,7 @@ from . import argocd  # noqa: E402
 from . import crds  # noqa: F401,E402
 from . import new  # noqa: E402
 from . import profile  # noqa: E402
+from . import run  # noqa: F401, E402
 from . import secrets  # noqa: E402
 from . import template  # noqa: F401,E402
 from . import tun  # noqa: E402
