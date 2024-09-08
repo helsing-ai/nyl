@@ -91,7 +91,7 @@ spec:
           name: nyl-v1
           env:
             - name: NYL_CMP_TEMPLATE_INPUT
-              value: '{{.path.basename}}'
+              value: '{{.path.filename}}'
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{.path.basename}}'
