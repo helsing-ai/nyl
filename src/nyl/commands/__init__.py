@@ -54,8 +54,13 @@ class LogLevel(str, Enum):
 
 @app.callback()
 def _callback(
+    quiet: bool = Option(False, "--quiet", "-q", help="Shortcut for --log-level=error."),
     log_level: LogLevel = Option(
-        LogLevel.INFO, "--log-level", "-l", help="The log level to use.", envvar="NYL_LOG_LEVEL"
+        LogLevel.INFO,
+        "--log-level",
+        "-l",
+        help="The log level to use.",
+        envvar="NYL_LOG_LEVEL",
     ),
     log_details: bool = Option(False, help="Include logger- and function names in the log message format."),
     log_file: Optional[Path] = Option(None, help="Additionally log to the given file."),
@@ -68,7 +73,7 @@ def _callback(
         fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_MESSAGE_FORMAT}"
 
     logger.remove()
-    logger.add(sys.stderr, level=log_level.name, format=fmt)
+    logger.add(sys.stderr, level=LogLevel.ERROR.name if quiet else log_level.name, format=fmt)
     if log_file:
         logger.add(log_file, level=log_level.name, format=fmt)
     logger.opt(ansi=True).debug("Nyl v{} run from <yellow>{}</>.", __version__, Path.cwd())
