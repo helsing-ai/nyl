@@ -603,6 +603,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#nyl.profiles.config.KubeconfigFromSsh.replace_apiserver_hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace_apiserver_hostname
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#nyl.profiles.config.KubeconfigFromSsh.user" class="md-nav__link">
     <span class="md-ellipsis">
       user
@@ -1502,6 +1511,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#nyl.profiles.config.KubeconfigFromSsh.replace_apiserver_hostname" class="md-nav__link">
+    <span class="md-ellipsis">
+      replace_apiserver_hostname
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#nyl.profiles.config.KubeconfigFromSsh.user" class="md-nav__link">
     <span class="md-ellipsis">
       user
@@ -1806,6 +1824,30 @@
     <div class="doc doc-contents ">
 
         <p>The path where the Kubeconfig can be retrieved from.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="nyl.profiles.config.KubeconfigFromSsh.replace_apiserver_hostname" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">replace_apiserver_hostname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Replace the hostname in the apiserver configuration of the Kubeconfig. This is useful for example with K3s when
+reading reading the <code>/etc/rancher/k3s/k3s.yaml</code> file from a remote host, but the API server in that file is not
+reachable from the local machine (e.g. because it <code>0.0.0.0</code>).</p>
     </div>
 
 </div>
