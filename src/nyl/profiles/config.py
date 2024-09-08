@@ -78,6 +78,13 @@ class KubeconfigFromSsh:
     The context to use from the Kubeconfig file. If not specified, the current context is used.
     """
 
+    replace_apiserver_hostname: str | None = None
+    """
+    Replace the hostname in the apiserver configuration of the Kubeconfig. This is useful for example with K3s when
+    reading reading the `/etc/rancher/k3s/k3s.yaml` file from a remote host, but the API server in that file is not
+    reachable from the local machine (e.g. because it `0.0.0.0`).
+    """
+
 
 @dataclass(kw_only=True)
 class SshTunnel:

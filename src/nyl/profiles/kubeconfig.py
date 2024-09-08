@@ -94,9 +94,15 @@ class KubeconfigManager:
         if api_host is None:
             raise ValueError(f"no hostname in Kubeconfig server URL: {server!r}")
 
+        if isinstance(source, KubeconfigFromSsh) and source.replace_apiserver_hostname:
+            api_host = source.replace_apiserver_hostname
+
         raw_kubeconfig.chmod(0o600)
         return GetRawKubeconfigResult(
-            path=raw_kubeconfig, context=kubeconfig_data["current-context"], api_host=api_host, api_port=api_port
+            path=raw_kubeconfig,
+            context=kubeconfig_data["current-context"],
+            api_host=api_host,
+            api_port=api_port,
         )
 
     def get_updated_kubeconfig(
