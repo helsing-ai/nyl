@@ -10,6 +10,10 @@ This page summarizes all environment variables that are used by Nyl.
   Used by: `nyl profile`, `nyl template`, `nyl tun`.
 - `NYL_CACHE_DIR` &ndash; The directory where Nyl stores its cache, such as downloaded Helm charts and cloned
   repositories. Defaults to `cache/` relative to the `NYL_STATE_DIR`. Used by `nyl template`.
+- `NYL_CMP_TEMPLATE_INPUT` &mdash; This variable is only recognized by `nyl template` when the only positional argument
+  it receives is `.` (i.e. the current working directory). The variable should be a comma-separated list of filenames
+  that should be treated as if the files were passed as arguments to `nyl template` instead. This is used for the Nyl
+  ArgoCD plugin to allow specifying exactly which files should be templated as part of an ArgoCD application.
 - `KUBE_VERSION` &ndash; The version of the Kubernetes cluster. If this is not set, Nyl will try to query the Kubernetes
   API server to determine the version. When used as an ArgoCD plugin, this variable is usually available
   [^ArgoBuildEnv]. Used by: `nyl template`.

@@ -49,6 +49,14 @@ repoServer:
     If you do not wish to grant the plugin access to the Kubernetes API, you must disable this option and ensure that
     your manifests do not rely on features that require API access.
 
+## One file per application
+
+ArgoCD applications do not permit to point their `source.path` field to a file within a repository, it must be a
+directory. For this, Nyl accepts a `NYL_CMP_TEMPLATE_INPUT` environment variable that can be a comma-separate list
+of filenames that you would pass to `nyl template` as arguments. Nyl will then ignore the default `.` argument
+(pointing to the current directory, which is the directory specified with `source.path`) and use the files specified
+via the environment variable instead.
+
 ## Debugging the plugin
 
 The ArgoCD plugin produces per-project/application logs in the `/var/log` directory of the `nyl-v1` container in the

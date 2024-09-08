@@ -19,6 +19,7 @@ from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
 from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
 from nyl.tools.kubectl import Kubectl
+from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests
 
 from . import app
@@ -77,6 +78,19 @@ def template(
     """
     Render a package template into full Kubernetes resources.
     """
+
+    if paths == [Path(".")] and (env_paths := os.getenv("NYL_CMP_TEMPLATE_INPUT")) is not None:
+        paths = [Path(p) for p in env_paths.split(",")]
+        if not paths:
+            logger.error("<cyan>NYL_CMP_TEMPLATE_INPUT</> is set, but empty.")
+            exit(1)
+        logger.opt(ansi=True).info(
+            "Using paths from <cyan>NYL_CMP_TEMPLATE_INPUT</>: <blue>{}</>",
+            lazy_str(lambda: ", ".join(map(str, paths))),
+        )
+    elif "NYL_CMP_TEMPLATE_INPUT" in os.environ:
+        logger.error("<cyan>NYL_CMP_TEMPLATE_INPUT</> is set, but paths were also provided via the command-line.")
+        exit(1)
 
     if apply:
         # When running with --apply, we must ensure that the --applyset-part-of option is disabled, as it would cause
