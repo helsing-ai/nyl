@@ -57,6 +57,90 @@ of filenames that you would pass to `nyl template` as arguments. Nyl will then i
 (pointing to the current directory, which is the directory specified with `source.path`) and use the files specified
 via the environment variable instead.
 
+## ApplicationSet example
+
+A desirable pattern for using Nyl with ArgoCD is to create on application per YAML file in the directory corresponding
+to your cluster in the repository. The following example demonstrates how to setup an ArgoCD `ApplicationSet` that
+does exactly this:
+
+```yaml title="appset.yaml"
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: main
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - git:
+      repoURL: git@github.com:myorg/gitops.git
+      revision: HEAD
+      files:
+        - path: "clusters/my-cluster/*.yaml"
+  template:
+    metadata:
+      name: '{{.path.filename | trimSuffix ".yaml" | slugify }}'
+    spec:
+      project: default
+      source:
+        repoURL: git@github.com:myorg/gitops.git
+        targetRevision: HEAD
+        path: '{{.path.path}}'
+        plugin:
+          name: nyl-v1
+          env:
+            - name: NYL_CMP_TEMPLATE_INPUT
+              value: '{{.path.basename}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{.path.basename}}'
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+```
+
+You may treat `appset.yaml` as a member of the same directory, allowing it to be managed by its own "appset" application
+created by the `ApplicationSet` itself.
+
+Note that in order for the `argocd-applicationset-controller` to be able to clone your Git repository via SSH, you
+need to configure a [Credential template](https://argo-cd.readthedocs.io/en/stable/user-guide/private-repositories/#credential-templates)
+that matches the `spec.generators[0].git.repoURL` field, whereas for the individual applications to clone the repository
+you need to configure a [Repository](https://argo-cd.readthedocs.io/en/stable/user-guide/private-repositories/#repositories).
+
+```yaml title="repository-secrets.yaml"
+# For the ApplicationSet
+---
+kind: Secret
+metadata:
+  name: github-creds
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repo-creds
+type: Opaque
+stringData:
+  project: default
+  name: github.com
+  url: git@github.com:myorg/
+  type: git
+  sshPrivateKey: ...
+
+# For the Application(s), but credentials can be omitted as they are inherited from the repo-creds above.
+---
+kind: Secret
+metadata:
+  name: github-repo-gitops
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+type: Opaque
+stringData:
+  project: default
+  type: git
+  url: git@github.com:myorg/gitops.git
+```
+
 ## Debugging the plugin
 
 The ArgoCD plugin produces per-project/application logs in the `/var/log` directory of the `nyl-v1` container in the
