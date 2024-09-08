@@ -1221,7 +1221,7 @@
   Used by: <code>nyl profile</code>, <code>nyl template</code>, <code>nyl tun</code>.</li>
 <li><code>NYL_CACHE_DIR</code> &ndash; The directory where Nyl stores its cache, such as downloaded Helm charts and cloned
   repositories. Defaults to <code>cache/</code> relative to the <code>NYL_STATE_DIR</code>. Used by <code>nyl template</code>.</li>
-<li><code>NYL_CMP_TEMPLATE_INPUT</code> &mdash; This variable is only recognized by <code>nyl template</code> when the only positional argument
+<li><code>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</code> &mdash; This variable is only recognized by <code>nyl template</code> when the only positional argument
   it receives is <code>.</code> (i.e. the current working directory). The variable should be a comma-separated list of filenames
   that should be treated as if the files were passed as arguments to <code>nyl template</code> instead. This is used for the Nyl
   ArgoCD plugin to allow specifying exactly which files should be templated as part of an ArgoCD application.</li>
