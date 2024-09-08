@@ -52,10 +52,21 @@ repoServer:
 ## One file per application
 
 ArgoCD applications do not permit to point their `source.path` field to a file within a repository, it must be a
-directory. For this, Nyl accepts a `NYL_CMP_TEMPLATE_INPUT` environment variable that can be a comma-separate list
-of filenames that you would pass to `nyl template` as arguments. Nyl will then ignore the default `.` argument
+directory. For this, Nyl accepts a `ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT` environment variable that can be a comma-separate
+list of filenames that you would pass to `nyl template` as arguments. Nyl will then ignore the default `.` argument
 (pointing to the current directory, which is the directory specified with `source.path`) and use the files specified
 via the environment variable instead.
+
+```yaml title="argocd-application.yaml"
+# trimmed example
+spec:
+  source:
+    plugin:
+      name: nyl-v1
+      env:
+        - name: NYL_CMP_TEMPLATE_INPUT
+          value: '{{.path.filename}}'
+```
 
 ## ApplicationSet example
 

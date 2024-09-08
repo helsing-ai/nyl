@@ -79,17 +79,19 @@ def template(
     Render a package template into full Kubernetes resources.
     """
 
-    if paths == [Path(".")] and (env_paths := os.getenv("NYL_CMP_TEMPLATE_INPUT")) is not None:
+    if paths == [Path(".")] and (env_paths := os.getenv("ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT")) is not None:
         paths = [Path(p) for p in env_paths.split(",")]
         if not paths:
-            logger.error("<cyan>NYL_CMP_TEMPLATE_INPUT</> is set, but empty.")
+            logger.error("<cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</> is set, but empty.")
             exit(1)
         logger.opt(ansi=True).info(
-            "Using paths from <cyan>NYL_CMP_TEMPLATE_INPUT</>: <blue>{}</>",
+            "Using paths from <cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</>: <blue>{}</>",
             lazy_str(lambda: ", ".join(map(str, paths))),
         )
-    elif "NYL_CMP_TEMPLATE_INPUT" in os.environ:
-        logger.error("<cyan>NYL_CMP_TEMPLATE_INPUT</> is set, but paths were also provided via the command-line.")
+    elif "ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT" in os.environ:
+        logger.error(
+            "<cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</> is set, but paths were also provided via the command-line."
+        )
         exit(1)
 
     if apply:
