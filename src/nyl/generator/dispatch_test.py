@@ -37,7 +37,11 @@ def test__DispatchingGenerator__default__creates_generator_for_every_nyl_inline_
     assert "StatefulSecret" in resource_kinds
 
     generator = DispatchingGenerator.default(
-        cache_dir=Path("/tmp"), search_path=[], working_dir=Path("/tmp"), client=MagicMock()
+        cache_dir=Path("/tmp"),
+        search_path=[],
+        components_path=Path("/tmp"),
+        working_dir=Path("/tmp"),
+        client=MagicMock(),
     )
 
     for kind in resource_kinds:
