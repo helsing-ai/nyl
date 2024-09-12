@@ -45,7 +45,7 @@ class ProjectConfig:
     config: Project
 
     def get_components_path(self) -> Path:
-        return self.config.components_path or (self.file.parent if self.file else Path.cwd()) / "components"
+        return (self.file.parent if self.file else Path.cwd()) / (self.config.components_path or "components")
 
     @staticmethod
     def load(file: Path | None = None, /) -> "ProjectConfig":
