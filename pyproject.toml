@@ -24,7 +24,7 @@ dependencies = [
     "typer>=0.12.3",
     "typing-extensions>=4.12.2",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "MIT"}
 

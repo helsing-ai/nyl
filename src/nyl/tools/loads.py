@@ -6,14 +6,14 @@ from typing import IO, Any, AnyStr
 
 loads_functions = {
     "json": "json:loads",
-    "toml": "tomli:loads",
+    "toml": "tomllib:loads",
     "yaml": "yaml:safe_load",
     "yml": "yaml:safe_load",
 }
 
 load_functions = {
     "json": "json:load",
-    "toml": "tomli:load",
+    "toml": "tomllib:load",
     "yaml": "yaml:safe_load",
     "yml": "yaml:safe_load",
 }
