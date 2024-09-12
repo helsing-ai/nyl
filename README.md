@@ -7,7 +7,7 @@ consistent and reusable deployment configurations, project layouts and operation
 
 Requires Python 3.11 or newer.
 
-    $ uvx run nyl
+    $ uvx nyl
 
 ## Local development
 
