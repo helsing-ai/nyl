@@ -146,6 +146,7 @@ def template(
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,
         search_path=project.config.search_path,
+        components_path=project.get_components_path(),
         working_dir=Path.cwd(),
         client=client,
         kube_version=os.getenv("KUBE_VERSION"),

@@ -20,6 +20,11 @@ class Project:
     after the namespace.
     """
 
+    components_path: Path | None = None
+    """
+    Path to the directory that contains Nyl components.
+    """
+
     search_path: list[Path] = field(default_factory=lambda: [Path(".")])
     """
     Search path for additional resources used by the project. Used for example when using the `chart.path` option on a
@@ -38,6 +43,9 @@ class ProjectConfig:
 
     file: Path | None
     config: Project
+
+    def get_components_path(self) -> Path:
+        return self.config.components_path or (self.file.parent if self.file else Path.cwd()) / "components"
 
     @staticmethod
     def load(file: Path | None = None, /) -> "ProjectConfig":

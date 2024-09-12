@@ -2,13 +2,20 @@
 Bootstrap files for a new Nyl project or Helm chart.
 """
 
+from enum import Enum
 from pathlib import Path
 from textwrap import dedent
 
 from loguru import logger
+from typer import Option
+from nyl.project.config import ProjectConfig
 from nyl.tools.typer import new_typer
 
 app = new_typer(name="new", help=__doc__)
+
+
+class ComponentType(Enum):
+    Helm = "helm"
 
 
 def _write_file_dedent(dir: Path, name: str, content: str) -> None:
@@ -89,3 +96,15 @@ def chart(dir: Path) -> None:
                 image: {{ .Values.image }}
         """,
     )
+
+
+@app.command()
+def component(
+    api_version: str,
+    kind: str,
+    type: ComponentType = Option("helm", help="The type of Nyl component to create."),
+) -> None:
+    """Create the boilerplate for a Nyl component in the components directory."""
+
+    components_path = ProjectConfig.load().get_components_path()
+    chart(components_path / api_version / kind)
