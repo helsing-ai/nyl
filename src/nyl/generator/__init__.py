@@ -6,7 +6,8 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, ClassVar, Generic, TypeVar
 
-from nyl.resources import API_VERSION_INLINE
+from stablehash import stablehash
+
 from nyl.tools.types import Manifest, Manifests
 
 T = TypeVar("T")
@@ -49,6 +50,7 @@ def reconcile_generator(
 
     queue = Manifests(manifests)
     result = Manifests([])
+    seen = set()
     loops = 0
 
     while queue:
@@ -56,11 +58,13 @@ def reconcile_generator(
             raise RuntimeError("Reconciliation loop limit exceeded (1000).")
 
         resource = queue.pop(0)
-        if resource.get("apiVersion") == API_VERSION_INLINE:
+        resource_hash = stablehash(resource).hexdigest()
+        if resource_hash in seen:
+            result.append(resource)
+        else:
+            seen.add(resource_hash)
             for manifest in generator.generate(resource):
                 queue.append(on_generated(manifest))
-        else:
-            result.append(resource)
-        loops += 1
+            loops += 1
 
     return result
