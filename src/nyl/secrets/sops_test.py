@@ -66,4 +66,4 @@ sops:
         provider = SopsFile(Path("sops.yaml"))
         provider.init(config_file=Path(tmp) / "nyl-secrets.yaml")
 
-        assert provider._load() == {"a": 1, "b": {"c": 2}, "d": [3, 4]}
+        assert provider.load() == {"a": 1, "b": {"c": 2}, "d": [3, 4]}

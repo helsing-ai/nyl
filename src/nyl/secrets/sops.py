@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 import json
 import os
@@ -6,6 +7,9 @@ import subprocess
 from typing import Iterable
 from databind.core import Union
 from loguru import logger
+
+from nyl.tools.logging import lazy_str
+from nyl.tools.shell import pretty_cmd
 from .config import SecretProvider, SecretValue
 
 
@@ -33,20 +37,30 @@ class SopsFile(SecretProvider):
 
     _cache: SecretValue | None = field(init=False, repr=False, default=None)
 
-    def _load(self) -> SecretValue:
+    def _getenv(self) -> Mapping[str, str]:
+        if self.do_not_use_in_prod_only_for_testing_sops_age_key:
+            env = os.environ.copy()
+            env["SOPS_AGE_KEY"] = self.do_not_use_in_prod_only_for_testing_sops_age_key
+            return env
+        else:
+            return os.environ
+
+    def load(self, input_type: str | None = None) -> SecretValue:
         if self._cache is None:
             logger.info("Loading secrets with Sops from '{}'", self.path)
-            env = os.environ.copy()
-            if self.do_not_use_in_prod_only_for_testing_sops_age_key:
-                env["SOPS_AGE_KEY"] = self.do_not_use_in_prod_only_for_testing_sops_age_key
+            command = ["sops", "--output-type", "json", "--decrypt"]
+            if input_type is not None:
+                command += ["--input-type", input_type]
+            command.append(str(self.path))
+            logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
             try:
                 self._cache = json.loads(
                     subprocess.run(
-                        ["sops", "--output-type", "json", "--decrypt", str(self.path)],
+                        command,
                         capture_output=True,
                         text=True,
                         check=True,
-                        env=env,
+                        env=self._getenv(),
                     ).stdout
                 )
             except subprocess.CalledProcessError as exc:
@@ -54,13 +68,26 @@ class SopsFile(SecretProvider):
                 raise
         return self._cache
 
+    def save(self, output_type: str) -> None:
+        command = ["sops", "--output-type", output_type, "--input-type", "json", "--encrypt", "/dev/stdin"]
+        logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
+        output = subprocess.run(
+            command,
+            text=True,
+            capture_output=True,
+            input=json.dumps(self._cache),
+            check=True,
+            env=self._getenv(),
+        ).stdout
+        self.path.write_text(output)
+
     # SecretProvider
 
     def init(self, config_file: Path) -> None:
         self.path = (config_file.parent / self.path).absolute()
 
     def keys(self) -> Iterable[str]:
-        stack = [(self._load(), "")]
+        stack = [(self.load(), "")]
         while stack:
             value, prefix = stack.pop(0)
             if prefix != "":
@@ -73,7 +100,7 @@ class SopsFile(SecretProvider):
 
     def get(self, key: str) -> SecretValue:
         parts = key.split(".")
-        value = self._load()
+        value = self.load()
         for idx, part in enumerate(parts):
             if not isinstance(value, dict):
                 raise KeyError(".".join(parts[: idx + 1]))
