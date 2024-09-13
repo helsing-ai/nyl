@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from venv import logger
 
 from pathlib import Path
+
+from loguru import logger
 
 from nyl.tools.fs import find_config_file
 from nyl.tools.loads import loadf
