@@ -5,7 +5,7 @@ from typing import Any
 from loguru import logger
 from nyl.generator import Generator
 from nyl.generator.components import ComponentsGenerator
-from nyl.resources import NylResource
+from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.tools.kubernetes import discover_kubernetes_api_versions
 from nyl.tools.types import Manifest, Manifests
 from kubernetes.client import VersionApi
@@ -95,11 +95,12 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
     # Generator implementation
 
     def generate(self, /, res: Manifest) -> Manifests:
-        if (nyl_resource := NylResource.maybe_load(res)) is None:
+        if res["apiVersion"] != API_VERSION_INLINE:
             if self.fallback:
                 return self.fallback.generate(res)
             return Manifests([res])
 
+        nyl_resource = NylResource.load(res)
         if nyl_resource.KIND not in self.generators:
             raise ValueError(f"No generator found for resource kind: {nyl_resource.KIND}")
 
