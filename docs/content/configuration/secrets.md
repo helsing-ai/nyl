@@ -19,7 +19,7 @@ must have the `sops` program installed.
 __Example__
 
 ```yaml title="nyl-secrets.yaml"
-provider: sops
+type: sops
 path: ../secrets.yaml
 ```
 
