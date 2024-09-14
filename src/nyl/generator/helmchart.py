@@ -11,11 +11,11 @@ from urllib.parse import parse_qs, urlparse
 from loguru import logger
 import yaml
 from nyl.generator import Generator
-from nyl.resources.helmchart import HelmChart
+from nyl.resources.helmchart import ChartRef, HelmChart, ReleaseMetadata
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.types import Manifests
 
-ChartAndRepository = tuple[str | None, str | None]
+ChartRepositoryVersion = tuple[str | None, str | None, str | None]
 
 
 @dataclass
@@ -45,34 +45,34 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
     `--validate` flag.
     """
 
-    def _materialize_chart(self, res: HelmChart) -> ChartAndRepository:
+    def _materialize_chart(self, chart_ref: ChartRef) -> ChartRepositoryVersion:
         repository: str | None = None
         chart: str | None = None
 
-        if res.chart.repository:
-            if res.chart.path:
+        if chart_ref.repository:
+            if chart_ref.path:
                 raise ValueError("Cannot specify both `chart.repository` and `chart.path`.")
-            if res.chart.git:
+            if chart_ref.git:
                 raise ValueError("Cannot specify both `chart.repository` and `chart.git`.")
-            if not res.chart.name:
+            if not chart_ref.name:
                 raise ValueError("`chart.name` must be set when `chart.repository` is set.")
 
-            if res.chart.repository.startswith("oci://"):
-                chart = f"{res.chart.repository}/{res.chart.name}"
+            if chart_ref.repository.startswith("oci://"):
+                chart = f"{chart_ref.repository}/{chart_ref.name}"
             else:
-                chart = res.chart.name
-                repository = res.chart.repository
+                chart = chart_ref.name
+                repository = chart_ref.repository
 
-            parsed = urlparse(res.chart.repository)
+            parsed = urlparse(chart_ref.repository)
             cache_dir = (
                 self.chart_cache_dir / f"{parsed.scheme}-{parsed.hostname}-{parsed.path.replace('/', '-').lstrip('-')}"
             )
             command = ["helm", "pull", chart]
             if repository:
                 command.extend(["--repo", repository])
-            if res.chart.version:
-                command.extend(["--version", res.chart.version, "--devel"])
-                cache_dir = cache_dir / res.chart.version
+            if chart_ref.version:
+                command.extend(["--version", chart_ref.version, "--devel"])
+                cache_dir = cache_dir / chart_ref.version
             else:
                 cache_dir = cache_dir / "latest"
 
@@ -94,12 +94,12 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             chart = str(cache_dir / next(cache_dir.iterdir()))
             repository = None
 
-        elif res.chart.git:
-            if res.chart.name:
+        elif chart_ref.git:
+            if chart_ref.name:
                 raise ValueError("Cannot specify both `chart.git` and `chart.name`, did you mean `chart.path`?")
 
             # Clone the repository and find the chart in the repository.
-            parsed = urlparse(res.chart.git)
+            parsed = urlparse(chart_ref.git)
             without_query_params = parsed._replace(query="").geturl()
             hashed = hashlib.md5(without_query_params.encode()).hexdigest()
             clone_dir = self.git_repo_cache_dir / f"{hashed}-{PosixPath(parsed.path).name}"
@@ -121,37 +121,38 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 command = ["git", "checkout", query["ref"][0]]
                 subprocess.check_call(command, cwd=clone_dir, stdout=sys.stderr)
 
-            chart = str(clone_dir / (res.chart.path or ""))
+            chart = str(clone_dir / (chart_ref.path or ""))
 
-        elif res.chart.path:
-            is_explicit = res.chart.path.startswith("/") or res.chart.path.startswith("./")
+        elif chart_ref.path:
+            is_explicit = chart_ref.path.startswith("/") or chart_ref.path.startswith("./")
             if not is_explicit:
                 for path in self.search_path:
-                    chart_path = path / res.chart.path
+                    chart_path = path / chart_ref.path
                     if chart_path.exists():
                         chart = str(chart_path)
                         break
                 else:
-                    raise ValueError(f"Chart '{res.chart.path}' not found in search path {self.search_path}")
+                    raise ValueError(f"Chart '{chart_ref.path}' not found in search path {self.search_path}")
             else:
-                chart_path = self.working_dir / res.chart.path
+                chart_path = self.working_dir / chart_ref.path
                 if not chart_path.exists():
-                    raise ValueError(f"Chart path '{res.chart.path}' not found")
+                    raise ValueError(f"Chart path '{chart_ref.path}' not found")
                 chart = str(chart_path)
 
         else:
             raise ValueError("Either `chart.repository`, `chart.git` or `chart.path` must be set.")
 
-        return (repository, chart)
+        return (repository, chart, chart_ref.version)
 
     # Generator
 
     def generate(self, /, res: HelmChart) -> Manifests:
-        repository, chart = self._materialize_chart(res)
+        repository, chart, version = self._materialize_chart(res.spec.chart)
+        release = res.spec.release or ReleaseMetadata(name=res.metadata.name, namespace=res.metadata.namespace)
 
         with TemporaryDirectory() as tmp:
             values_file = Path(tmp) / "values.yaml"
-            values_file.write_text(yaml.safe_dump(res.values))
+            values_file.write_text(yaml.safe_dump(res.spec.values))
 
             command = [
                 "helm",
@@ -176,22 +177,18 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             ]
             if repository:
                 command.extend(["--repo", repository])
-            if res.chart.version:
-                command.extend(["--version", res.chart.version, "--devel"])
+            if version:
+                command.extend(["--version", version, "--devel"])
 
             # Note: Support deprecated field `hooksEnabled` for a while.
-            if res.hooksEnabled is None and res.options.noHooks:
+            if res.spec.options.noHooks:
                 command.append("--no-hooks")
-            elif res.hooksEnabled is not None:
-                logger.warning("HelmChart resources uses deprecated field `hooksEnabled`, upgrade to `config.noHooks`")
-                if res.hooksEnabled:
-                    command.append("--no-hooks")
 
             command.extend(["--values", str(values_file)])
-            if res.release.namespace:
-                command.extend(["--namespace", res.release.namespace])
-            command.extend(res.options.additionalArgs)
-            command.extend([res.release.name, str(chart)])
+            if release.namespace:
+                command.extend(["--namespace", release.namespace])
+            command.extend(res.spec.options.additionalArgs)
+            command.extend([release.name, str(chart)])
 
             # for key, value in res.set.items():
             #     command.append("--set")

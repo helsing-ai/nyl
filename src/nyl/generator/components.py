@@ -5,11 +5,11 @@ Implements Nyl components generation.
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
-
 from loguru import logger
 from nyl.generator import Generator
 from nyl.generator.helmchart import HelmChartGenerator
-from nyl.resources.helmchart import ChartRef, HelmChart, ReleaseMetadata
+from nyl.resources import ObjectMetadata
+from nyl.resources.helmchart import ChartRef, HelmChart, HelmChartSpec
 from nyl.tools.types import Manifest, Manifests
 
 
@@ -63,12 +63,16 @@ class ComponentsGenerator(Generator[Manifest], resource_type=Manifest):
                 return Manifests([resource])
             case HelmComponent(path):
                 chart = HelmChart(
-                    chart=ChartRef(path=str(path.resolve())),
-                    release=ReleaseMetadata(
+                    metadata=ObjectMetadata(
                         name=resource["metadata"]["name"],
                         namespace=resource["metadata"].get("namespace", None),
+                        labels=resource["metadata"].get("labels", {}),
+                        annotations=resource["metadata"].get("annotations", {}),
                     ),
-                    values=resource.get("spec", {}),
+                    spec=HelmChartSpec(
+                        chart=ChartRef(path=str(path.resolve())),
+                        values=resource.get("spec", {}),
+                    ),
                 )
                 return self.helm_generator.generate(chart)
             case _:

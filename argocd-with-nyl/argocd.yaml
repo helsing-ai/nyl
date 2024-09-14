@@ -22,48 +22,49 @@ stringData:
 ---
 apiVersion: inline.nyl.io/v1
 kind: HelmChart
-release:
+metadata:
   name: argocd
   namespace: argocd
-chart:
-  # Explore the chart at https://artifacthub.io/packages/helm/argo/argo-cd
-  repository: https://argoproj.github.io/argo-helm
-  name: argo-cd
-  version: "7.4.3"
-values:
-  configs:
-    secret:
-      argocdServerAdminPassword: ${{ bcrypt(secrets.get("ARGOCD_ADMIN_PASSWORD")) }}
-  dex:
-    enabled: false
-  repoServer:
-    extraContainers:
-      - name: nyl-v1
-        image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:0.0.7
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 999
-        volumeMounts:
-          - mountPath: /var/run/argocd
-            name: var-files
-          - mountPath: /home/argocd/cmp-server/plugins
-            name: plugins
-          - mountPath: /tmp
-            name: cmp-tmp
-        env:
-          - name: NYL_CACHE_DIR
-            value: /tmp/nyl
-        envFrom:
-          - secretRef:
-              name: argocd-nyl-env
-    volumes:
-      - name: cmp-tmp
-        emptyDir: {}
+spec:
+  chart:
+    # Explore the chart at https://artifacthub.io/packages/helm/argo/argo-cd
+    repository: https://argoproj.github.io/argo-helm
+    name: argo-cd
+    version: "7.4.3"
+  values:
+    configs:
+      secret:
+        argocdServerAdminPassword: ${{ bcrypt(secrets.get("ARGOCD_ADMIN_PASSWORD")) }}
+    dex:
+      enabled: false
+    repoServer:
+      extraContainers:
+        - name: nyl-v1
+          image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:0.0.7
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+          volumeMounts:
+            - mountPath: /var/run/argocd
+              name: var-files
+            - mountPath: /home/argocd/cmp-server/plugins
+              name: plugins
+            - mountPath: /tmp
+              name: cmp-tmp
+          env:
+            - name: NYL_CACHE_DIR
+              value: /tmp/nyl
+          envFrom:
+            - secretRef:
+                name: argocd-nyl-env
+      volumes:
+        - name: cmp-tmp
+          emptyDir: {}
 
-    # HACK: Allow argocd-repo-server to read all Kubernetes resources. This is used by Helm and Nyl lookups.
-    #       However, this only works in-cluster and not with other clusters.
-    clusterRoleRules:
-      enabled: true
+      # HACK: Allow argocd-repo-server to read all Kubernetes resources. This is used by Helm and Nyl lookups.
+      #       However, this only works in-cluster and not with other clusters.
+      clusterRoleRules:
+        enabled: true
 
 # Self-manage ArgoCD with Nyl and this specific repository.
 ---

@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from nyl.resources import API_VERSION_INLINE, NylResource
+from nyl.resources import API_VERSION_INLINE, NylResource, ObjectMetadata
 
 
 @dataclass
@@ -11,7 +11,10 @@ class ChartRef:
     """
 
     path: str | None = None
-    """ Path to the chart in the Git repository; or relative to the file that defines the resource. """
+    """
+    Path to the chart in the Git repository; or relative to the file that defines the resource. This path is
+    searched in the [`Project`] search path.
+    """
 
     git: str | None = None
     """ URL to a Git repository containing the chart. May include a query string to specify a `ref` or `rev`. """
@@ -58,21 +61,31 @@ class ChartOptions:
 
 
 @dataclass(kw_only=True)
+class HelmChartSpec:
+    chart: ChartRef
+    """ Reference to the Helm chart. """
+
+    release: ReleaseMetadata | None = None
+    """ Override the Helm release options. Defaults to the resource metadata. """
+
+    options: ChartOptions = field(default_factory=ChartOptions)
+    """ Helm template options. """
+
+    values: dict[str, Any] = field(default_factory=dict)
+    """ Values for the Helm chart. """
+
+
+@dataclass(kw_only=True)
 class HelmChart(NylResource, api_version=API_VERSION_INLINE):
     """
     Represents a Helm chart.
     """
 
-    chart: ChartRef
-    """ Reference to the Helm chart. """
+    metadata: ObjectMetadata
+    """
+    The helm chart metadata. Note that the labels and annotations are not used. The `name` and `namespae` serve as
+    the release name and namespace, respectively.
+    """
 
-    release: ReleaseMetadata
-    """ Metadata for the release. """
-
-    options: ChartOptions = field(default_factory=ChartOptions)
-
-    values: dict[str, Any] = field(default_factory=dict)
-    """ Values for the Helm chart. """
-
-    hooksEnabled: bool | None = None
-    """DEPRECATED in Nyl v0.0.17, use `ChartOptions.noHooks` instead."""
+    spec: HelmChartSpec
+    """ The Helm chart specification. """

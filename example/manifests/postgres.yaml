@@ -7,11 +7,13 @@ stringData:
 ---
 apiVersion: nyl.io/v1
 kind: HelmChart
-name: postgres
-chart:
-  repository: oci://registry-1.docker.io/bitnamicharts
-  name: postgresql
-  version: 15.5.16
-values:
-  auth:
-    postgresPassword: {{ ref("Secret", "postgres-password", "PASSWORD") }}
+metadata:
+  name: postgres
+spec:
+  chart:
+    repository: oci://registry-1.docker.io/bitnamicharts
+    name: postgresql
+    version: 15.5.16
+  values:
+    auth:
+      postgresPassword: {{ ref("Secret", "postgres-password", "PASSWORD") }}
