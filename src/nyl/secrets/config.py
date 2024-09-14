@@ -14,7 +14,7 @@ A secret is a JSON-serializable value that can be stored in a secret provider.
 """
 
 
-@Union(style=Union.FLAT, discriminator_key="provider")
+@Union(style=Union.FLAT, discriminator_key="type")
 @dataclass
 class SecretProvider(ABC):
     """
