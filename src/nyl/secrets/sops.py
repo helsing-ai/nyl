@@ -108,3 +108,20 @@ class SopsFile(SecretProvider):
                 raise KeyError(".".join(parts[: idx + 1]))
             value = value[part]
         return value
+
+
+def detect_sops_format(suffix: str) -> str | None:
+    """
+    Tells the SOPS file format based on the file suffix. Never returns "binary".
+    Returns `None` if the format cannot be determined.
+    """
+
+    suffix = suffix.removeprefix(".")
+    if suffix in ("yml", "yaml"):
+        return "yaml"
+    elif suffix in ("json", "json5"):
+        return "json"
+    elif suffix in ("sh", "bash", "env"):
+        return "dotenv"
+    else:
+        return None
