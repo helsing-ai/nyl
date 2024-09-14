@@ -45,3 +45,23 @@ def shorter_path(path: Path, cwd: Path | None = None) -> Path:
     if len(str(new_path)) < len(str(path)):
         return new_path
     return path
+
+
+def distance_to_cwd(path: Path, cwd: Path | None = None) -> int:
+    """
+    Returns the dinstance of *path* to the current working directory.
+
+    If *path* is a subdirectory of *cwd*, the distance is positive. Otherwise, it's negative. If *path* is not a
+    subdirectory of *cwd*, a ValueError is raised.
+    """
+
+    cwd = cwd or Path.cwd()
+
+    sign = 1
+    if not path.is_relative_to(cwd):
+        if not cwd.is_relative_to(path):
+            raise ValueError(f"Path '{path}' is not relative to '{cwd}'")
+        path, cwd = cwd, path
+        sign = -1
+
+    return len(path.relative_to(cwd).parts) * sign

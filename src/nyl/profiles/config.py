@@ -120,7 +120,7 @@ class ProfileConfig:
     profiles: dict[str, Profile]
 
     @staticmethod
-    def load(file: Path | None = None, /, *, required: bool = True) -> "ProfileConfig":
+    def load(file: Path | None = None, /, *, cwd: Path | None = None, required: bool = True) -> "ProfileConfig":
         """
         Load the profiles configuration from the given file or the default file. If the configuration file does not
         exist, an error is raised unless *required* is set to `False`, in which case an empty configuration is
@@ -128,9 +128,21 @@ class ProfileConfig:
         """
 
         from databind.json import load as deser
+        from nyl.project.config import ProjectConfig
 
         if file is None:
-            file = find_config_file(ProfileConfig.FILENAMES, required=False)
+            file = find_config_file(ProfileConfig.FILENAMES, cwd, required=False)
+
+            # Check if there is a project configuration and if it configures profiles.
+            project = ProjectConfig.load_if_has_precedence(
+                over=file,
+                cwd=cwd,
+                predicate=lambda cfg: bool(cfg.config.profiles),
+            )
+            if project:
+                logger.debug("Using profiles from project configuration '{}'", project.file)
+                return ProfileConfig(project.file, project.config.profiles)
+
             if file is None:
                 file = find_config_file(ProfileConfig.FILENAMES, ProfileConfig.GLOBAL_CONFIG_DIR, required=False)
 

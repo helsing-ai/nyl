@@ -49,6 +49,13 @@ repoServer:
     If you do not wish to grant the plugin access to the Kubernetes API, you must disable this option and ensure that
     your manifests do not rely on features that require API access.
 
+## Discovery
+
+The ArgoCD plugin runs `nyl argocd discovery` as the discovery command to determine if a repository is compatible with
+Nyl. This means that if you create an ArgoCD application that points to a Git repository with at least one Nyl
+configuration file in it, the plugin will be invoked implicitly without specifying the `nyl-v1` plugin name in the
+application spec.
+
 ## One file per application
 
 ArgoCD applications do not permit to point their `source.path` field to a file within a repository, it must be a

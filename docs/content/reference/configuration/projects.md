@@ -1,8 +1,39 @@
 # Projects
 
+A Nyl project is a collection of files that together describe a set of Kubernetes resources that are typically deployed
+to at least one Kubernetes cluster and source secrets from zero or more secrets provider. Kubernetes resources are
+defined in YAML files and may be templated using [Nyl's structured templating](../templating.md) or as Helm charts.
+Helm charts may be used as [Nyl components](../components.md).
+
 ## Configuration
 
-*Todo*
+Projects are defined in a `nyl-project.<ext>` file that is located in the current working directory or any of its parent
+directories. A project configuration file is not required to use Nyl, however it is recommended to set various project
+settings, such as the search path for Helm charts and [Nyl components](../components.md), whether to generate
+[Nyl ApplySets](../applysets.md), etc.
+
+A project configuration file may also contain the configuration for secrets providers and profiles, though if any
+configuration file closer to the current working directory for secrets providers or profiles is found, it will take
+precedence.
+
+## Example
+
+The following example demonstrates a simple project configuration file that sets the search path for Helm charts and
+Nyl components, enables the generation of ApplySets, and defines a default secrets provider.
+
+```toml title="nyl-project.toml"
+[settings]
+generate_applysets = true
+search_path = ["packages"]
+
+[profiles.default.kubeconfig]
+type = "local"
+context = "my-cluster"
+
+[secrets.default]
+type = "sops"
+path = "secrets.yaml"
+```
 
 ## Project structure
 

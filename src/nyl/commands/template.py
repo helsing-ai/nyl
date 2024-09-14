@@ -131,7 +131,7 @@ def template(
 
     project = ProjectConfig.load()
     if generate_applysets is not None:
-        project.config.generate_applysets = generate_applysets
+        project.config.settings.generate_applysets = generate_applysets
 
     if state_dir is None:
         state_dir = project.file.parent / ".nyl" if project.file else Path(".nyl")
@@ -146,7 +146,7 @@ def template(
 
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,
-        search_path=project.config.search_path,
+        search_path=project.config.settings.search_path,
         components_path=project.get_components_path(),
         working_dir=Path.cwd(),
         client=client,
@@ -183,7 +183,7 @@ def template(
                 applyset = ApplySet.load(manifest)
                 source.manifests.remove(manifest)
 
-        if not applyset and project.config.generate_applysets:
+        if not applyset and project.config.settings.generate_applysets:
             if len(namespaces) > 1:
                 logger.opt(ansi=True).error(
                     "Multiple namespaces defined in <yellow>{}</>, but automatic ApplySet generation is enabled. "
