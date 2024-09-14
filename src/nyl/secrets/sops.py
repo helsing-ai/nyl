@@ -29,7 +29,7 @@ class SopsFile(SecretProvider):
     provider is defined in.
     """
 
-    do_not_use_in_prod_only_for_testing_sops_age_key: str | None = None
+    do_not_use_in_prod_only_for_testing_sops_age_key: str | None = field(default=None, repr=False)
     """
     The key to use for the `--age` option of SOPS. This is useful for testing purposes only and should not be used
     in production.

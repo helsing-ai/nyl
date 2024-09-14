@@ -21,16 +21,41 @@ app = new_typer(name="secrets", help=__doc__)
 sops = new_typer(name="sops", help=__doc__)
 app.add_typer(sops)
 
+# Initialized from callback for access by subcommands.
+provider: str
+
+
+@app.callback()
+def callback(
+    _provider: str = Option(
+        "default", "--provider", help="The name of the configured secrets provider to use.", envvar="NYL_SECRETS"
+    ),
+) -> None:
+    """
+    Interact with the secrets providers configured in `nyl-secrets.yaml`.
+    """
+
+    global provider
+    provider = _provider
+
 
 @app.command()
-def list() -> None:
+def list(
+    providers: bool = Option(
+        False, help="List the configured secrets providers instead of the current provider's available keys."
+    ),
+) -> None:
     """
     List the keys for all secrets in the provider.
     """
 
     secrets = SecretsConfig.load()
-    for key in secrets.provider.keys():
-        print(key)
+    if providers:
+        for alias, impl in secrets.providers.items():
+            print(alias, impl)
+    else:
+        for key in secrets.providers[provider].keys():
+            print(key)
 
 
 @app.command()
@@ -40,7 +65,7 @@ def get(key: str, pretty: bool = False) -> None:
     """
 
     secrets = SecretsConfig.load()
-    print(json.dumps(secrets.provider.get(key), indent=4 if pretty else None))
+    print(json.dumps(secrets.providers[provider].get(key), indent=4 if pretty else None))
 
 
 @sops.command()
@@ -65,8 +90,8 @@ def re_encrypt(
 
     if file is None:
         secrets = SecretsConfig.load()
-        if isinstance(secrets.provider, SopsFile):
-            file = secrets.provider.path
+        if isinstance(impl := secrets.providers[provider], SopsFile):
+            file = impl.path
         else:
             logger.error("no `file` argument was specified and no SOPS file could be detected in your configuration")
             sys.exit(1)

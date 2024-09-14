@@ -41,6 +41,7 @@ class ManifestsWithSource:
 def template(
     paths: list[Path] = Argument(..., help="The YAML file(s) to render. Can be a directory."),
     profile: Optional[str] = Option(None, envvar="NYL_PROFILE", help="The Nyl profile to use."),
+    secrets_provider: str = Option("default", "--secrets", envvar="NYL_SECRETS", help="The secrets provider to use."),
     in_cluster: bool = Option(
         False, help="Use the in-cluster Kubernetes configuration. The --profile option is ignored."
     ),
@@ -141,7 +142,7 @@ def template(
     secrets = SecretsConfig.load()
     client = ApiClient()
 
-    template_engine = NylTemplateEngine(secrets.provider, client)
+    template_engine = NylTemplateEngine(secrets.providers[secrets_provider], client)
 
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,

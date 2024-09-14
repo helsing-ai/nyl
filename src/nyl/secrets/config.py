@@ -53,10 +53,10 @@ class SecretsConfig:
     FILENAMES = ["nyl-secrets.yaml", "nyl-secrets.toml", "nyl-secrets.json"]
 
     file: Path | None
-    provider: SecretProvider
+    providers: dict[str, SecretProvider]
 
     @staticmethod
-    def load(file: Path | None = None, /) -> "SecretsConfig":
+    def load(file: Path | None = None, /, *, cwd: Path | None = None) -> "SecretsConfig":
         """
         Load the secrets configuration from the given or the default configuration file. If the configuration file does
         not exist, a [NullSecretsProvider] is used.
@@ -66,12 +66,14 @@ class SecretsConfig:
         from nyl.secrets.null import NullSecretsProvider
 
         if file is None:
-            file = find_config_file(SecretsConfig.FILENAMES, required=False)
+            file = find_config_file(SecretsConfig.FILENAMES, cwd, required=False)
+
         if file is None:
             logger.debug("Found no Nyl secrets configuration file.")
-            return SecretsConfig(None, NullSecretsProvider())
+            return SecretsConfig(None, {"default": NullSecretsProvider()})
         else:
             logger.debug("Loading secrets configuration from '{}'.", file)
-            provider = deser(loadf(file), SecretProvider, filename=str(file))
-            provider.init(file)
-            return SecretsConfig(file, provider)
+            providers = deser(loadf(file), dict[str, SecretProvider], filename=str(file))
+            for provider in providers.values():
+                provider.init(file)
+            return SecretsConfig(file, providers)
