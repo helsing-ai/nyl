@@ -24,7 +24,7 @@ Once you are ready, run the following command to bootstrap ArgoCD:
     $ nyl crds | kubectl apply -f -
     $ nyl template argocd.yaml --apply
 
-Note that the `nyl-project.yaml` is empty here, but it helps ArgoCD to automatically detect that the Nyl Config
+Note that the `nyl-project.toml` is empty here, but it helps ArgoCD to automatically detect that the Nyl Config
 Management Plugin should be used for this application.
 
 ## Project layout
@@ -42,9 +42,9 @@ _excluding_ any files that begin with `nyl-`, `.` or `_`.
 argocd.yaml         -- The main Nyl manifest file for ArgoCD that creates the argocd Namespace, the argocd-nyl-env
                        Secret, instantiates the ArgoCD Helm chart and creates the ArgoCD application to manage itself
                        after bootstrapping.
-nyl-project.yaml    -- Empty file that signals to ArgoCD that the Nyl Config Management Plugin should be used for this
+nyl-project.toml    -- Empty file that signals to ArgoCD that the Nyl Config Management Plugin should be used for this
                        application. This may have some project-specific configuration, but in this case it is empty.
-nyl-secrets.yaml    -- Tells Nyl to lookup secrets in the .secrets.yaml via SOPS when rendering the manifests that call
+nyl-secrets.toml    -- Tells Nyl to lookup secrets in the .secrets.yaml via SOPS when rendering the manifests that call
                        the `secrets.get(<key>)` function.
 ```
 

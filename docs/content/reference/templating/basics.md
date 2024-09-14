@@ -1,4 +1,4 @@
-# Templating
+# Basics
 
 Todo
 

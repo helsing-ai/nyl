@@ -6,7 +6,7 @@ theme:
   name: material
   palette:
     accent: blue
-    primary: purple
+    primary: teal
     scheme: default
   features:
     - navigation.expand
@@ -38,3 +38,4 @@ plugins:
     handlers:
       python:
         paths: [../src]
+- mkdocs-nav-weight

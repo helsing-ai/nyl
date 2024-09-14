@@ -1,18 +1,44 @@
+---
+weight: 10
+---
+
 # Components
 
 Nyl components are effectively templates that you can instantiate them similar to standard Kubernetes resources. They
 are treated in a way similar to CRDs, only that they will never to pushed to the Kubernetes API server and instead be
 replaced throuhg a first reconcilation phase during `nyl template`.
 
+Components are built on top of Helm chart [inlining](./inlining.md#helm-charts).
+
 ## How Nyl looks for components
 
-Nyl by default looks for components in a `components/` directory relative to your `nyl-project.yaml` (or relative to
-your current working directory if there is no `nyl-project.yaml`). You can also override the path where Nyl looks in
-the `nyl-project.yaml`:
+Nyl by default looks for components in a `components/` directory relative to your `nyl-project.ext` (or relative to
+your current working directory if there is no `nyl-project.<ext>`). You can also override the path where Nyl looks in
+the `nyl-project.<ext>`:
 
-```yaml title="nyl-project.yaml"
-components_path: ../../components
-```
+=== "TOML"
+
+    ```yaml title="nyl-project.toml"
+    [settings]
+    components_path = "../../components"
+    ```
+
+=== "YAML"
+
+    ```yaml title="nyl-project.yaml"
+    settings:
+      components_path: ../../components
+    ```
+
+=== "JSON"
+
+    ```json title="nyl-project.json"
+    {
+        "settings": {
+            "components_path": "../../components"
+        }
+    }
+    ```
 
 ## Component directory structure
 

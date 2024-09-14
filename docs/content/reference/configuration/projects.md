@@ -2,14 +2,14 @@
 
 A Nyl project is a collection of files that together describe a set of Kubernetes resources that are typically deployed
 to at least one Kubernetes cluster and source secrets from zero or more secrets provider. Kubernetes resources are
-defined in YAML files and may be templated using [Nyl's structured templating](../templating.md) or as Helm charts.
-Helm charts may be used as [Nyl components](../components.md).
+defined in YAML files and may be templated using [Nyl's structured templating](../templating/basics.md) or as Helm
+charts. Helm charts may be used as [Nyl components](../templating/components.md).
 
 ## Configuration
 
 Projects are defined in a `nyl-project.<ext>` file that is located in the current working directory or any of its parent
 directories. A project configuration file is not required to use Nyl, however it is recommended to set various project
-settings, such as the search path for Helm charts and [Nyl components](../components.md), whether to generate
+settings, such as the search path for Helm charts and [Nyl components](../templating/components.md), whether to generate
 [Nyl ApplySets](../applysets.md), etc.
 
 A project configuration file may also contain the configuration for secrets providers and profiles, though if any
@@ -62,7 +62,7 @@ nyl-project.toml
 
 __Further reading__
 
-* [Components](../components.md)
+* [Components](../templating/components.md)
 * [ArgoCD ApplicationSet Example](../argocd-plugin.md#applicationset-example)
 
 ### Heterogenous targets

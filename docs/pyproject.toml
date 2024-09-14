@@ -5,6 +5,7 @@ description = ""
 requires-python = ">=3.10"
 dependencies = [
     "mkdocs-material>=9.5.28",
+    "mkdocs-nav-weight>=0.2.0",
     "mkdocs>=1.6.0",
     "mkdocstrings[python]>=0.25.1",
 ]
