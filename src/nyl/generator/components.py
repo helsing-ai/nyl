@@ -2,10 +2,11 @@
 Implements Nyl components generation.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Annotated, Any, Sequence
 from loguru import logger
+from databind.core import Remainder
 from databind.json import load as deser
 from nyl.generator import Generator
 from nyl.generator.helmchart import HelmChartGenerator
@@ -28,7 +29,11 @@ class GenericComponent(Component):
     apiVersion: str
     kind: str
     metadata: ObjectMetadata
-    spec: dict[str, Any]
+    spec: dict[str, Any] = field(default_factory=dict)
+
+    # Additional fields, which are not allowed in the schema, but are stored and later checked if set.
+    # Having additional fields on a resource for which we find a component is an error.
+    remainder: Annotated[dict[str, Any], Remainder()] = field(default_factory=dict)
 
 
 @dataclass
@@ -65,9 +70,13 @@ class ComponentsGenerator(Generator[Manifest], resource_type=Manifest):
     def generate(self, /, resource: Manifest) -> Manifests:
         instance = deser(resource, GenericComponent)
         component = self.find_component(instance.apiVersion, instance.kind)
+        if component is None:
+            return Manifests([resource])
+
+        if instance.remainder:
+            raise RuntimeError(f"unexpected fields in component {instance.metadata}: {instance.remainder.keys()}")
+
         match component:
-            case None:
-                return Manifests([resource])
             case HelmComponent(path):
                 chart = HelmChart(
                     metadata=instance.metadata,
