@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../../provisional/templating/resources/Package/">
+        <link rel="prev" href="../applysets/">
       
       
         <link rel="next" href="../cluster-connectivity/">
@@ -226,7 +226,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="./" class="md-tabs__link">
+        <a href="../applysets/" class="md-tabs__link">
           
   
   Reference
@@ -860,6 +860,27 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../applysets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ApplySets
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -912,6 +933,15 @@
   <a href="#installation" class="md-nav__link">
     <span class="md-ellipsis">
       Installation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      Discovery
     </span>
   </a>
   
@@ -1022,6 +1052,27 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../templating/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Templating
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
     
     
     
@@ -1040,10 +1091,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_7" >
         
           
-          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -1054,8 +1105,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_7">
             <span class="md-nav__icon md-icon"></span>
             Configuration
           </label>
@@ -1156,10 +1207,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_8" >
         
           
-          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_3_8" id="__nav_3_8_label" tabindex="">
             
   
   <span class="md-ellipsis">
@@ -1170,8 +1221,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_8">
             <span class="md-nav__icon md-icon"></span>
             Configuration api
           </label>
@@ -1270,6 +1321,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      Discovery
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#one-file-per-application" class="md-nav__link">
     <span class="md-ellipsis">
       One file per application
@@ -1353,6 +1413,11 @@ various Nyl features to function correctly (such as lookups, see <a href="../clu
 If you do not wish to grant the plugin access to the Kubernetes API, you must disable this option and ensure that
 your manifests do not rely on features that require API access.</p>
 </div>
+<h2 id="discovery">Discovery</h2>
+<p>The ArgoCD plugin runs <code>nyl argocd discovery</code> as the discovery command to determine if a repository is compatible with
+Nyl. This means that if you create an ArgoCD application that points to a Git repository with at least one Nyl
+configuration file in it, the plugin will be invoked implicitly without specifying the <code>nyl-v1</code> plugin name in the
+application spec.</p>
 <h2 id="one-file-per-application">One file per application</h2>
 <p>ArgoCD applications do not permit to point their <code>source.path</code> field to a file within a repository, it must be a
 directory. For this, Nyl accepts a <code>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</code> environment variable that can be a comma-separate
