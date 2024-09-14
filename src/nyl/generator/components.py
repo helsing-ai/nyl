@@ -4,8 +4,9 @@ Implements Nyl components generation.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 from loguru import logger
+from databind.json import load as deser
 from nyl.generator import Generator
 from nyl.generator.helmchart import HelmChartGenerator
 from nyl.resources import ObjectMetadata
@@ -20,6 +21,14 @@ class Component:
 @dataclass
 class HelmComponent(Component):
     path: Path
+
+
+@dataclass
+class GenericComponent(Component):
+    apiVersion: str
+    kind: str
+    metadata: ObjectMetadata
+    spec: dict[str, Any]
 
 
 @dataclass
@@ -54,24 +63,17 @@ class ComponentsGenerator(Generator[Manifest], resource_type=Manifest):
     # Generator
 
     def generate(self, /, resource: Manifest) -> Manifests:
-        api_version = resource["apiVersion"]
-        kind = resource["kind"]
-
-        component = self.find_component(api_version, kind)
+        instance = deser(resource, GenericComponent)
+        component = self.find_component(instance.apiVersion, instance.kind)
         match component:
             case None:
                 return Manifests([resource])
             case HelmComponent(path):
                 chart = HelmChart(
-                    metadata=ObjectMetadata(
-                        name=resource["metadata"]["name"],
-                        namespace=resource["metadata"].get("namespace", None),
-                        labels=resource["metadata"].get("labels", {}),
-                        annotations=resource["metadata"].get("annotations", {}),
-                    ),
+                    metadata=instance.metadata,
                     spec=HelmChartSpec(
                         chart=ChartRef(path=str(path.resolve())),
-                        values=resource.get("spec", {}),
+                        values={"metadata": resource["metadata"], **instance.spec},
                     ),
                 )
                 return self.helm_generator.generate(chart)
