@@ -339,7 +339,7 @@ requires-dist = [
     { name = "nr-stream", specifier = ">=1.1.5" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "requests", specifier = ">=2.32.3" },
-    { name = "stablehash", specifier = ">=0.2.0" },
+    { name = "stablehash", specifier = ">=0.2.1,<0.3.0" },
     { name = "structured-templates", specifier = ">=0.0.6,<0.1.0" },
     { name = "typer", specifier = ">=0.12.3" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
@@ -545,11 +545,11 @@ wheels = [
 
 [[package]]
 name = "stablehash"
-version = "0.2.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e0/85/d5be4c4c37c9a737caf57de74672faee3ac9dece962b3178a9de3d410de6/stablehash-0.2.0.tar.gz", hash = "sha256:cdf1a6d39b2efa763b224224c88b9bec2bffa8d0d6f423f62a2e57608b8ffa08", size = 5088 }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/9f/114d42a5d67387aea869f853e72e04479b85809ab5483b6f1e34e82caeb6/stablehash-0.2.1.tar.gz", hash = "sha256:b547e34cab6f24c199cda76f637a98973b24fb8ddd98f95e509581ed85b429b1", size = 14914 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/b3/a6c829dd013060be9273bf90b2777b342deac7f33644221b72517a37c864/stablehash-0.2.0-py3-none-any.whl", hash = "sha256:d3376dd4f6784faf01f424de53b2076ec7b133755b9cc5149bfe9b03da12df06", size = 5975 },
+    { url = "https://files.pythonhosted.org/packages/bc/2d/f0af155f6ca8ee525cdd991d25208b62b5e45a2055eb8cc5f015c681cdc8/stablehash-0.2.1-py3-none-any.whl", hash = "sha256:3605682ba0a4fada6b4436f6f231130d9682acec53b5f9fdbab8d7d8dde516d7", size = 5991 },
 ]
 
 [[package]]
