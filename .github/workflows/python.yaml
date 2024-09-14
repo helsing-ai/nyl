@@ -26,17 +26,21 @@ jobs:
         with:
           python-version: "${{ matrix.python-version }}"
 
-      - name: Install PDM
-        run: python -m pip install --upgrade pipx && pipx install kraken-wrapper
+      - name: Install Kraken-wrapper and UV
+        run: python -m pip install --upgrade pipx && pipx install kraken-wrapper && pipx install uv
 
       - name: Cache Venv
         uses: actions/cache@v4
         with:
           path: .venv
-          key: ${{ runner.os }}-${{ hashFiles('pdm.lock') }}-pdm-${{ matrix.python-version }}
+          key: ${{ runner.os }}-${{ hashFiles('uv.lock') }}-uv-${{ matrix.python-version }}
 
       - name: Run ${{ matrix.step }}
         run: krakenw run fmt lint
+
+      # TODO: Until krakenw run test works (currently fails because of doctest modules)
+      - name: Run tests
+        run: uv run pytest -vv
 
   publish:
     runs-on: ubuntu-latest

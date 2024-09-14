@@ -42,6 +42,8 @@ def test__DispatchingGenerator__default__creates_generator_for_every_nyl_inline_
         components_path=Path("/tmp"),
         working_dir=Path("/tmp"),
         client=MagicMock(),
+        kube_version="1.30.0",
+        kube_api_versions={},
     )
 
     for kind in resource_kinds:
