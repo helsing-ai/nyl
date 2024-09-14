@@ -1,4 +1,4 @@
-# Profiles
+# Profiles API
 
 ::: nyl.profiles.config
     options:

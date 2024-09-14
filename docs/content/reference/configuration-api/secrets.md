@@ -1,4 +1,4 @@
-# Secrets
+# Secrets API
 
 ::: nyl.secrets.sops
     options:
