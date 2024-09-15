@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 from textwrap import indent
-from typing import Optional, cast
+from typing import Optional
 from loguru import logger
 from typer import Argument, Option
 import yaml
@@ -157,12 +157,12 @@ def template(
     for source in load_manifests(paths):
         logger.opt(ansi=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
-        source.manifests = cast(Manifests, template_engine.evaluate(source.manifests))
+        source.manifests = template_engine.evaluate(source.manifests)
         if inline:
             source.manifests = reconcile_generator(
                 generator,
                 source.manifests,
-                on_generated=lambda m: cast(Manifest, template_engine.evaluate(m)),
+                on_generated=lambda m: template_engine.evaluate(Manifests([m])),
             )
 
         # Find the namespaces that are defined in the file. If we find any manifests without a namespace, we will

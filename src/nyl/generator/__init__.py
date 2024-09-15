@@ -36,7 +36,7 @@ class Generator(ABC, Generic[T]):
 def reconcile_generator(
     generator: Generator[Manifest],
     manifests: Manifests,
-    on_generated: Callable[[Manifest], Manifest],
+    on_generated: Callable[[Manifest], Manifests],
 ) -> Manifests:
     """
     Recursively reconcile all Nyl resources in the manifests using the given generator.
@@ -64,7 +64,7 @@ def reconcile_generator(
         else:
             seen.add(resource_hash)
             for manifest in generator.generate(resource):
-                queue.append(on_generated(manifest))
+                queue.extend(on_generated(manifest))
             loops += 1
 
     return result

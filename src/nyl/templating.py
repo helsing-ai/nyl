@@ -3,13 +3,15 @@ Implements Nyl's variant of structured templating.
 """
 
 from contextlib import contextmanager
-from typing import Any, Callable, ClassVar, Iterator, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, ClassVar, Iterator, TypeVar, cast
 from structured_templates import TemplateEngine as _TemplateEngine
 from kubernetes.client.api_client import ApiClient
-from structured_templates.context import Context
 
 from kubernetes.dynamic.client import DynamicClient
+from kubernetes.client.exceptions import ApiException
 from nyl.secrets.config import SecretProvider
+from nyl.tools.types import Manifest, Manifests
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 registered_functions: dict[str, Callable[..., Any]] = {}
@@ -80,21 +82,35 @@ def b64encode(data: str) -> str:
 def lookup(api_version: str, kind: str, name: str, namespace: str) -> Any:
     client = NylTemplateEngine.current.dynamic_client
     resource = client.resources.get(api_version=api_version, kind=kind)
-    obj = resource.get(name=name, namespace=namespace)
+    try:
+        obj = resource.get(name=name, namespace=namespace)
+    except ApiException as exc:
+        if exc.status == 404:
+            raise LookupError(f"Resource '{kind}/{name}' not found in namespace '{namespace}'.")
+        else:
+            raise
     return obj
 
 
-class NylTemplateEngine(_TemplateEngine):
+@dataclass
+class NylTemplateEngine:
     """
     Nyl's structured template engine.
+
+    Args:
+        secrets: The secrets engine to make available to templated expressions.
+        client: The Kubernetes API client to use for lookups.
+        create_placeholders: Whether to create placeholders for templates that fail to evaluate due
+            to unsatisfied conditions (e.g. lookup errors).
     """
 
     current: ClassVar["NylTemplateEngine"]
 
-    def __init__(self, secrets: SecretProvider, client: ApiClient) -> None:
-        super().__init__({"secrets": secrets, **registered_functions})
-        self.client = client
-        self.dynamic_client = DynamicClient(client)
+    secrets: SecretProvider
+    client: ApiClient
+
+    def __post_init__(self) -> None:
+        self.dynamic_client = DynamicClient(self.client)
 
     @contextmanager
     def as_current(self) -> Iterator["NylTemplateEngine"]:
@@ -112,19 +128,12 @@ class NylTemplateEngine(_TemplateEngine):
             else:
                 NylTemplateEngine.current = prev
 
-    # TemplateEngine
+    def _new_engine(self) -> _TemplateEngine:
+        return _TemplateEngine({"secrets": self.secrets, **registered_functions})
 
-    def evaluate(
-        self,
-        value: dict[str, Any]
-        | list[Any]
-        | str
-        | int
-        | float
-        | bool
-        | None
-        | Context[dict[str, Any] | list[Any] | str | int | float | bool | None],
-        recursive: bool = True,
-    ) -> dict[str, Any] | list[Any] | str | int | float | bool | None:
+    def evaluate(self, value: Manifests, recursive: bool = True) -> Manifests:
+        result = []
         with self.as_current():
-            return super().evaluate(value, recursive)
+            for item in value:
+                result.append(cast(Manifest, self._new_engine().evaluate(item, recursive)))
+        return Manifests(result)
