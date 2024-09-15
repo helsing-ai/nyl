@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Callable, ClassVar, Iterator, TypeVar, cast
 from structured_templates import TemplateEngine as _TemplateEngine
+from structured_templates.exceptions import TemplateError
 from kubernetes.client.api_client import ApiClient
 
 from kubernetes.dynamic.client import DynamicClient
@@ -108,6 +109,7 @@ class NylTemplateEngine:
 
     secrets: SecretProvider
     client: ApiClient
+    create_placeholders: bool
 
     def __post_init__(self) -> None:
         self.dynamic_client = DynamicClient(self.client)
@@ -135,5 +137,31 @@ class NylTemplateEngine:
         result = []
         with self.as_current():
             for item in value:
-                result.append(cast(Manifest, self._new_engine().evaluate(item, recursive)))
+                try:
+                    result.append(cast(Manifest, self._new_engine().evaluate(item, recursive)))
+                except TemplateError as exc:
+                    if not isinstance(exc.__cause__, LookupError) or not self.create_placeholders:
+                        raise
+
+                    result.append(
+                        Manifest(
+                            {
+                                "apiVersion": "nyl.io/v1",
+                                "kind": "Placeholder",
+                                "metadata": {
+                                    "name": _get_resource_slug(
+                                        item["apiVersion"], item["kind"], item["metadata"]["name"]
+                                    ),
+                                    "namespace": item["metadata"].get("namespace"),
+                                },
+                                "spec": {"reason": "LookupError", "message": str(exc.__cause__)},
+                            }
+                        )
+                    )
+
         return Manifests(result)
+
+
+def _get_resource_slug(api_version: str, kind: str, name: str, max_length: int = 63) -> str:
+    suffix = f"{api_version.replace('/', '-').replace('.', '-')}-{kind}"
+    return f"{name}-{suffix[:max_length - len(name) - 1]}".lower()

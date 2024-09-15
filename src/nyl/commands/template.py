@@ -142,7 +142,9 @@ def template(
     secrets = SecretsConfig.load()
     client = ApiClient()
 
-    template_engine = NylTemplateEngine(secrets.providers[secrets_provider], client)
+    template_engine = NylTemplateEngine(
+        secrets.providers[secrets_provider], client, create_placeholders=project.config.settings.generate_placeholders
+    )
 
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,

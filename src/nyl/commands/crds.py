@@ -1,6 +1,7 @@
 import yaml
 
 from nyl.resources.applyset import ApplySet
+from nyl.resources.placeholder import Placeholder
 from . import app
 
 
@@ -12,3 +13,5 @@ def crds() -> None:
 
     print("---")
     print(yaml.safe_dump(ApplySet.CRD))
+    print("---")
+    print(yaml.safe_dump(Placeholder.CRD))

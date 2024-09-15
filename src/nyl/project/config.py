@@ -24,6 +24,12 @@ class ProjectSettings:
     after the namespace.
     """
 
+    generate_placeholders: bool = False
+    """
+    If enabled, resources with templates that fail to evaluate due to unsatisfied conditions (e.g. lookup errors) will
+    be replaced with `nyl.io/v1/Placeholder` resources during templating. Otherwise, the error will be propagated.
+    """
+
     components_path: Path | None = None
     """
     Path to the directory that contains Nyl components.
