@@ -51,6 +51,16 @@ class Placeholder(NylResource, api_version=API_VERSION_K8S):
                             "properties": {
                                 "spec": {
                                     "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "A message that describes the missing resource.",
+                                        },
+                                        "reason": {
+                                            "type": "string",
+                                            "description": "The reason why the resource is missing (e.g. 'NotFound').",
+                                        },
+                                    },
                                 },
                             },
                         }
