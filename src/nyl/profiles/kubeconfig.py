@@ -109,7 +109,7 @@ class KubeconfigManager:
         self, *, profile_name: str, path: Path, context: str, api_host: str, api_port: int
     ) -> Path:
         kubeconfig_data = yaml.safe_load(path.read_text())
-        kubeconfig_data = _trim_to_context(kubeconfig_data, context)
+        kubeconfig_data = _trim_to_context(kubeconfig_data, context, rename_context=profile_name)
 
         # TODO: Do we need to support the Kubernetes API hosted on a subpath?
         kubeconfig_data["clusters"][0]["cluster"]["server"] = f"https://{api_host}:{api_port}"
@@ -122,7 +122,9 @@ class KubeconfigManager:
         return final_kubeconfig
 
 
-def _trim_to_context(kubeconfig: dict[str, Any], context: str | None) -> dict[str, Any]:
+def _trim_to_context(
+    kubeconfig: dict[str, Any], context: str | None, rename_context: str | None = None
+) -> dict[str, Any]:
     """
     Trim a Kubeconfig down to a single context. If *context* is `None`, it will be trinmed to the current context.
     """
@@ -130,12 +132,14 @@ def _trim_to_context(kubeconfig: dict[str, Any], context: str | None) -> dict[st
     if context is None:
         context = kubeconfig["current-context"]
     else:
-        kubeconfig["current-context"] = context
+        kubeconfig["current-context"] = rename_context or context
 
     kubeconfig["contexts"] = [c for c in kubeconfig["contexts"] if c["name"] == context]
     if not kubeconfig["contexts"]:
         raise ValueError(f"Context '{context}' not found in Kubeconfig file.")
     context_data = kubeconfig["contexts"][0]
+    if rename_context:
+        context_data["name"] = rename_context
 
     kubeconfig["clusters"] = [c for c in kubeconfig["clusters"] if c["name"] == context_data["context"]["cluster"]]
     if not kubeconfig["clusters"]:
