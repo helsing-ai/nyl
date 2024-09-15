@@ -93,6 +93,12 @@ def lookup(api_version: str, kind: str, name: str, namespace: str) -> Any:
     return obj
 
 
+class LookupError(Exception):
+    """
+    Raised when a `lookup()` call fails because the resource was not found.
+    """
+
+
 @dataclass
 class NylTemplateEngine:
     """
