@@ -29,12 +29,14 @@ from . import profile  # noqa: E402
 from . import run  # noqa: F401, E402
 from . import secrets  # noqa: E402
 from . import template  # noqa: F401,E402
+from . import tools  # noqa: E402
 from . import tun  # noqa: E402
 
 app.add_typer(argocd.app)
 app.add_typer(new.app)
 app.add_typer(profile.app)
 app.add_typer(secrets.app)
+app.add_typer(tools.app)
 app.add_typer(tun.app)
 
 
