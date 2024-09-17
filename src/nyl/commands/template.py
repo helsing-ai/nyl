@@ -66,6 +66,18 @@ def template(
         "This option must be disabled when passing the generated manifests to `kubectl apply --applyset=...`, as it "
         "would otherwise cause an error due to the label being present on the input data.",
     ),
+    default_namespace: Optional[str] = Option(
+        None,
+        help="The name of the Kubernetes namespace to fill in to Kubernetes resource that don't have a namespace set. "
+        "If this is not specified as an argument or via environment variables, it will default to the stem of the "
+        "manifest source filename. Note that if a manifest defines a Namespace resource, that namespace is used "
+        "instead, regardless of the value of this option. If a manifest source file defines multiple namespaces and a "
+        "resource without namespace is encountered, this option is considered if it matches one of the namespaces "
+        "defined in the file. Note that this option is usually problematic when rendering multiple files, as often "
+        "a single file is intended to deploy into a single namespace.\n\n"
+        "Note that Nyl's detection for cluster-scoped vs. namespace-scoped resources is not very good, yet.",
+        envvar="ARGOCD_APP_NAMESPACE",
+    ),
     inline: bool = Option(True, help="Evaluate Nyl inlined resources."),
     state_dir: Optional[Path] = Option(
         None, help="The directory to store state in (such as kubeconfig files).", envvar="NYL_STATE_DIR"
@@ -168,10 +180,10 @@ def template(
             )
 
         # Find the namespaces that are defined in the file. If we find any manifests without a namespace, we will
-        # inject that namespace name into them.
-        # Also find the applyset defined in the file.
+        # inject that namespace name into them. Also find the applyset defined in the file.
         namespaces: set[str] = set()
         applyset: ApplySet | None = None
+
         for manifest in list(source.manifests):
             if is_namespace_resource(manifest):
                 namespaces.add(manifest["metadata"]["name"])
@@ -185,23 +197,28 @@ def template(
                 applyset = ApplySet.load(manifest)
                 source.manifests.remove(manifest)
 
+        # Determine what namespace to fill in if we encounter resources without it.
+        current_default_namespace = default_namespace
+        if current_default_namespace is None:
+            if len(namespaces) == 1:
+                current_default_namespace = next(iter(namespaces))
+            elif len(namespaces) == 0:
+                current_default_namespace = source.file.stem
+
         if not applyset and project.config.settings.generate_applysets:
-            if len(namespaces) > 1:
+            if not current_default_namespace:
                 logger.opt(ansi=True).error(
-                    "Multiple namespaces defined in <yellow>{}</>, but automatic ApplySet generation is enabled. "
-                    "There can only be one namespace per source in this case.",
+                    "No default namespace defined for <yellow>{}</>, but it is required for the automatically "
+                    "generated nyl.io/v1/ApplySet resource (the ApplySet is named after the default namespace).",
                     source.file,
                 )
                 exit(1)
-            elif len(namespaces) == 1:
-                applyset_name = next(iter(namespaces))
-            else:
-                applyset_name = source.file.stem
 
+            applyset_name = current_default_namespace
+            applyset = ApplySet.new(applyset_name)
             logger.opt(ansi=True).info(
                 "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).", source.file, applyset_name
             )
-            applyset = ApplySet.new(applyset_name)
 
         if applyset is not None:
             applyset.set_group_kinds(source.manifests)
@@ -236,7 +253,7 @@ def template(
 
             if "metadata" not in manifest:
                 logger.opt(ansi=True).error(
-                    "Manifest in <yellow>'{}'</> has no <cyan>metadata</> key:\n\n{}",
+                    "A manifest in <yellow>'{}'</> has no <cyan>metadata</> key:\n\n{}",
                     source.file,
                     indent(yaml.safe_dump(manifest), "  "),
                 )
@@ -247,30 +264,23 @@ def template(
                     labels[APPLYSET_LABEL_PART_OF] = applyset.id
 
             if not is_cluster_scoped_resource(manifest) and "namespace" not in manifest["metadata"]:
-                if len(namespaces) > 1:
+                if not current_default_namespace:
                     logger.error(
-                        "Multiple namespaces defined in '{}', but manifest {}/{} does not have a namespace.",
+                        "A namespace-scoped manifest in '{}' has no namespace, and no default namespace is defined. "
+                        "Try defining a single namespace in the manifest source file, naming the manifest source file "
+                        "the same as that default namespace or passing the --default-namespace option.",
                         source.file,
-                        manifest["kind"],
-                        manifest["metadata"]["name"],
                     )
                     exit(1)
-                elif len(namespaces) == 0:
-                    logger.warning(
-                        "No namespaces defined in '{}', injecting 'default' into manifest {}/{}.",
-                        source.file,
-                        manifest["kind"],
-                        manifest["metadata"]["name"],
-                    )
-                    manifest["metadata"]["namespace"] = "default"
-                else:
-                    logger.trace(
-                        "Injecting namespace '{}' into manifest {}/{}.",
-                        next(iter(namespaces)),
-                        manifest["kind"],
-                        manifest["metadata"]["name"],
-                    )
-                    manifest["metadata"]["namespace"] = next(iter(namespaces))
+
+                logger.trace(
+                    "Injecting namespace '{}' into manifest {}/{}.",
+                    current_default_namespace,
+                    manifest["kind"],
+                    manifest["metadata"]["name"],
+                )
+                manifest["metadata"]["namespace"] = current_default_namespace
+
             elif not is_cluster_scoped_resource(manifest) and manifest["metadata"]["namespace"] not in namespaces:
                 logger.warning(
                     "Resource '{}/{}' in '{}' references namespace '{}', which is not defined in the file.",
