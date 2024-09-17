@@ -204,6 +204,18 @@ def template(
                 current_default_namespace = next(iter(namespaces))
             elif len(namespaces) == 0:
                 current_default_namespace = source.file.stem
+        elif len(namespaces) > 2 and current_default_namespace not in namespaces:
+            logger.error(
+                "The specified --default-namespace='{}' is not defined in manifest source file '{}', despite it "
+                "defining {} namespaces. If your manifest source file defines multiple namespaces, the specified "
+                "--default-namespace must be one of the namespaces defined in it (the file current defines "
+                "the following namespaces: {})",
+                default_namespace,
+                source.file,
+                len(namespaces),
+                ", ".join(namespaces),
+            )
+            exit(1)
 
         if not applyset and project.config.settings.generate_applysets:
             if not current_default_namespace:
