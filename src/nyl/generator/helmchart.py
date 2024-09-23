@@ -9,7 +9,7 @@ from textwrap import indent
 from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
-import yaml
+from nyl.tools import yaml
 from nyl.generator import Generator
 from nyl.resources.helmchart import ChartRef, HelmChart, ReleaseMetadata
 from nyl.tools.shell import pretty_cmd
@@ -152,7 +152,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
 
         with TemporaryDirectory() as tmp:
             values_file = Path(tmp) / "values.yaml"
-            values_file.write_text(yaml.safe_dump(res.spec.values))
+            values_file.write_text(yaml.dumps(res.spec.values))
 
             command = [
                 "helm",
@@ -207,6 +207,6 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                     f"stderr:\n{indent(e.stderr.decode(), prefix)}"
                 )
 
-            manifests = Manifests(list(filter(None, yaml.safe_load_all(result.stdout.decode()))))
+            manifests = Manifests(list(filter(None, yaml.loads_all(result.stdout.decode()))))
 
             return manifests

@@ -6,7 +6,7 @@ from textwrap import indent
 from typing import Optional
 from loguru import logger
 from typer import Argument, Option
-import yaml
+from nyl.tools import yaml
 from nyl.generator import reconcile_generator
 from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import ProfileManager
@@ -252,7 +252,7 @@ def template(
                 kubectl.diff(Manifests([applyset.dump()]))
             else:
                 print("---")
-                print(yaml.safe_dump(applyset.dump()))
+                print(yaml.dumps(applyset.dump()))
 
         # Find all manifests without a namespace and inject the namespace name into them.
         # If there is an applyset, ensure they are marked as part of the applyset.
@@ -267,7 +267,7 @@ def template(
                 logger.opt(ansi=True).error(
                     "A manifest in <yellow>'{}'</> has no <cyan>metadata</> key:\n\n{}",
                     source.file,
-                    indent(yaml.safe_dump(manifest), "  "),
+                    indent(yaml.dumps(manifest), "  "),
                 )
                 exit(1)
 
@@ -317,7 +317,7 @@ def template(
             # If we're not going to be applying the manifests immediately via `kubectl`, we print them to stdout.
             for manifest in source.manifests:
                 print("---")
-                print(yaml.safe_dump(manifest))
+                print(yaml.dumps(manifest))
 
 
 def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
@@ -347,7 +347,7 @@ def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
 
     result = []
     for file in files:
-        manifests = Manifests(list(map(Manifest, filter(None, yaml.safe_load_all(file.read_text())))))
+        manifests = Manifests(list(map(Manifest, filter(None, yaml.loads_all(file.read_text())))))
         result.append(ManifestsWithSource(manifests, file))
 
     return result

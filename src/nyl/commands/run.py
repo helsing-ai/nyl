@@ -6,7 +6,7 @@ import sys
 from tempfile import TemporaryDirectory
 from loguru import logger
 from typer import Argument, Option
-import yaml
+from nyl.tools import yaml
 from nyl.profiles import ActivatedProfile, ProfileManager
 from nyl.profiles.kubeconfig import _trim_to_context
 from nyl.tools.logging import lazy_str
@@ -56,7 +56,7 @@ def run(
             sys.exit(1)
 
         try:
-            kubeconfig_data = yaml.safe_load(kubeconfig.read_text())
+            kubeconfig_data = yaml.loads(kubeconfig.read_text())
             kubeconfig_data = _trim_to_context(kubeconfig_data, profile_name)
         except ValueError:
             logger.debug("Failed to parse the kubeconfig file/find context '{}'.", profile_name)
@@ -83,7 +83,7 @@ def run(
             tmpdir = TemporaryDirectory()
             atexit.register(tmpdir.cleanup)
             kubeconfig = Path(tmpdir.name) / "kubeconfig"
-            kubeconfig.write_text(yaml.dump(kubeconfig_data))
+            kubeconfig.write_text(yaml.dumps(kubeconfig_data))
             kubeconfig.chmod(0o600)
 
     profile = ActivatedProfile(kubeconfig)

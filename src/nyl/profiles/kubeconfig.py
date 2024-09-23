@@ -5,8 +5,8 @@ import shlex
 import subprocess
 from typing import Any
 from urllib.parse import urlparse
-import yaml
 
+from nyl.tools import yaml
 from nyl.tools.shell import pretty_cmd
 from .config import KubeconfigFromSsh, LocalKubeconfig
 from loguru import logger
@@ -87,7 +87,7 @@ class KubeconfigManager:
                 raise ValueError(f"Unsupported Kubeconfig type: {source.__class__.__name__}")
 
         # Find the Kubernetes API host and port.
-        kubeconfig_data = yaml.safe_load(raw_kubeconfig.read_text())
+        kubeconfig_data = yaml.loads(raw_kubeconfig.read_text())
         kubeconfig_data = _trim_to_context(kubeconfig_data, source.context)
         server: str = kubeconfig_data["clusters"][0]["cluster"]["server"]
         api_host, api_port = (lambda parsed: (parsed.hostname, parsed.port or 443))(urlparse(server))
@@ -108,7 +108,7 @@ class KubeconfigManager:
     def get_updated_kubeconfig(
         self, *, profile_name: str, path: Path, context: str, api_host: str, api_port: int
     ) -> Path:
-        kubeconfig_data = yaml.safe_load(path.read_text())
+        kubeconfig_data = yaml.loads(path.read_text())
         kubeconfig_data = _trim_to_context(kubeconfig_data, context, rename_context=profile_name)
 
         # TODO: Do we need to support the Kubernetes API hosted on a subpath?
@@ -116,7 +116,7 @@ class KubeconfigManager:
 
         final_kubeconfig = self._state_dir / profile_name / "kubeconfig.local"
         final_kubeconfig.parent.mkdir(parents=True, exist_ok=True)
-        final_kubeconfig.write_text(yaml.safe_dump(kubeconfig_data))
+        final_kubeconfig.write_text(yaml.dumps(kubeconfig_data))
         final_kubeconfig.chmod(0o600)
 
         return final_kubeconfig
