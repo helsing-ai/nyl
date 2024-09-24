@@ -2,15 +2,17 @@
 Implements Nyl's variant of structured templating.
 """
 
+from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Iterator, TypeVar, cast
+from typing import Any, Callable, ClassVar, Iterator, Sequence, TypeVar, cast
 from structured_templates import TemplateEngine as _TemplateEngine
 from structured_templates.exceptions import TemplateError
 from kubernetes.client.api_client import ApiClient
 
 from kubernetes.dynamic.client import DynamicClient
 from kubernetes.client.exceptions import ApiException
+from kubernetes.dynamic.resource import ResourceField, ResourceInstance
 from nyl.secrets.config import SecretProvider
 from nyl.tools.types import Manifest, Manifests
 
@@ -90,7 +92,61 @@ def lookup(api_version: str, kind: str, name: str, namespace: str) -> Any:
             raise LookupError(f"Resource '{kind}/{name}' not found in namespace '{namespace}'.")
         else:
             raise
-    return obj
+    return LookupResourceWrapper(obj)
+
+
+class LookupResourceWrapper(Mapping[str, Any]):
+    """
+    A wrapper for a Kubernetes resources returned by `lookup()` that permits looking up fields by `__getitem__()`
+    and `__getattr__()`. This wraps a `ResourceInstance` or `ResourceField`, which can later be treated by the
+    `NylTemplateEngine` to serialize into a dictionary when embedded into a manifest.
+
+    This class is needed because the YAML serializer will not be able to serialize the `ResourceInstance` or
+    `ResourceField` objects returned by `lookup()`.
+    """
+
+    @staticmethod
+    def maybe_wrap(obj: Any) -> Any:
+        if isinstance(obj, (ResourceInstance, ResourceField)):
+            return LookupResourceWrapper(obj)
+        if isinstance(obj, Sequence) and not isinstance(obj, str):
+            obj = [LookupResourceWrapper.maybe_wrap(x) for x in obj]
+        return obj
+
+    @staticmethod
+    def materialize(obj: Any) -> Any:
+        match obj:
+            case LookupResourceWrapper():
+                return obj.__obj.to_dict()
+            case str():
+                return obj
+        if isinstance(obj, Sequence):
+            return [LookupResourceWrapper.materialize(x) for x in obj]
+        if isinstance(obj, Mapping):
+            return {k: LookupResourceWrapper.materialize(v) for k, v in obj.items()}
+        return obj
+
+    def __init__(self, obj: ResourceInstance | ResourceField) -> None:
+        assert isinstance(obj, (ResourceInstance, ResourceField)), f"got {type(obj).__name__}"
+        self.__obj = obj
+
+    def __iter__(self) -> Iterator[str]:
+        if isinstance(self.__obj, ResourceInstance):
+            target = self.__obj.attributes
+        else:
+            target = self.__obj
+        for key, _ in target:
+            yield key
+
+    def __len__(self) -> int:
+        # TODO: Find a better (faster) way to get the length of the resource instance/field attributes.
+        return len(self.__obj.to_dict())
+
+    def __getattr__(self, key: str) -> Any:
+        return LookupResourceWrapper.maybe_wrap(getattr(self.__obj, key))
+
+    def __getitem__(self, key: str) -> Any:
+        return LookupResourceWrapper.maybe_wrap(self.__obj[key])
 
 
 class LookupError(Exception):
@@ -165,6 +221,7 @@ class NylTemplateEngine:
                         )
                     )
 
+        result = LookupResourceWrapper.materialize(result)
         return Manifests(result)
 
 
