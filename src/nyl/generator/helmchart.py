@@ -91,7 +91,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             else:
                 logger.opt(ansi=True).debug("Using cached Helm chart '{}' from repository '{}'", chart, repository)
 
-            chart = str(cache_dir / next(cache_dir.iterdir()))
+            chart = str(next(cache_dir.iterdir()))
             repository = None
 
         elif chart_ref.git:
