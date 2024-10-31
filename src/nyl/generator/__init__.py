@@ -4,8 +4,9 @@ This package contains everything related to the generation of Kubernetes manifes
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, ClassVar, Generic, TypeVar
+from typing import Any, ClassVar, Generic, Sequence, TypeVar
 
+from nyl.resources import NylResource
 from stablehash import stablehash
 
 from nyl.tools.types import Manifest, Manifests
@@ -37,6 +38,7 @@ def reconcile_generator(
     generator: Generator[Manifest],
     manifests: Manifests,
     on_generated: Callable[[Manifest], Manifests],
+    skip_resources: Sequence[type[NylResource]] = (),
 ) -> Manifests:
     """
     Recursively reconcile all Nyl resources in the manifests using the given generator.
@@ -46,6 +48,7 @@ def reconcile_generator(
         manifests: The list of manifests to reconcile.
         on_generated: A callback to call on each generated manifest, giving the opportunity to modify it.
                       This is used to pass the manifest through the `structured-templates` engine.
+        skip_resources: A list of Nyl resources to ignore.
     """
 
     queue = Manifests(manifests)
@@ -63,8 +66,11 @@ def reconcile_generator(
             result.append(resource)
         else:
             seen.add(resource_hash)
-            for manifest in generator.generate(resource):
-                queue.extend(on_generated(manifest))
+            if any(t.matches(resource) for t in skip_resources):
+                queue.append(resource)
+            else:
+                for manifest in generator.generate(resource):
+                    queue.extend(on_generated(manifest))
             loops += 1
 
     return result

@@ -2,19 +2,11 @@
 weight: 5
 ---
 
-# Inlining
+# HelmChart
 
-Nyl supports inlining of Kubernetes resources generated from templates in your configuration. Resources that are
-inlined by Nyl are typically in the `inline.nyl.io/v1` API group, however Nyl also has the concept of
-[components](./components.md) which effectively allow you to define your own API groups and resource kinds for
-inlined resources.
-
-## Helm charts
-
-Nyl currently only supports inlining of Helm charts. Helm charts are inlined by specifying a `HelmChart` resource in
-your configuration. Just like any other resource, the Helm chart resource values can be templated using Nyl's
-[structured templating](../templating/basics.md) (for example to inject secrets), and are then rendered to Kubernetes
-resources that are inlined in your configuration.
+Nyl allows you to inline Helm charts by specifying a `HelmChart` resource in your manifest. Just like any other
+resource, the Helm chart resource values can be templated using Nyl's [structured templating](../templating/basics.md)
+(for example to inject secrets), and are then rendered to Kubernetes resources that are inlined in your configuration.
 
 __Example__
 
@@ -28,6 +20,7 @@ spec:
   chart:
     repository: https://charts.bitnami.com/bitnami
     name: nginx
+    # version: "..."
   values:
     controller:
       service:
