@@ -29,7 +29,7 @@ RUN \
     case "$(uname -m)" in \
         x86_64) BIN_ARCH='amd64' ;; \
         aarch64) BIN_ARCH='arm64' ;; \
-        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+        *) echo "Unsupported architecture: $(uname -m)" && exit 1 ;; \
     esac \
     && printf "%s" "$BIN_ARCH" > /BINARY_ARCH
 
@@ -57,12 +57,24 @@ RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/s
 FROM fetch-bin-base AS sops-bin
 # Find SOPS releases at https://github.com/getsops/sops/releases
 ARG SOPS_VERSION=v3.9.0
-RUN curl -LO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) \
+RUN curl -fLO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) \
     && mv sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) /usr/local/bin/sops \
     && chmod +x /usr/local/bin/sops \
     && upx /usr/local/bin/sops \
     && sops --version
 
+FROM fetch-bin-base AS kyverno-bin
+ARG KYVERNO_VERSION=1.13.0
+RUN \
+    case "$(uname -m)" in \
+        x86_64) KYVERNO_ARCH='x86_64' ;; \
+        aarch64) KYVERNO_ARCH='arm64' ;; \
+        *) echo "Unsupported architecture: $(uname -m)" && exit 1 ;; \
+    esac \
+    && curl -fLO https://github.com/kyverno/kyverno/releases/download/v${KYVERNO_VERSION}/kyverno-cli_v${KYVERNO_VERSION}_linux_${KYVERNO_ARCH}.tar.gz \
+    && tar -xvf kyverno-cli_v${KYVERNO_VERSION}_linux_${KYVERNO_ARCH}.tar.gz \
+    && mv kyverno /usr/local/bin/ \
+    && upx /usr/local/bin/kyverno
 
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
@@ -73,6 +85,7 @@ COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
 RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:999 /usr/local/bin/argocd-cmp-server
 COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
 COPY --from=sops-bin /usr/local/bin/sops /usr/local/bin/sops
+COPY --from=kyverno-bin /usr/local/bin/kyverno /usr/local/bin/kyverno
 COPY --from=build /opt/nyl /opt/nyl
 RUN ln -s /opt/nyl/.venv/bin/nyl /usr/local/bin/nyl
 COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml

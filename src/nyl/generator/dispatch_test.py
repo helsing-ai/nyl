@@ -46,6 +46,10 @@ def test__DispatchingGenerator__default__creates_generator_for_every_nyl_inline_
         kube_api_versions=set(),
     )
 
+    # We make an exception for the PostProcessor resource as it has no generator.
+
     for kind in resource_kinds:
+        if kind == "PostProcessor":
+            continue
         assert kind in generator.generators.keys()
         assert isinstance(generator.generators[kind], Generator)

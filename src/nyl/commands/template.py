@@ -5,6 +5,7 @@ from pathlib import Path
 from textwrap import indent
 from typing import Optional
 from loguru import logger
+from nyl.resources.postprocessor import PostProcessor
 from typer import Argument, Option
 from nyl.tools import yaml
 from nyl.generator import reconcile_generator
@@ -177,7 +178,12 @@ def template(
                 generator,
                 source.manifests,
                 on_generated=lambda m: template_engine.evaluate(Manifests([m])),
+                skip_resources=[PostProcessor],
             )
+
+        # Find any PostProcessor resources and apply them.
+        source.manifests, post_processors = PostProcessor.extract_from_list(source.manifests)
+        source.manifests = PostProcessor.apply_all(source.manifests, post_processors, source.file)
 
         # Find the namespaces that are defined in the file. If we find any manifests without a namespace, we will
         # inject that namespace name into them. Also find the applyset defined in the file.
