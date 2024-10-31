@@ -38,6 +38,11 @@ jobs:
       - name: Run ${{ matrix.step }}
         run: krakenw run fmt lint
 
+      - name: Install the Kyverno CLI (required for some Nyl features)
+        uses: kyverno/action-install-cli@v0.2.0
+        with:
+          release: 'v1.13.0'
+
       # TODO: Until krakenw run test works (currently fails because of doctest modules)
       - name: Run tests
         run: uv run pytest -vv

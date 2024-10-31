@@ -9,6 +9,12 @@ Requires Python 3.11 or newer.
 
     $ uvx nyl
 
+For some features, additional programs must be available:
+
+* [kubectl](https://kubernetes.io/de/docs/reference/kubectl/) for most operations
+* [kyverno](https://kyverno.io/docs/kyverno-cli/) when using the Nyl `PostProcessor` resource
+* [sops](https://github.com/getsops/sops) when using the SOPS secrets provider
+
 ## Local development
 
 Install the project with [Uv](https://docs.astral.sh/uv/).
