@@ -75,7 +75,11 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
 
                 # Write inline policies to files.
                 inline_dir = tmp / "inline-policies"
+                inline_dir.mkdir()
                 for key, value in self.spec.kyverno.inlinePolicies.items():
+                    # If the file name does not end with a YAML suffix, Kyverno will ignore the input file.
+                    if not key.endswith(".yml") and not key.endswith(".yaml"):
+                        key += ".yaml"
                     policy_paths.append(inline_dir.joinpath(key))
                     policy_paths[-1].write_text(yaml.safe_dump(value))
 
