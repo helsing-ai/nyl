@@ -67,9 +67,13 @@ class KubeconfigManager:
 
                 command = [
                     "ssh",
+                    "-p",
+                    str(source.port),
                     f"{source.user}@{source.host}",
                     f"cat {shlex.quote(source.path)}",
                 ]
+                if source.sudo:
+                    command[4] = "sudo " + command[4]
                 if source.identity_file:
                     command[1:1] = ["-i", str(self._cwd / source.identity_file)]
 

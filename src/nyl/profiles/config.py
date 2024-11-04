@@ -58,9 +58,19 @@ class KubeconfigFromSsh:
     The username to connect to the remote host with.
     """
 
+    sudo: bool = False
+    """
+    Use `sudo cat` to retrieve the file instead of ust `cat`.
+    """
+
     host: str
     """
     The remote host to connect to.
+    """
+
+    port: int = 22
+    """
+    SSH port to use.
     """
 
     identity_file: str | None = None

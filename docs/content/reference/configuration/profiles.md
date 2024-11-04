@@ -45,8 +45,10 @@ machine and use that to connect to the Kubernetes cluster.
     ```toml title="nyl-profile.toml"
     [default.kubeconfig]
     type = "ssh"
+    sudo = false  # default, set to true to use `sudo cat <path>`
     user = "root"
     host = "mycluster.example.com"
+    port = 22 # default
     path = "/etc/rancher/k3s/k3s.yaml"
 
     [default.tunnel]
@@ -61,8 +63,10 @@ machine and use that to connect to the Kubernetes cluster.
     default:
       kubeconfig:
         type: ssh
+        sudo: false
         user: root
         host: mycluster.example.com
+        port: 22
         path: /etc/rancher/k3s/k3s.yaml
       tunnel:
         type: ssh
@@ -77,8 +81,10 @@ machine and use that to connect to the Kubernetes cluster.
       "default": {
         "kubeconfig": {
           "type": "ssh",
+          "sudo": false,
           "user": "root",
           "host": "mycluster.example.com",
+          "port": 22,
           "path": "/etc/rancher/k3s/k3s.yaml"
         },
         "tunnel": {
