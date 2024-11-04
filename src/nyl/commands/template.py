@@ -1,9 +1,11 @@
 import atexit
+from typing import cast
 from dataclasses import dataclass
+from enum import Enum
 import os
 from pathlib import Path
 from textwrap import indent
-from typing import Optional
+from typing import Any, Literal, Optional
 from loguru import logger
 from nyl.resources.postprocessor import PostProcessor
 from typer import Argument, Option
@@ -26,6 +28,16 @@ from nyl.tools.types import Manifest, Manifests
 from . import app
 
 DEFAULT_PROFILE = "default"
+
+
+# Need an enum for typer
+class OnLookupFailure(str, Enum):
+    Error = "Error"
+    CreatePlaceholder = "CreatePlaceholder"
+    SkipResource = "SkipResource"
+
+    def to_literal(self) -> Literal["Error", "CreatePlaceholder", "SkipResource"]:
+        return cast(Any, self.name)  # type: ignore[no-any-return]
 
 
 @dataclass
@@ -87,6 +99,10 @@ def template(
         None,
         help="The directory to store cache data in. If not set, a directory in the --state-dir is used.",
         envvar="NYL_CACHE_DIR",
+    ),
+    on_lookup_failure: OnLookupFailure | None = Option(
+        None,
+        help="Specify what to do when a lookup() call in a Nyl templated manifest fails. This overrides the nyl-project.toml setting if specified.",
     ),
 ) -> None:
     """
@@ -156,7 +172,11 @@ def template(
     client = ApiClient()
 
     template_engine = NylTemplateEngine(
-        secrets.providers[secrets_provider], client, create_placeholders=project.config.settings.generate_placeholders
+        secrets.providers[secrets_provider],
+        client,
+        on_lookup_failure=on_lookup_failure.to_literal()
+        if on_lookup_failure
+        else project.config.settings.on_lookup_failure,
     )
 
     generator = DispatchingGenerator.default(

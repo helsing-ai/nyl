@@ -5,7 +5,8 @@ Implements Nyl's variant of structured templating.
 from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar, Iterator, Sequence, TypeVar, cast
+from typing import Any, Callable, ClassVar, Iterator, Literal, Sequence, TypeVar, cast
+from loguru import logger
 from structured_templates import TemplateEngine as _TemplateEngine
 from structured_templates.exceptions import TemplateError
 from kubernetes.client.api_client import ApiClient
@@ -163,15 +164,14 @@ class NylTemplateEngine:
     Args:
         secrets: The secrets engine to make available to templated expressions.
         client: The Kubernetes API client to use for lookups.
-        create_placeholders: Whether to create placeholders for templates that fail to evaluate due
-            to unsatisfied conditions (e.g. lookup errors).
+        on_lookup_failure: What should happen on failure to perform lookups of other Kubernetes resources.
     """
 
     current: ClassVar["NylTemplateEngine"]
 
     secrets: SecretProvider
     client: ApiClient
-    create_placeholders: bool
+    on_lookup_failure: Literal["Error", "CreatePlaceholder", "SkipResource"] = "Error"
 
     def __post_init__(self) -> None:
         self.dynamic_client = DynamicClient(self.client)
@@ -202,24 +202,29 @@ class NylTemplateEngine:
                 try:
                     result.append(cast(Manifest, self._new_engine().evaluate(item, recursive)))
                 except TemplateError as exc:
-                    if not isinstance(exc.__cause__, LookupError) or not self.create_placeholders:
-                        raise
-
-                    result.append(
-                        Manifest(
-                            {
-                                "apiVersion": "nyl.io/v1",
-                                "kind": "Placeholder",
-                                "metadata": {
-                                    "name": _get_resource_slug(
-                                        item["apiVersion"], item["kind"], item["metadata"]["name"]
-                                    ),
-                                    "namespace": item["metadata"].get("namespace"),
-                                },
-                                "spec": {"reason": "LookupError", "message": str(exc.__cause__)},
-                            }
-                        )
-                    )
+                    if isinstance(exc.__cause__, LookupError):
+                        if self.on_lookup_failure == "CreatePlaceholder":
+                            result.append(
+                                Manifest(
+                                    {
+                                        "apiVersion": "nyl.io/v1",
+                                        "kind": "Placeholder",
+                                        "metadata": {
+                                            "name": _get_resource_slug(
+                                                item["apiVersion"], item["kind"], item["metadata"]["name"]
+                                            ),
+                                            "namespace": item["metadata"].get("namespace"),
+                                        },
+                                        "spec": {"reason": "LookupError", "message": str(exc.__cause__)},
+                                    }
+                                )
+                            )
+                            continue
+                        elif self.on_lookup_failure == "SkipResource":
+                            # TODO: More/clearer information on which resource is being skipped and why.
+                            logger.warning("Failed lookup(), skipping resource\n\n{}", exc)
+                            continue
+                    raise
 
         result = LookupResourceWrapper.materialize(result)
         return Manifests(result)

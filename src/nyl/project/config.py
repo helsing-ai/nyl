@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Literal
 
 from loguru import logger
 
@@ -24,10 +24,10 @@ class ProjectSettings:
     after the namespace.
     """
 
-    generate_placeholders: bool = False
+    on_lookup_failure: Literal["Error", "CreatePlaceholder", "SkipResource"] = "Error"
     """
-    If enabled, resources with templates that fail to evaluate due to unsatisfied conditions (e.g. lookup errors) will
-    be replaced with `nyl.io/v1/Placeholder` resources during templating. Otherwise, the error will be propagated.
+    Can be used to tell Nyl to create a placeholder resource (`nyl.io/v1/Placeholder`) or skip a resource that was
+    dependant on a `lookup()` call if the lookup fails. Otherwise, the error will be propagated.
     """
 
     components_path: Path | None = None
