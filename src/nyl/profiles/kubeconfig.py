@@ -98,8 +98,13 @@ class KubeconfigManager:
         if api_host is None:
             raise ValueError(f"no hostname in Kubeconfig server URL: {server!r}")
 
-        if isinstance(source, KubeconfigFromSsh) and source.replace_apiserver_hostname:
-            api_host = source.replace_apiserver_hostname
+        if isinstance(source, KubeconfigFromSsh):
+            if source.replace_apiserver_hostname:
+                api_host = source.replace_apiserver_hostname
+            elif api_host in ("127.0.0.1", "0.0.0.0", "localhost"):
+                # Automatically replace the API server since we won't be able to reach the Kubernetes API server
+                # pointing to localhost from the current machine.
+                api_host = source.host
 
         raw_kubeconfig.chmod(0o600)
         return GetRawKubeconfigResult(

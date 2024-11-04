@@ -92,7 +92,10 @@ class KubeconfigFromSsh:
     """
     Replace the hostname in the apiserver configuration of the Kubeconfig. This is useful for example with K3s when
     reading reading the `/etc/rancher/k3s/k3s.yaml` file from a remote host, but the API server in that file is not
-    reachable from the local machine (e.g. because it `0.0.0.0`).
+    reachable from that machine.
+
+    Note that if the host in the retrieve Kubeconfig is `localhost`, `0.0.0.0` or `127.0.0.1`, it will be automatically
+    replaced with the specified `host` that was also SSH-ed to, unless this option is set.
     """
 
 

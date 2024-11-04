@@ -50,6 +50,7 @@ machine and use that to connect to the Kubernetes cluster.
     host = "mycluster.example.com"
     port = 22 # default
     path = "/etc/rancher/k3s/k3s.yaml"
+    # replace_apiserver_hostname
 
     [default.tunnel]
     type = "ssh"
@@ -68,6 +69,7 @@ machine and use that to connect to the Kubernetes cluster.
         host: mycluster.example.com
         port: 22
         path: /etc/rancher/k3s/k3s.yaml
+        replace_apiserver_hostname: null
       tunnel:
         type: ssh
         user: root
@@ -85,7 +87,8 @@ machine and use that to connect to the Kubernetes cluster.
           "user": "root",
           "host": "mycluster.example.com",
           "port": 22,
-          "path": "/etc/rancher/k3s/k3s.yaml"
+          "path": "/etc/rancher/k3s/k3s.yaml",
+          "replace_apiserver_hostname": null
         },
         "tunnel": {
           "type": "ssh",
@@ -106,7 +109,7 @@ is reachable from your local machine.
     user = "root"
     host = "mycluster.example.com"
     path = "/etc/rancher/k3s/k3s.yaml"
-    replace_apiserver_hostname = "mycluster.example.com"
+    replace_apiserver_hostname = "reachable-address.com"
     ```
 
 === "YAML"
@@ -118,7 +121,7 @@ is reachable from your local machine.
         user: root
         host: mycluster.example.com
         path: /etc/rancher/k3s/k3s.yaml
-        replace_apiserver_hostname: mycluster.example.com
+        replace_apiserver_hostname: reachable-address.com
     ```
 
 === "JSON"
@@ -131,10 +134,18 @@ is reachable from your local machine.
           "user": "root",
           "host": "mycluster.example.com",
           "path": "/etc/rancher/k3s/k3s.yaml",
-          "replace_apiserver_hostname": "mycluster.example.com"
+          "replace_apiserver_hostname": "reachable-address.com"
         }
     }
     ```
+
+!!! note
+
+    When retrieving a Kubeconfig via SSH that has `127.0.0.1`, `0.0.0.0` or `localhost` as the hostname in the `server`
+    field, and `replace_apiserver_hostname` is not specified, Nyl will automatically replace it with the `host` field
+    specified that was used to execute the remote command to read the Kubeconfig. This is because we expect the two
+    hosts to be the same, and you cannot reach the Kubernetes API server through your local machine without using tunnel
+    (which you can use, see [Tunnel management](#tunnel-management)).
 
 If you are you are already setup with a kubeconfig file, you can specify the path to the file directly or have it
 automatically use your `~/.kube/config` file/`KUBECONFIG` environment variable. You may specify the context to use
