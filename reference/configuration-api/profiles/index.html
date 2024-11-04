@@ -704,9 +704,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#nyl.profiles.config.KubeconfigFromSsh.port" class="md-nav__link">
+    <span class="md-ellipsis">
+      port
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#nyl.profiles.config.KubeconfigFromSsh.replace_apiserver_hostname" class="md-nav__link">
     <span class="md-ellipsis">
       replace_apiserver_hostname
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nyl.profiles.config.KubeconfigFromSsh.sudo" class="md-nav__link">
+    <span class="md-ellipsis">
+      sudo
     </span>
   </a>
   
@@ -1220,9 +1238,27 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#nyl.profiles.config.KubeconfigFromSsh.port" class="md-nav__link">
+    <span class="md-ellipsis">
+      port
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#nyl.profiles.config.KubeconfigFromSsh.replace_apiserver_hostname" class="md-nav__link">
     <span class="md-ellipsis">
       replace_apiserver_hostname
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nyl.profiles.config.KubeconfigFromSsh.sudo" class="md-nav__link">
+    <span class="md-ellipsis">
+      sudo
     </span>
   </a>
   
@@ -1541,6 +1577,28 @@
 
 
 
+<h4 id="nyl.profiles.config.KubeconfigFromSsh.port" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">22</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>SSH port to use.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h4 id="nyl.profiles.config.KubeconfigFromSsh.replace_apiserver_hostname" class="doc doc-heading">
             <code class="highlight language-python"><span class="n">replace_apiserver_hostname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span></code>
 
@@ -1556,7 +1614,31 @@
 
         <p>Replace the hostname in the apiserver configuration of the Kubeconfig. This is useful for example with K3s when
 reading reading the <code>/etc/rancher/k3s/k3s.yaml</code> file from a remote host, but the API server in that file is not
-reachable from the local machine (e.g. because it <code>0.0.0.0</code>).</p>
+reachable from that machine.</p>
+<p>Note that if the host in the retrieve Kubeconfig is <code>localhost</code>, <code>0.0.0.0</code> or <code>127.0.0.1</code>, it will be automatically
+replaced with the specified <code>host</code> that was also SSH-ed to, unless this option is set.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="nyl.profiles.config.KubeconfigFromSsh.sudo" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">sudo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Use <code>sudo cat</code> to retrieve the file instead of ust <code>cat</code>.</p>
     </div>
 
 </div>
