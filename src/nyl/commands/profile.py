@@ -4,13 +4,13 @@ Interact with your Nyl profile configuration.
 
 import shlex
 
-from typer import Argument
+from typer import Argument, Typer
+
 from nyl.commands import PROVIDER
 from nyl.profiles import ProfileManager
 from nyl.tools.typer import new_typer
 
-
-app = new_typer(name="profile", help=__doc__)
+app: Typer = new_typer(name="profile", help=__doc__)
 
 
 @app.command()

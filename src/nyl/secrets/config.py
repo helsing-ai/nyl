@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+
 from loguru import logger
 
 from nyl.secrets import SecretProvider
@@ -39,8 +40,9 @@ class SecretsConfig:
         """
 
         from databind.json import load as deser
-        from nyl.secrets.null import NullSecretsProvider
+
         from nyl.project.config import ProjectConfig
+        from nyl.secrets.null import NullSecretsProvider
 
         if file is None:
             file = find_config_file(SecretsConfig.FILENAMES, cwd, required=False)

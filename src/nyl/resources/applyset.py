@@ -1,10 +1,11 @@
 import base64
-from dataclasses import dataclass
 import hashlib
+from dataclasses import dataclass
 from typing import Annotated, ClassVar
-from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
+
 from databind.core import SerializeDefaults
 
+from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
 from nyl.tools.types import Manifests
 
 APPLYSET_LABEL_PART_OF = "applyset.kubernetes.io/part-of"

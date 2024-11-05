@@ -1,9 +1,11 @@
 import os
 import shutil
-from tempfile import TemporaryDirectory
 import unittest.mock
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import pytest
+
 from nyl.secrets.sops import SopsFile
 from nyl.tools.di import DependenciesProvider
 

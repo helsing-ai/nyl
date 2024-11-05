@@ -7,12 +7,13 @@ from pathlib import Path
 from textwrap import dedent
 
 from loguru import logger
-from typer import Option
+from typer import Option, Typer
+
 from nyl.commands import PROVIDER
 from nyl.project.config import ProjectConfig
 from nyl.tools.typer import new_typer
 
-app = new_typer(name="new", help=__doc__)
+app: Typer = new_typer(name="new", help=__doc__)
 
 
 class ComponentType(Enum):

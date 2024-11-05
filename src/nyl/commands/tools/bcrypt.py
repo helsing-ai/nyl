@@ -2,6 +2,7 @@ import sys
 from typing import Optional
 
 from bcrypt import gensalt, hashpw
+
 from . import app
 
 

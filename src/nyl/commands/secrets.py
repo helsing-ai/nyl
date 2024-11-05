@@ -6,14 +6,14 @@ import json
 import json as _json
 
 from loguru import logger
-from typer import Option
+from typer import Option, Typer
+
+from nyl.commands import PROVIDER, ApiClientConfig
 from nyl.secrets import SecretProvider
 from nyl.secrets.config import SecretsConfig
 from nyl.tools.typer import new_typer
-from nyl.commands import ApiClientConfig, PROVIDER
 
-
-app = new_typer(name="secrets", help=__doc__)
+app: Typer = new_typer(name="secrets", help=__doc__)
 
 
 @app.callback()

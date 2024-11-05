@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -141,6 +142,7 @@ class ProfileConfig:
         """
 
         from databind.json import load as deser
+
         from nyl.project.config import ProjectConfig
 
         if file is None:

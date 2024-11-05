@@ -1,27 +1,28 @@
 import atexit
-from typing import cast
+import os
 from dataclasses import dataclass
 from enum import Enum
-import os
 from pathlib import Path
 from textwrap import indent
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, cast
+
 from loguru import logger
-from nyl.resources.postprocessor import PostProcessor
 from typer import Argument, Option
-from nyl.commands import app, PROVIDER, ApiClientConfig
-from nyl.tools import yaml
+
+from kubernetes.client.api_client import ApiClient
+from kubernetes.config.incluster_config import load_incluster_config
+from kubernetes.config.kube_config import load_kube_config
+from nyl.commands import PROVIDER, ApiClientConfig, app
 from nyl.generator import reconcile_generator
 from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import ProfileManager
-from kubernetes.config.incluster_config import load_incluster_config
-from kubernetes.config.kube_config import load_kube_config
-from kubernetes.client.api_client import ApiClient
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
+from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests

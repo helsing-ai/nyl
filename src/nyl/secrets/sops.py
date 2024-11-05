@@ -1,17 +1,18 @@
-from collections.abc import Mapping
-from dataclasses import dataclass, field
 import json
 import os
-from pathlib import Path
 import subprocess
+from collections.abc import Mapping
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Iterable
+
 from databind.core import Union
 from loguru import logger
 
+from nyl.secrets import SecretProvider, SecretValue
 from nyl.tools.di import DependenciesProvider
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
-from nyl.secrets import SecretProvider, SecretValue
 
 
 @Union.register(SecretProvider, name="sops")

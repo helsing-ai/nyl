@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from typing import Annotated, ClassVar
-from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
+
 from databind.core import SerializeDefaults
+
+from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
 
 
 @dataclass(kw_only=True)

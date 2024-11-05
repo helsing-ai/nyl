@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, Iterable
-from pathlib import Path
-from databind.core import Union
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterable
+
+from databind.core import Union
 
 from nyl.tools.di import DependenciesProvider
-
 
 SecretValue = dict[str, Any] | list[Any] | str | int | float | bool | None
 """
@@ -74,4 +74,4 @@ class SecretProvider(ABC):
         """
 
 
-from . import config, sops, kubernetes  # noqa
+from . import config, kubernetes, sops  # noqa

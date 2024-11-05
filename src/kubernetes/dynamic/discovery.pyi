@@ -1,5 +1,6 @@
 from collections.abc import Sequence
 from typing import Any
+
 from kubernetes.dynamic.resource import Resource
 
 class Discoverer:

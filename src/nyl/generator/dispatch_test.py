@@ -1,9 +1,10 @@
 import importlib
 import pkgutil
-from unittest.mock import MagicMock
 from pathlib import Path
+from unittest.mock import MagicMock
 
 from loguru import logger
+
 from nyl.generator import Generator
 from nyl.generator.dispatch import DispatchingGenerator
 from nyl.resources import API_VERSION_INLINE, NylResource

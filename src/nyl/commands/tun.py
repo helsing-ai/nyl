@@ -3,10 +3,11 @@ Access SSH tunnels globally managed by Nyl.
 """
 
 from pathlib import Path
+
 from loguru import logger
-from typer import Argument
 from rich.console import Console
 from rich.table import Table
+from typer import Argument, Typer
 
 from nyl.commands import PROVIDER
 from nyl.profiles import get_tunnel_spec
@@ -15,8 +16,7 @@ from nyl.profiles.tunnel import TunnelManager, TunnelSpec, TunnelStatus
 from nyl.tools.fs import shorter_path
 from nyl.tools.typer import new_typer
 
-
-app = new_typer(name="tun", help=__doc__)
+app: Typer = new_typer(name="tun", help=__doc__)
 
 
 @app.command()
