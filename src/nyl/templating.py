@@ -14,7 +14,7 @@ from kubernetes.client.api_client import ApiClient
 from kubernetes.dynamic.client import DynamicClient
 from kubernetes.client.exceptions import ApiException
 from kubernetes.dynamic.resource import ResourceField, ResourceInstance
-from nyl.secrets.config import SecretProvider
+from nyl.secrets import SecretProvider
 from nyl.tools.types import Manifest, Manifests
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])

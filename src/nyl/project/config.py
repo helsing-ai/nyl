@@ -6,7 +6,7 @@ from typing import Callable, Literal
 from loguru import logger
 
 from nyl.profiles.config import Profile
-from nyl.secrets.config import SecretProvider
+from nyl.secrets import SecretProvider
 from nyl.tools.fs import distance_to_cwd, find_config_file
 from nyl.tools.loads import loadf
 

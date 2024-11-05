@@ -3,7 +3,9 @@ Interact with the secrets providers configured in `nyl-secrets.yaml`.
 """
 
 import json
+import json as _json
 
+from loguru import logger
 from typer import Option
 from nyl.secrets.config import SecretsConfig
 from nyl.tools.typer import new_typer
@@ -59,3 +61,25 @@ def get(key: str, pretty: bool = False) -> None:
 
     secrets = SecretsConfig.load()
     print(json.dumps(secrets.providers[provider].get(key), indent=4 if pretty else None))
+
+
+@app.command()
+def set(key: str, value: str, json: bool = False) -> None:
+    """
+    Set the value of a secret.
+    """
+
+    logger.info("Setting key '{}' in provider '{}'", key, provider)
+    secrets = SecretsConfig.load()
+    secrets.providers[provider].set(key, _json.loads(value) if json else value)
+
+
+@app.command()
+def unset(key: str) -> None:
+    """
+    Unset the value of a secret.
+    """
+
+    logger.info("Unsetting key '{}' in provider '{}'", key, provider)
+    secrets = SecretsConfig.load()
+    secrets.providers[provider].unset(key)

@@ -10,7 +10,7 @@ from loguru import logger
 
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
-from .config import SecretProvider, SecretValue
+from nyl.secrets import SecretProvider, SecretValue
 
 
 @Union.register(SecretProvider, name="sops")
@@ -44,6 +44,18 @@ class SopsFile(SecretProvider):
             return env
         else:
             return os.environ
+
+    def _key2sops(self, key: str) -> str:
+        """
+        Convert a dotted key to a key that SOPS understands for setting/unsetting.
+        """
+
+        # Convert the key to one that SOPS understands.
+        # TODO: Support integer indexing?
+        sops_key = ""
+        for part in key.split("."):
+            sops_key += f'["{part}"]'
+        return sops_key
 
     def load(self, input_type: str | None = None) -> SecretValue:
         if self._cache is None:
@@ -98,7 +110,7 @@ class SopsFile(SecretProvider):
                         (value, f"{prefix}.{key}" if prefix else key) for key, value in sorted(value.items())
                     ] + stack
 
-    def get(self, key: str) -> SecretValue:
+    def get(self, key: str, /) -> SecretValue:
         parts = key.split(".")
         value = self.load()
         for idx, part in enumerate(parts):
@@ -108,6 +120,25 @@ class SopsFile(SecretProvider):
                 raise KeyError(".".join(parts[: idx + 1]))
             value = value[part]
         return value
+
+    def set(self, key: str, value: SecretValue, /) -> None:
+        sops_key = self._key2sops(key)
+        command = ["sops", "set", str(self.path), sops_key, json.dumps(value)]
+        safe_command = ["sops", "set", str(self.path), sops_key, "MASKED"]
+        logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, safe_command))
+        subprocess.run(command, env=self._getenv(), check=True)
+
+    def unset(self, key: str, /) -> None:
+        sops_key = self._key2sops(key)
+        command = ["sops", "unset", str(self.path), sops_key]
+        logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
+        try:
+            subprocess.run(command, env=self._getenv(), text=True, capture_output=True, check=True)
+        except subprocess.CalledProcessError as exc:
+            if exc.returncode == 1 and "Key not found" in exc.stderr:
+                raise KeyError(key)
+            else:
+                raise
 
 
 def detect_sops_format(suffix: str) -> str | None:

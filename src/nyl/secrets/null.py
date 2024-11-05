@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Iterable
-from nyl.secrets.config import SecretProvider
+from nyl.secrets import SecretProvider, SecretValue
 
 
 class NullSecretsProvider(SecretProvider):
@@ -12,3 +12,9 @@ class NullSecretsProvider(SecretProvider):
 
     def get(self, secret_name: str) -> str:
         raise KeyError(f"No secrets provider configured; cannot retrieve secret '{secret_name}'.")
+
+    def set(self, secret_name: str, value: SecretValue) -> None:
+        raise RuntimeError(f"No secrets provider configured; cannot set secret '{secret_name}'")
+
+    def unset(self, secret_name: str) -> None:
+        raise RuntimeError(f"No secrets provider configured; cannot unset secret '{secret_name}'")

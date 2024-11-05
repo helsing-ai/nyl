@@ -44,6 +44,29 @@ stringData:
   password: ${{ secrets.get("my-password") }}
 ```
 
+## CLI
+
+The `nyl secrets` command allows you to interact with the configured secret provider(s).
+
+```
+ Usage: nyl secrets [OPTIONS] COMMAND [ARGS]...                                 
+                                                                                
+ Interact with the secrets providers configured in `nyl-secrets.yaml`.          
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --provider        TEXT  The name of the configured secrets provider to use.  │
+│                         [env var: NYL_SECRETS]                               │
+│                         [default: default]                                   │
+│ --help                  Show this message and exit.                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ get     Get the value of a secret as JSON.                                   │
+│ list    List the keys for all secrets in the provider.                       │
+│ set     Set the value of a secret.                                           │
+│ unset   Unset the value of a secret.                                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
 ---
 
 ## Provider: [Sops]
