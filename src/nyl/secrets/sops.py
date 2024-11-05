@@ -8,6 +8,7 @@ from typing import Iterable
 from databind.core import Union
 from loguru import logger
 
+from nyl.tools.di import DependenciesProvider
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
 from nyl.secrets import SecretProvider, SecretValue
@@ -95,7 +96,7 @@ class SopsFile(SecretProvider):
 
     # SecretProvider
 
-    def init(self, config_file: Path) -> None:
+    def init(self, config_file: Path, dependencies: DependenciesProvider) -> None:
         self.path = (config_file.parent / self.path).absolute()
 
     def keys(self) -> Iterable[str]:
@@ -136,7 +137,7 @@ class SopsFile(SecretProvider):
             subprocess.run(command, env=self._getenv(), text=True, capture_output=True, check=True)
         except subprocess.CalledProcessError as exc:
             if exc.returncode == 1 and "Key not found" in exc.stderr:
-                raise KeyError(key)
+                logger.warning("Key '{}' not found in SOPS file '{}'", key, self.path)
             else:
                 raise
 

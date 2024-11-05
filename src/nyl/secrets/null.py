@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import Iterable
 from nyl.secrets import SecretProvider, SecretValue
+from nyl.tools.di import DependenciesProvider
 
 
 class NullSecretsProvider(SecretProvider):
-    def init(self, config_file: Path) -> None:
+    def init(self, config_file: Path, dependencies: DependenciesProvider) -> None:
         pass
 
     def keys(self) -> Iterable[str]:

@@ -151,6 +151,7 @@ class ProfileConfig:
                 over=file,
                 cwd=cwd,
                 predicate=lambda cfg: bool(cfg.config.profiles),
+                init_secret_providers=False,
             )
             if project:
                 logger.debug("Using profiles from project configuration '{}'", project.file)
