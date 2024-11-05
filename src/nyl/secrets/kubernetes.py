@@ -23,7 +23,7 @@ class KubernetesSecretProvider(SecretProvider):
 
     name: str
     namespace: str
-    _api: CoreV1Api = field(init=False)  # initialized in init()
+    _api: CoreV1Api = field(init=False, repr=False)  # initialized in init()
     _cache: dict[str, str] | None = field(init=False, repr=False, default=None)
 
     def load(self, force: bool = False) -> dict[str, str]:
