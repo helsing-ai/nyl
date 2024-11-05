@@ -8,6 +8,7 @@ from textwrap import dedent
 
 from loguru import logger
 from typer import Option
+from nyl.commands import PROVIDER
 from nyl.project.config import ProjectConfig
 from nyl.tools.typer import new_typer
 
@@ -106,5 +107,5 @@ def component(
 ) -> None:
     """Create the boilerplate for a Nyl component in the components directory."""
 
-    components_path = ProjectConfig.load().get_components_path()
+    components_path = PROVIDER.get(ProjectConfig).get_components_path()
     chart(components_path / api_version / kind)

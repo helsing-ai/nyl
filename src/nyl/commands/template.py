@@ -9,6 +9,7 @@ from typing import Any, Literal, Optional
 from loguru import logger
 from nyl.resources.postprocessor import PostProcessor
 from typer import Argument, Option
+from nyl.commands import app, PROVIDER, ApiClientConfig
 from nyl.tools import yaml
 from nyl.generator import reconcile_generator
 from nyl.generator.dispatch import DispatchingGenerator
@@ -24,8 +25,6 @@ from nyl.templating import NylTemplateEngine
 from nyl.tools.kubectl import Kubectl
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests
-
-from . import app
 
 DEFAULT_PROFILE = "default"
 
@@ -172,12 +171,10 @@ def template(
     #       plugin without granting it access to the Kubernetes API. Most relevant bits of information that Nyl requires
     #       about the cluster are passed via the environment variables.
     #       See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
-    if in_cluster:
-        client = get_incluster_kubernetes_client()
-    else:
-        client = get_profile_kubernetes_client(ProfileManager.load(required=False), profile=profile)
+    PROVIDER.set(ApiClientConfig, ApiClientConfig(in_cluster, profile))
+    client = PROVIDER.get(ApiClient)
 
-    project = ProjectConfig.load()
+    project = PROVIDER.get(ProjectConfig)
     if generate_applysets is not None:
         project.config.settings.generate_applysets = generate_applysets
 
@@ -187,7 +184,7 @@ def template(
     if cache_dir is None:
         cache_dir = state_dir / "cache"
 
-    secrets = SecretsConfig.load()
+    secrets = PROVIDER.get(SecretsConfig)
 
     template_engine = NylTemplateEngine(
         secrets.providers[secrets_provider],

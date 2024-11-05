@@ -4,6 +4,7 @@ applications directly or integrate as an ArgoCD ConfigManagementPlugin.
 """
 
 import atexit
+from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
@@ -14,12 +15,40 @@ from enum import Enum
 import sys
 from loguru import logger
 from typer import Option
+from nyl.profiles import ProfileManager
+from nyl.project.config import ProjectConfig
+from nyl.secrets.config import SecretsConfig
+from nyl.tools.di import DependenciesProvider
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.typer import new_typer
+from kubernetes.client.api_client import ApiClient
 
 
 app = new_typer(help=__doc__)
+
+# A global instance that we use for dependency injection.
+PROVIDER = DependenciesProvider.default()
+PROVIDER.set_lazy(ProfileManager, lambda: ProfileManager.load(required=False))
+PROVIDER.set_lazy(SecretsConfig, lambda: SecretsConfig.load(dependencies=PROVIDER))
+PROVIDER.set_lazy(ProjectConfig, lambda: ProjectConfig.load(dependencies=PROVIDER))
+PROVIDER.set_lazy(
+    ApiClient,
+    lambda: template.get_incluster_kubernetes_client()
+    if PROVIDER.get(ApiClientConfig).in_cluster
+    else template.get_profile_kubernetes_client(
+        PROVIDER.get(ProfileManager), PROVIDER.get(ApiClientConfig).profile or os.getenv("NYL_PROFILE")
+    ),
+)
+
+
+# Retrieving the Kubernetes API client depends on whether in-cluster configuration should be used or not.
+@dataclass
+class ApiClientConfig:
+    in_cluster: bool
+    " Load the in-cluster configuration if enabled; forego any Nyl profile configuration. "
+    profile: str | None
+    " If not loading the in-cluster configuration, use the given Nyl profile. Otherwise, use the default kubeconfig. "
 
 
 from . import argocd  # noqa: E402

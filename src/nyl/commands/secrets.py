@@ -9,6 +9,7 @@ from loguru import logger
 from typer import Option
 from nyl.secrets.config import SecretsConfig
 from nyl.tools.typer import new_typer
+from nyl.commands import ApiClientConfig, PROVIDER
 
 
 app = new_typer(name="secrets", help=__doc__)
@@ -33,6 +34,8 @@ def callback(
     global provider
     provider = _provider
 
+    PROVIDER.set(ApiClientConfig, ApiClientConfig(False, None))
+
 
 @app.command()
 def list(
@@ -44,7 +47,7 @@ def list(
     List the keys for all secrets in the provider.
     """
 
-    secrets = SecretsConfig.load()
+    secrets = PROVIDER.get(SecretsConfig)
     if providers:
         for alias, impl in secrets.providers.items():
             print(alias, impl)
@@ -59,7 +62,7 @@ def get(key: str, pretty: bool = False) -> None:
     Get the value of a secret as JSON.
     """
 
-    secrets = SecretsConfig.load()
+    secrets = PROVIDER.get(SecretsConfig)
     print(json.dumps(secrets.providers[provider].get(key), indent=4 if pretty else None))
 
 
@@ -70,7 +73,7 @@ def set(key: str, value: str, json: bool = False) -> None:
     """
 
     logger.info("Setting key '{}' in provider '{}'", key, provider)
-    secrets = SecretsConfig.load()
+    secrets = PROVIDER.get(SecretsConfig)
     secrets.providers[provider].set(key, _json.loads(value) if json else value)
 
 
@@ -81,5 +84,5 @@ def unset(key: str) -> None:
     """
 
     logger.info("Unsetting key '{}' in provider '{}'", key, provider)
-    secrets = SecretsConfig.load()
+    secrets = PROVIDER.get(SecretsConfig)
     secrets.providers[provider].unset(key)

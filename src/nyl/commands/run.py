@@ -6,6 +6,7 @@ import sys
 from tempfile import TemporaryDirectory
 from loguru import logger
 from typer import Argument, Option
+from nyl.commands import PROVIDER
 from nyl.tools import yaml
 from nyl.profiles import ActivatedProfile, ProfileManager
 from nyl.profiles.kubeconfig import _trim_to_context
@@ -42,7 +43,7 @@ def run(
     `nyl-profiles.yaml` configuration or from the same-named context in the global kubeconfig.
     """
 
-    manager = ProfileManager.load(required=False)
+    manager = PROVIDER.get(ProfileManager)
     if manager and profile_name in manager.config.profiles:
         with manager:
             profile = manager.activate_profile(profile_name)
