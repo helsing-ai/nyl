@@ -1,10 +1,13 @@
 import os
 import shutil
-from tempfile import TemporaryDirectory
 import unittest.mock
 from pathlib import Path
+from tempfile import TemporaryDirectory
+
 import pytest
+
 from nyl.secrets.sops import SopsFile
+from nyl.tools.di import DependenciesProvider
 
 
 @pytest.fixture
@@ -64,6 +67,6 @@ sops:
         sops_file.write_text(sops_encrypted)
 
         provider = SopsFile(Path("sops.yaml"))
-        provider.init(config_file=Path(tmp) / "nyl-secrets.yaml")
+        provider.init(config_file=Path(tmp) / "nyl-secrets.yaml", dependencies=DependenciesProvider.default())
 
         assert provider.load() == {"a": 1, "b": {"c": 2}, "d": [3, 4]}

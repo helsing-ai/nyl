@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from nyl.resources import API_VERSION_INLINE, NylResource, ObjectMetadata
 
 

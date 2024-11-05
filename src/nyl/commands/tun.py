@@ -3,19 +3,20 @@ Access SSH tunnels globally managed by Nyl.
 """
 
 from pathlib import Path
+
 from loguru import logger
-from typer import Argument
 from rich.console import Console
 from rich.table import Table
+from typer import Argument, Typer
 
+from nyl.commands import PROVIDER
 from nyl.profiles import get_tunnel_spec
 from nyl.profiles.config import ProfileConfig
 from nyl.profiles.tunnel import TunnelManager, TunnelSpec, TunnelStatus
 from nyl.tools.fs import shorter_path
 from nyl.tools.typer import new_typer
 
-
-app = new_typer(name="tun", help=__doc__)
+app: Typer = new_typer(name="tun", help=__doc__)
 
 
 @app.command()
@@ -24,7 +25,7 @@ def status(all: bool = False) -> None:
     Show the status of all tunnels.
     """
 
-    config = ProfileConfig.load(required=False)
+    config = PROVIDER.get(ProfileConfig)
 
     table = Table()
     table.add_column("Source", style="blue")
@@ -84,7 +85,7 @@ def start(profile_name: str = Argument("default", envvar="NYL_PROFILE")) -> None
     Open a tunnel to the cluster targeted by the profile.
     """
 
-    config = ProfileConfig.load()
+    config = PROVIDER.get(ProfileConfig)
 
     try:
         profile = config.profiles[profile_name]
@@ -120,6 +121,6 @@ def stop(profile_name: str = Argument("default", envvar="NYL_PROFILE"), all: boo
                 manager.close_tunnel(spec.locator)
         return
 
-    config = ProfileConfig.load()
+    config = PROVIDER.get(ProfileConfig)
     with TunnelManager() as manager:
         manager.close_tunnel(TunnelSpec.Locator(str(config.file), profile_name))

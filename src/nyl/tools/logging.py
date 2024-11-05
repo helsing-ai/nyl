@@ -1,7 +1,6 @@
 from collections.abc import Callable
 from typing import ParamSpec
 
-
 P = ParamSpec("P")
 
 

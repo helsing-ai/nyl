@@ -2,21 +2,22 @@
 Utilities for SOPS files.
 """
 
+import sys
 from pathlib import Path
 from shlex import quote
-import sys
 from typing import Optional
 
 from loguru import logger
-from typer import Option
+from typer import Option, Typer
+
+from nyl.commands import PROVIDER
 from nyl.secrets.config import SecretsConfig
 from nyl.secrets.sops import SopsFile, detect_sops_format
 from nyl.tools.fs import shorter_path
 from nyl.tools.logging import lazy_str
 from nyl.tools.typer import new_typer
 
-
-app = new_typer(name="sops", help=__doc__)
+app: Typer = new_typer(name="sops", help=__doc__)
 
 
 @app.command()
@@ -46,7 +47,7 @@ def re_encrypt(
     """
 
     if file is None:
-        secrets = SecretsConfig.load()
+        secrets = PROVIDER.get(SecretsConfig)
         if isinstance(impl := secrets.providers[provider], SopsFile):
             file = impl.path
         else:

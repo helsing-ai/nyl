@@ -1,7 +1,8 @@
 from collections.abc import Iterator
 from typing import Any, TextIO
-from yaml import SafeDumper, SafeLoader
+
 import yaml
+from yaml import SafeDumper, SafeLoader
 
 
 class PatchedSafeLoader(SafeLoader):

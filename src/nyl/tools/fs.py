@@ -1,7 +1,7 @@
-from collections.abc import Sequence
 import os
-from typing import Literal, overload
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Literal, overload
 
 
 @overload

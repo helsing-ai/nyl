@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Any, Iterable
-from pathlib import Path
-from databind.core import Union
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterable
 
+from databind.core import Union
+
+from nyl.tools.di import DependenciesProvider
 
 SecretValue = dict[str, Any] | list[Any] | str | int | float | bool | None
 """
@@ -19,10 +21,16 @@ class SecretProvider(ABC):
     """
 
     @abstractmethod
-    def init(self, config_file: Path) -> None:
+    def init(self, config_file: Path, dependencies: DependenciesProvider) -> None:
         """
         Called after loading the provider configuration from a configuration file. The file's path is provided to
         allow the provider to resolve relative paths.
+
+        Args:
+            config_file: The file that the configuration is loaded from. This is useful to allow configuration
+                parameters that are relative paths to be converted to absolute paths.
+            dependencies: Any extraneous dependencies that may be required for the provider are passed through
+                this interface, up to one per type.
         """
 
     @abstractmethod
@@ -66,4 +74,4 @@ class SecretProvider(ABC):
         """
 
 
-from . import config, sops  # noqa
+from . import config, kubernetes, sops  # noqa

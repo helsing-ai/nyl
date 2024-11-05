@@ -1,4 +1,5 @@
 from typing import Any, TypeVar
+
 from typer import Typer
 
 T = TypeVar("T")

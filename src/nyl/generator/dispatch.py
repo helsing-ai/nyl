@@ -3,13 +3,14 @@ from pathlib import Path
 from typing import Any
 
 from loguru import logger
+
+from kubernetes.client import VersionApi
+from kubernetes.client.api_client import ApiClient
 from nyl.generator import Generator
 from nyl.generator.components import ComponentsGenerator
 from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.tools.kubernetes import discover_kubernetes_api_versions
 from nyl.tools.types import Manifest, Manifests
-from kubernetes.client import VersionApi
-from kubernetes.client.api_client import ApiClient
 
 
 @dataclass

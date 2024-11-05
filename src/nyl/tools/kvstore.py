@@ -1,11 +1,11 @@
-from abc import ABC, abstractmethod
 import json
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Generic, Iterable, TypeVar
-from databind.json import load as deser, dump as ser
 
+from databind.json import dump as ser
+from databind.json import load as deser
 from filelock import FileLock
-
 
 T = TypeVar("T")
 Value = dict[str, Any] | list[Any] | str | int | float | bool | None

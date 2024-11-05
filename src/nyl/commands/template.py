@@ -1,31 +1,31 @@
 import atexit
-from typing import cast
+import os
 from dataclasses import dataclass
 from enum import Enum
-import os
 from pathlib import Path
 from textwrap import indent
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, cast
+
 from loguru import logger
-from nyl.resources.postprocessor import PostProcessor
 from typer import Argument, Option
-from nyl.tools import yaml
+
+from kubernetes.client.api_client import ApiClient
+from kubernetes.config.incluster_config import load_incluster_config
+from kubernetes.config.kube_config import load_kube_config
+from nyl.commands import PROVIDER, ApiClientConfig, app
 from nyl.generator import reconcile_generator
 from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import ProfileManager
-from kubernetes.config.incluster_config import load_incluster_config
-from kubernetes.config.kube_config import load_kube_config
-from kubernetes.client.api_client import ApiClient
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
+from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests
-
-from . import app
 
 DEFAULT_PROFILE = "default"
 
@@ -48,6 +48,37 @@ class ManifestsWithSource:
 
     manifests: Manifests
     file: Path
+
+
+def get_incluster_kubernetes_client() -> ApiClient:
+    logger.info("Using in-cluster configuration.")
+    load_incluster_config()
+    return ApiClient()
+
+
+def get_profile_kubernetes_client(profiles: ProfileManager, profile: str | None) -> ApiClient:
+    """
+    Create a Kubernetes :class:`ApiClient` from the selected *profile*.
+
+    If no *profile* is specified, but the profile manager contains at least one profile, the *profile* argument will
+    default to the value of :data:`DEFAULT_PROFILE` (which is `"default"`). Otherwise, if no profile is selected and
+    none is configured, the standard Kubernetes config load takes place (i.e. try `KUBECONFIG` and then
+    `~/.kube/config`).
+    """
+
+    with profiles:
+        # If no profile to activate is specified, and there are no profiles defined, we're not activating a
+        # a profile. It should be valid to use Nyl without a `nyl-profiles.yaml` file.
+        if profile is not None or profiles.config.profiles:
+            profile = profile or DEFAULT_PROFILE
+            active = profiles.activate_profile(profile)
+            load_kube_config(str(active.kubeconfig))
+        else:
+            logger.opt(ansi=True).info(
+                "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
+            )
+            load_kube_config()
+    return ApiClient()
 
 
 @app.command()
@@ -141,24 +172,10 @@ def template(
     #       plugin without granting it access to the Kubernetes API. Most relevant bits of information that Nyl requires
     #       about the cluster are passed via the environment variables.
     #       See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
-    if in_cluster:
-        logger.info("Using in-cluster configuration.")
-        load_incluster_config()
-    else:
-        with ProfileManager.load(required=False) as profiles:
-            # If no profile to activate is specified, and there are no profiles defined, we're not activating a
-            # a profile. It should be valid to use Nyl without a `nyl-profiles.yaml` file.
-            if profile is not None or profiles.config.profiles:
-                profile = profile or DEFAULT_PROFILE
-                active = profiles.activate_profile(profile)
-                load_kube_config(str(active.kubeconfig))
-            else:
-                logger.opt(ansi=True).info(
-                    "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
-                )
-                load_kube_config()
+    PROVIDER.set(ApiClientConfig, ApiClientConfig(in_cluster=in_cluster, profile=profile))
+    client = PROVIDER.get(ApiClient)
 
-    project = ProjectConfig.load()
+    project = PROVIDER.get(ProjectConfig)
     if generate_applysets is not None:
         project.config.settings.generate_applysets = generate_applysets
 
@@ -168,8 +185,7 @@ def template(
     if cache_dir is None:
         cache_dir = state_dir / "cache"
 
-    secrets = SecretsConfig.load()
-    client = ApiClient()
+    secrets = PROVIDER.get(SecretsConfig)
 
     template_engine = NylTemplateEngine(
         secrets.providers[secrets_provider],

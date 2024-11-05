@@ -6,9 +6,9 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, ClassVar, Generic, Sequence, TypeVar
 
-from nyl.resources import NylResource
 from stablehash import stablehash
 
+from nyl.resources import NylResource
 from nyl.tools.types import Manifest, Manifests
 
 T = TypeVar("T")

@@ -5,12 +5,14 @@ Helper commands for the ArgoCD integration.
 import sys
 
 from loguru import logger
+from typer import Typer
+
+from nyl.commands import PROVIDER
 from nyl.project.config import ProjectConfig
 from nyl.secrets.config import SecretsConfig
 from nyl.tools.typer import new_typer
 
-
-app = new_typer(name="argocd", help=__doc__)
+app: Typer = new_typer(name="argocd", help=__doc__)
 
 
 @app.command()
@@ -21,10 +23,10 @@ def discovery() -> None:
     """
 
     found = False
-    if (file := ProjectConfig.load().file) is not None:
+    if (file := PROVIDER.get(ProjectConfig).file) is not None:
         print(file.absolute())
         found = True
-    if (file := SecretsConfig.load().file) is not None:
+    if (file := PROVIDER.get(SecretsConfig).file) is not None:
         print(file.absolute())
         found = True
 
