@@ -31,24 +31,6 @@ app: Typer = new_typer(help=__doc__)
 # A global instance that we use for dependency injection.
 PROVIDER = DependenciesProvider.default()
 
-from . import argocd  # noqa: E402
-from . import crds  # noqa: F401,E402
-from . import new  # noqa: E402
-from . import profile  # noqa: E402
-from . import run  # noqa: F401, E402
-from . import secrets  # noqa: E402
-from . import template  # noqa: F401,E402
-from . import tools  # noqa: E402
-from . import tun  # noqa: E402
-
-app.add_typer(argocd.app)
-app.add_typer(new.app)
-app.add_typer(profile.app)
-app.add_typer(secrets.app)
-app.add_typer(tools.app)
-app.add_typer(tun.app)
-
-
 LOG_TIME_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>"
 LOG_LEVEL_FORAMT = "<level>{level: <8}</level>"
 LOG_DETAILS_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>"
@@ -137,3 +119,21 @@ def version() -> None:
 
     print(f"Nyl v{__version__}")
     sys.exit(0)
+
+
+from . import argocd  # noqa: E402
+from . import crds  # noqa: F401,E402
+from . import new  # noqa: E402
+from . import profile  # noqa: E402
+from . import run  # noqa: F401, E402
+from . import secrets  # noqa: E402
+from . import template  # noqa: F401,E402
+from . import tools  # noqa: E402
+from . import tun  # noqa: E402
+
+app.add_typer(argocd.app)
+app.add_typer(new.app)
+app.add_typer(profile.app)
+app.add_typer(secrets.app)
+app.add_typer(tools.app)
+app.add_typer(tun.app)
