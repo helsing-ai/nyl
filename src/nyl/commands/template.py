@@ -50,6 +50,37 @@ class ManifestsWithSource:
     file: Path
 
 
+def get_incluster_kubernetes_client() -> ApiClient:
+    logger.info("Using in-cluster configuration.")
+    load_incluster_config()
+    return ApiClient()
+
+
+def get_profile_kubernetes_client(profiles: ProfileManager, profile: str | None) -> ApiClient:
+    """
+    Create a Kubernetes :class:`ApiClient` from the selected *profile*.
+
+    If no *profile* is specified, but the profile manager contains at least one profile, the *profile* argument will
+    default to the value of :data:`DEFAULT_PROFILE` (which is `"default"`). Otherwise, if no profile is selected and
+    none is configured, the standard Kubernetes config load takes place (i.e. try `KUBECONFIG` and then
+    `~/.kube/config`).
+    """
+
+    with profiles:
+        # If no profile to activate is specified, and there are no profiles defined, we're not activating a
+        # a profile. It should be valid to use Nyl without a `nyl-profiles.yaml` file.
+        if profile is not None or profiles.config.profiles:
+            profile = profile or DEFAULT_PROFILE
+            active = profiles.activate_profile(profile)
+            load_kube_config(str(active.kubeconfig))
+        else:
+            logger.opt(ansi=True).info(
+                "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
+            )
+            load_kube_config()
+    return ApiClient()
+
+
 @app.command()
 def template(
     paths: list[Path] = Argument(..., help="The YAML file(s) to render. Can be a directory."),
@@ -142,21 +173,9 @@ def template(
     #       about the cluster are passed via the environment variables.
     #       See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
     if in_cluster:
-        logger.info("Using in-cluster configuration.")
-        load_incluster_config()
+        client = get_incluster_kubernetes_client()
     else:
-        with ProfileManager.load(required=False) as profiles:
-            # If no profile to activate is specified, and there are no profiles defined, we're not activating a
-            # a profile. It should be valid to use Nyl without a `nyl-profiles.yaml` file.
-            if profile is not None or profiles.config.profiles:
-                profile = profile or DEFAULT_PROFILE
-                active = profiles.activate_profile(profile)
-                load_kube_config(str(active.kubeconfig))
-            else:
-                logger.opt(ansi=True).info(
-                    "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
-                )
-                load_kube_config()
+        client = get_profile_kubernetes_client(ProfileManager.load(required=False), profile=profile)
 
     project = ProjectConfig.load()
     if generate_applysets is not None:
@@ -169,7 +188,6 @@ def template(
         cache_dir = state_dir / "cache"
 
     secrets = SecretsConfig.load()
-    client = ApiClient()
 
     template_engine = NylTemplateEngine(
         secrets.providers[secrets_provider],
