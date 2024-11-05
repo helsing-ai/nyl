@@ -59,12 +59,16 @@ def list(
 
 
 @app.command()
-def get(key: str, pretty: bool = False) -> None:
+def get(key: str, pretty: bool = False, raw: bool = False) -> None:
     """
     Get the value of a secret as JSON.
     """
 
-    print(json.dumps(PROVIDER.get(SecretProvider).get(key), indent=4 if pretty else None))  # type: ignore[type-abstract]
+    value = PROVIDER.get(SecretProvider).get(key)  # type: ignore[type-abstract]
+    if raw and isinstance(value, str):
+        print(value)
+    else:
+        print(json.dumps(value, indent=4 if pretty else None))
 
 
 @app.command()
