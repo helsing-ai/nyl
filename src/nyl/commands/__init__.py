@@ -36,14 +36,12 @@ PROVIDER.set_lazy(
     ApiClient,
     lambda: template.get_incluster_kubernetes_client()
     if PROVIDER.get(ApiClientConfig).in_cluster
-    else template.get_profile_kubernetes_client(
-        PROVIDER.get(ProfileManager), PROVIDER.get(ApiClientConfig).profile or os.getenv("NYL_PROFILE")
-    ),
+    else template.get_profile_kubernetes_client(PROVIDER.get(ProfileManager), PROVIDER.get(ApiClientConfig).profile),
 )
 
 
 # Retrieving the Kubernetes API client depends on whether in-cluster configuration should be used or not.
-@dataclass
+@dataclass(kw_only=True)
 class ApiClientConfig:
     in_cluster: bool
     " Load the in-cluster configuration if enabled; forego any Nyl profile configuration. "

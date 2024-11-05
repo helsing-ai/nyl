@@ -2,6 +2,7 @@
 Interact with the secrets providers configured in `nyl-secrets.yaml`.
 """
 
+from dataclasses import dataclass
 import json
 import json as _json
 
@@ -14,27 +15,35 @@ from nyl.commands import ApiClientConfig, PROVIDER
 
 app = new_typer(name="secrets", help=__doc__)
 
-# Initialized from callback for access by subcommands.
-provider: str
+
+@dataclass
+class SelectedProviderName:
+    "Stores the name of the provider selected in the `nyl secrets` command."
+
+    value: str
 
 
 @app.callback()
 def callback(
-    _provider: str = Option(
+    provider: str = Option(
         "default",
         "--provider",
         help="The name of the configured secrets provider to use.",
         envvar="NYL_SECRETS",
+    ),
+    profile: str | None = Option(
+        None,
+        "--profile",
+        help="The Nyl profile to assume.",
+        envvar="NYL_PROFILE",
     ),
 ) -> None:
     """
     Interact with the secrets providers configured in `nyl-secrets.yaml`.
     """
 
-    global provider
-    provider = _provider
-
-    PROVIDER.set(ApiClientConfig, ApiClientConfig(False, None))
+    PROVIDER.set(SelectedProviderName, SelectedProviderName(provider))
+    PROVIDER.set(ApiClientConfig, ApiClientConfig(in_cluster=False, profile=profile))
 
 
 @app.command()
@@ -52,6 +61,7 @@ def list(
         for alias, impl in secrets.providers.items():
             print(alias, impl)
     else:
+        provider = PROVIDER.get(SelectedProviderName).value
         for key in secrets.providers[provider].keys():
             print(key)
 
@@ -63,6 +73,7 @@ def get(key: str, pretty: bool = False) -> None:
     """
 
     secrets = PROVIDER.get(SecretsConfig)
+    provider = PROVIDER.get(SelectedProviderName).value
     print(json.dumps(secrets.providers[provider].get(key), indent=4 if pretty else None))
 
 
@@ -72,6 +83,7 @@ def set(key: str, value: str, json: bool = False) -> None:
     Set the value of a secret.
     """
 
+    provider = PROVIDER.get(SelectedProviderName).value
     logger.info("Setting key '{}' in provider '{}'", key, provider)
     secrets = PROVIDER.get(SecretsConfig)
     secrets.providers[provider].set(key, _json.loads(value) if json else value)
@@ -83,6 +95,7 @@ def unset(key: str) -> None:
     Unset the value of a secret.
     """
 
+    provider = PROVIDER.get(SelectedProviderName).value
     logger.info("Unsetting key '{}' in provider '{}'", key, provider)
     secrets = PROVIDER.get(SecretsConfig)
     secrets.providers[provider].unset(key)

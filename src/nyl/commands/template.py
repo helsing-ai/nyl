@@ -171,7 +171,7 @@ def template(
     #       plugin without granting it access to the Kubernetes API. Most relevant bits of information that Nyl requires
     #       about the cluster are passed via the environment variables.
     #       See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
-    PROVIDER.set(ApiClientConfig, ApiClientConfig(in_cluster, profile))
+    PROVIDER.set(ApiClientConfig, ApiClientConfig(in_cluster=in_cluster, profile=profile))
     client = PROVIDER.get(ApiClient)
 
     project = PROVIDER.get(ProjectConfig)
