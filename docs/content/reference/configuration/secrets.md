@@ -108,3 +108,45 @@ __Example__
 
 The secrets will be decoded using the `sops` program, hence all the typical ways to configure Sops and how it decrypts
 files apply. The `path` field is relative to the location of the `nyl-secrets.yaml` file.
+
+---
+
+## Provider: [KubernetesSecret](https://kubernetes.io/docs/concepts/configuration/secret/)
+
+Allows you to point to a Kubernetes Secret as a source for secrets. Since Kubernetes secret values must be strings,
+this provider does not currently support nested keys, although it could be made possible by assuming TOML/YAML/JSON
+format for the Kubernetes `Secret` keys in the `data` field.
+
+The secret provider will use the same Kubernetes context that is configured in Nyl via [Profiles](./profiles.md).
+
+__Example__
+
+=== "TOML"
+
+    ```toml title="nyl-secrets.toml"
+    [default]
+    type = "KubernetesSecret"
+    name = "nyl-secrets"
+    namespace = "default"
+    ```
+
+=== "YAML"
+
+    ```yaml title="nyl-secrets.yaml"
+    default:
+      type: KubernetesSecret
+      name: nyl-secrets
+      namespace: default
+    ```
+
+=== "JSON"
+
+    ```toml title="nyl-secrets.json"
+    {
+      "default": {
+        "type": "KubernetesSecret",
+        "name": "nyl-secrets",
+        "namespace": "default"
+      }
+    }
+    ```
