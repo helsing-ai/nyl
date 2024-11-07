@@ -48,27 +48,23 @@
           line-length = 120
         '';
 
-        dmypy = "${pythonSet.mkVirtualEnv "mypy" workspace.deps.all}/bin/dmypy";
-        ruff = "${pythonSet.mkVirtualEnv "ruff" workspace.deps.all}/bin/ruff";
-        pytest =
-          "${pythonSet.mkVirtualEnv "ruff" workspace.deps.all}/bin/pytest";
+        devEnv = pythonSet.mkVirtualEnv "dev" workspace.deps.all;
+        dmypy = "${devEnv}/bin/dmypy";
+        ruff = "${devEnv}/bin/ruff";
+        pytest = "${devEnv}/bin/pytest";
 
-        dependencies = [ pkgs.helm pkgs.kyverno pkgs.sops pkgs.kubectl ];
-        dependenciesPaths = nixpkgs.lib.concatStringsSep ":"
-          (map (dep: "${dep}/bin") dependencies);
+        dependencies =
+          [ pkgs.kubernetes-helm pkgs.kyverno pkgs.sops pkgs.kubectl ];
       in {
         packages.default =
           (pythonSet.mkVirtualEnv "nyl" workspace.deps.default).overrideAttrs
           (oldAttrs: {
-            buildInputs = oldAttrs.buildInputs or [ ] ++ [ pkgs.makeWrapper ];
-            postInstall = ''
-              wrapProgram $out/bin/nyl --prefix PATH : ${dependenciesPaths}
-            '';
+            runtimeInputs = oldAttrs.runtimeInputs or [ ] ++ dependencies;
           });
 
         # TODO: Use formatter.fmt, but it complains about missing type attribute
         # TODO: Have it also fmt the nix code
-        packages.fmt = pkgs.writeShellScriptBin "fmt" ''
+        formatter = pkgs.writeShellScriptBin "fmt" ''
           set -x
           ${ruff} --config ${ruffConfig} format .
           ${pkgs.nixfmt}/bin/nixfmt .
@@ -84,9 +80,11 @@
           ${pkgs.nixfmt}/bin/nixfmt --check .
         '';
 
-        packages.test = pkgs.writeShellScriptBin "test" ''
-          PATH="''${PATH}:${dependenciesPaths}" ${pytest} ${./.}
-        '';
+        packages.test = pkgs.writeShellScript {
+          name = "test";
+          runtimeInputs = dependencies;
+          text = "${pytest} ${./.}";
+        };
 
         checks.lint = pkgs.runCommand "lint" { } ''
           # TODO: Is it an issue that this runs the Mypy daemon?
@@ -98,5 +96,7 @@
           ${self.packages.${system}.test}/bin/test
           echo Done > $out
         '';
+
+        devShells.default = pkgs.mkShell { buildInputs = [ devEnv ]; };
       });
 }
