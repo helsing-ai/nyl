@@ -36,6 +36,9 @@ jobs:
       # TODO: How would I best pass the Python version to use for the test?
       - run: nix flake check
 
+      # TODO: nix flake check won't show us test output if everything passes, but showing it is useful.
+      - run: nix run .#test
+
   publish:
     runs-on: ubuntu-latest
     needs: test
