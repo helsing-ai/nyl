@@ -17,6 +17,8 @@
     };
   };
 
+  # TODO: Build argocd-cmp Docker image with Nix.
+
   outputs = { self, nixpkgs, flake-utils, pyproject-nix, uv2nix }:
     flake-utils.lib.eachDefaultSystem (system:
       let
