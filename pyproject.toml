@@ -34,7 +34,9 @@ nyl = "nyl.commands:app"
 [tool.uv]
 dev-dependencies = [
     "kubernetes-stubs>=22.6.0.post1",
+    "mypy>=1.13.0",
     "pytest>=8.2.2",
+    "ruff>=0.7.2",
     "types-pyyaml>=6.0.12.20240311",
     "types-requests>=2.32.0.20240712",
 ]

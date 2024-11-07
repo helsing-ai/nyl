@@ -1,5 +1,6 @@
 .nyl/
 docs/site/
+/result
 
 # Python
 __pycache__/

@@ -7,9 +7,6 @@ on:
   pull_request:
     branches: [ develop ]
 
-env:
-  KRAKENW_USE: UV
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,32 +17,24 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+      - name: Check Nix flake Nixpkgs inputs
+        uses: DeterminateSystems/flake-checker-action@main
+      - uses: cachix/install-nix-action@v25
         with:
-          python-version: "${{ matrix.python-version }}"
-
-      - name: Install Kraken-wrapper and UV
-        run: python -m pip install --upgrade pipx && pipx install kraken-wrapper && pipx install uv
-
-      - name: Cache Venv
-        uses: actions/cache@v4
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v14
         with:
-          path: .venv
-          key: ${{ runner.os }}-${{ hashFiles('uv.lock') }}-uv-${{ matrix.python-version }}
+          name: mycache
+          # If you chose signing key for write access
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          # If you chose API tokens for write access OR if you have a private cache
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Run ${{ matrix.step }}
-        run: krakenw run fmt lint
+      # TODO: How would I best pass the Python version to use for the test?
+      - run: nix flake check
 
-      - name: Install the Kyverno CLI (required for some Nyl features)
-        uses: kyverno/action-install-cli@v0.2.0
-        with:
-          release: 'v1.13.0'
-
-      # TODO: Until krakenw run test works (currently fails because of doctest modules)
-      - name: Run tests
-        run: uv run pytest -vv
+      # TODO: nix flake check won't show us test output if everything passes, but showing it is useful.
+      - run: nix run .#test
 
   publish:
     runs-on: ubuntu-latest
@@ -66,13 +55,10 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install Kraken-wrapper
-        run: python -m pip install kraken-wrapper
-
-      - name: Build the package
-        run: krakenw run build
+      - name: Install uv
+        run: python -m pip install uv
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: build/python-dist/
+          packages-dir: dist/
