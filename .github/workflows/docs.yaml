@@ -15,19 +15,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Check Nix flake Nixpkgs inputs
+        uses: DeterminateSystems/flake-checker-action@main
+      - uses: cachix/install-nix-action@v25
         with:
-          python-version: "3.10"
+          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: cachix/cachix-action@v14
+        with:
+          name: mycache
+          # If you chose signing key for write access
+          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          # If you chose API tokens for write access OR if you have a private cache
+          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      - name: Install Uv
-        run: pip install uv
-
-      - name: Build documentation
-        run: |
-          cd docs/
-          uv run mkdocs build
+      - name: Build docs
+        run: nix run .#docs build
 
       - name: Publish documentation
         uses: peaceiris/actions-gh-pages@v4
