@@ -80,7 +80,11 @@
           ${pkgs.nixfmt}/bin/nixfmt --check .
         '';
 
-        packages.test = pkgs.writeShellScriptBin "test" "${pytest} ${./.}";
+        packages.test = let
+          dependenciesPath = nixpkgs.lib.concatStringsSep ":"
+            (map (dep: "${dep}/bin") dependencies);
+        in pkgs.writeShellScriptBin "test"
+        "PATH=\${PATH}:${dependenciesPath} ${pytest} ${./.}";
 
         checks.lint = pkgs.runCommand "lint" { } ''
           # TODO: Is it an issue that this runs the Mypy daemon?
@@ -93,6 +97,7 @@
           echo Done > $out
         '';
 
-        devShells.default = pkgs.mkShell { buildInputs = [ devEnv ] ++ dependencies; };
+        devShells.default =
+          pkgs.mkShell { buildInputs = [ devEnv ] ++ dependencies; };
       });
 }
