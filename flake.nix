@@ -48,20 +48,28 @@
 
         dmypy = "${pythonSet.mkVirtualEnv "mypy" workspace.deps.all}/bin/dmypy";
         ruff = "${pythonSet.mkVirtualEnv "ruff" workspace.deps.all}/bin/ruff";
+        pytest =
+          "${pythonSet.mkVirtualEnv "ruff" workspace.deps.all}/bin/pytest";
+
+        dependencies = [ pkgs.helm pkgs.kyverno pkgs.sops pkgs.kubectl ];
+        dependenciesPaths = nixpkgs.lib.concatStringsSep ":"
+          (map (dep: "${dep}/bin") dependencies);
       in {
         packages.default =
           (pythonSet.mkVirtualEnv "nyl" workspace.deps.default).overrideAttrs
           (oldAttrs: {
             buildInputs = oldAttrs.buildInputs or [ ] ++ [ pkgs.makeWrapper ];
             postInstall = ''
-              wrapProgram $out/bin/nyl --prefix PATH : ${pkgs.helm}/bin:${pkgs.kyverno}/bin:${pkgs.sops}/bin:${pkgs.kubectl}/bin
+              wrapProgram $out/bin/nyl --prefix PATH : ${dependenciesPaths}
             '';
           });
 
         # TODO: Use formatter.fmt, but it complains about missing type attribute
         # TODO: Have it also fmt the nix code
         packages.fmt = pkgs.writeShellScriptBin "fmt" ''
+          set -x
           ${ruff} --config ${ruffConfig} format .
+          ${pkgs.nixfmt}/bin/nixfmt .
         '';
 
         packages.lint = pkgs.writeShellScriptBin "lint" ''
@@ -71,11 +79,21 @@
           ${ruff} --config ${ruffConfig} format --check "${./.}/$checkDir"
           # TODO: If we don't copy the workdir to the nix store we get more Mypy errors :(
           ${dmypy} run -- --config-file ${mypyConfig} "${./.}/$checkDir"
+          ${pkgs.nixfmt}/bin/nixfmt --check .
+        '';
+
+        packages.test = pkgs.writeShellScriptBin "test" ''
+          PATH="''${PATH}:${dependenciesPaths}" ${pytest} ${./.}
         '';
 
         checks.lint = pkgs.runCommand "lint" { } ''
           # TODO: Is it an issue that this runs the Mypy daemon?
-          ${self.packages.${system}.lint}/bin/lint ${./src}
+          ${self.packages.${system}.lint}/bin/lint
+          echo Done > $out
+        '';
+
+        checks.test = pkgs.runCommand "test" { } ''
+          ${self.packages.${system}.test}/bin/test
           echo Done > $out
         '';
       });
