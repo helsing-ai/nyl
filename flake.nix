@@ -55,7 +55,7 @@
 
         dependencies =
           [ pkgs.kubernetes-helm pkgs.kyverno pkgs.sops pkgs.kubectl ];
-      in {
+      in rec {
         packages.default =
           (pythonSet.mkVirtualEnv "nyl" workspace.deps.default).overrideAttrs
           (oldAttrs: {
@@ -67,7 +67,7 @@
         formatter = pkgs.writeShellScriptBin "fmt" ''
           set -x
           ${ruff} --config ${ruffConfig} format .
-          ${pkgs.nixfmt}/bin/nixfmt .
+          ${pkgs.nixfmt-classic}/bin/nixfmt .
         '';
 
         packages.lint = pkgs.writeShellScriptBin "lint" ''
@@ -77,7 +77,7 @@
           ${ruff} --config ${ruffConfig} format --check "${./.}/$checkDir"
           # TODO: If we don't copy the workdir to the nix store we get more Mypy errors :(
           ${dmypy} run -- --config-file ${mypyConfig} "${./.}/$checkDir"
-          ${pkgs.nixfmt}/bin/nixfmt --check .
+          ${pkgs.nixfmt-classic}/bin/nixfmt --check .
         '';
 
         packages.test = let
