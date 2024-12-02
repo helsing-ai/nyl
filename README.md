@@ -31,6 +31,13 @@ And to format code, run
 
     $ nix fmt
 
+To build or serve the documentation, run
+
+    $ nix run .#docs serve
+    $ nix run .#docs build
+
+respectively.
+
 ## Tracking upstream information
 
 * Discussion around ArgoCD supporting Helm lookups (maybe with Project-level service account?), see
