@@ -15,11 +15,21 @@ For some features, additional programs must be available:
 * [kyverno](https://kyverno.io/docs/kyverno-cli/) when using the Nyl `PostProcessor` resource
 * [sops](https://github.com/getsops/sops) when using the SOPS secrets provider
 
+You can install Nyl with Nix to ensure all dependencies are met.
+
 ## Local development
 
 Install the project with [Uv](https://docs.astral.sh/uv/).
 
     $ uv sync
+
+To lint, run
+
+    $ nix flake check
+
+And to format code, run
+
+    $ nix fmt
 
 ## Tracking upstream information
 
