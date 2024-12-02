@@ -2,8 +2,8 @@
 #: Build Nyl itself.
 #: -----------------
 
-FROM python:3.12-alpine AS build
-COPY --from=ghcr.io/astral-sh/uv:0.4.7 /uv /bin/uv
+FROM python:3.13-alpine AS build
+COPY --from=ghcr.io/astral-sh/uv:0.5.5 /uv /bin/uv
 
 WORKDIR /opt/nyl
 
@@ -79,7 +79,7 @@ RUN \
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
 
-FROM python:3.12-alpine AS nyl-cmp
+FROM python:3.13-alpine AS nyl-cmp
 RUN apk add git
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
 RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:999 /usr/local/bin/argocd-cmp-server
