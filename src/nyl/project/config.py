@@ -24,6 +24,11 @@ class ProjectSettings:
     after the namespace.
     """
 
+    generate_placeholders: bool | None = None
+    """
+    **Deprecated.** Will be removed in a future version. Use `on_lookup_failure` set to `CreatePlaceholder` instead.
+    """
+
     on_lookup_failure: Literal["Error", "CreatePlaceholder", "SkipResource"] = "Error"
     """
     Can be used to tell Nyl to create a placeholder resource (`nyl.io/v1/Placeholder`) or skip a resource that was
@@ -41,6 +46,15 @@ class ProjectSettings:
     `HelmChart` resource. Relative paths specified here are considered relative to the `nyl-project.yaml` configuration
     file.
     """
+
+    def __post_init__(self):
+        if self.generate_placeholders is not None:
+            logger.warning(
+                "The 'generate_placeholders' setting is deprecated and will be removed in a future version. "
+                "Use 'on_lookup_failure' set to 'CreatePlaceholder' instead."
+            )
+            if self.generate_placeholders:
+                self.on_lookup_failure = "CreatePlaceholder"
 
 
 @dataclass
