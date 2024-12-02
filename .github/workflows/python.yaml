@@ -11,10 +11,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12"]
-
     steps:
       - uses: actions/checkout@v4
       - name: Check Nix flake Nixpkgs inputs
@@ -25,15 +21,8 @@ jobs:
       - uses: cachix/cachix-action@v15
         with:
           name: mycache
-          # If you chose signing key for write access
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-          # If you chose API tokens for write access OR if you have a private cache
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-      # TODO: How would I best pass the Python version to use for the test?
       - run: nix flake check
-
-      # TODO: nix flake check won't show us test output if everything passes, but showing it is useful.
       - run: nix run .#test
 
   publish:
