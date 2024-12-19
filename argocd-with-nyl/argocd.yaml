@@ -40,7 +40,7 @@ spec:
     repoServer:
       extraContainers:
         - name: nyl-v1
-          image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:0.0.7
+          image: ghcr.io/helsing-ai/nyl/argocd-cmp:0.0.7
           securityContext:
             runAsNonRoot: true
             runAsUser: 999
@@ -76,7 +76,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/NiklasRosenstein/nyl.git
+    repoURL: https://github.com/helsing-ai/nyl.git
     targetRevision: HEAD
     path: argocd-with-nyl
   destination:
