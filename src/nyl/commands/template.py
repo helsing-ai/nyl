@@ -386,6 +386,12 @@ def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
             files.append(path)
 
     logger.trace("Files to load: {}", files)
+    if len(files) == 0:
+        logger.warning(
+            "No valid manifests found in the paths. Nyl does not recursively enumerate directory contents, make sure "
+            "you are specifying at least one path with valid YAML manifests to render.",
+            paths,
+        )
 
     result = []
     for file in files:
