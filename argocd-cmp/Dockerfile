@@ -3,7 +3,7 @@
 #: -----------------
 
 FROM python:3.13-alpine AS build
-COPY --from=ghcr.io/astral-sh/uv:0.5.5 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.5.7 /uv /bin/uv
 
 WORKDIR /opt/nyl
 
@@ -59,7 +59,7 @@ RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/s
 FROM fetch-bin-base AS sops-bin
 # Find SOPS releases at https://github.com/getsops/sops/releases
 # renovate: datasource=github-releases depName=sops packageName=getsops/sops
-ARG SOPS_VERSION=v3.9.1
+ARG SOPS_VERSION=v3.9.2
 RUN curl -fLO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) \
     && mv sops-${SOPS_VERSION}.linux.$(cat /BINARY_ARCH) /usr/local/bin/sops \
     && chmod +x /usr/local/bin/sops \
@@ -68,7 +68,7 @@ RUN curl -fLO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/
 
 FROM fetch-bin-base AS kyverno-bin
 # renovate: datasource=github-releases depName=kyverno packageName=kyverno/kyverno
-ARG KYVERNO_VERSION=1.13.1
+ARG KYVERNO_VERSION=1.13.2
 RUN \
     case "$(uname -m)" in \
         x86_64) KYVERNO_ARCH='x86_64' ;; \
