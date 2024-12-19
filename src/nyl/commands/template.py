@@ -278,7 +278,7 @@ def template(
             applyset.set_group_kinds(source.manifests)
             # HACK: Kubectl 1.30 can't create the custom resource, so we need to create it. But it will also reject
             #       using the custom resource unless it has the tooling label set appropriately. For more details, see
-            #       https://github.com/NiklasRosenstein/nyl/issues/5.
+            #       https://github.com/helsing-ai/nyl/issues/5.
             applyset.tooling = f"kubectl/v{generator.kube_version}"
             applyset.validate()
 

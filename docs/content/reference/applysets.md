@@ -7,4 +7,4 @@ resources in a cluster. Nyl provides basic support for ApplySets, allowing you t
 and prune resources as they are removed from your configuration.
 
 Note that ApplySet support is experimental and has still has various issues. You can following the progress of the
-feature in the [nyl#5](https://github.com/NiklasRosenstein/nyl/issues/5).
+feature in the [nyl#5](https://github.com/helsing-ai/nyl/issues/5).
