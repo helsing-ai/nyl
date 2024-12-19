@@ -16,7 +16,7 @@ We recommend the following configuration:
 repoServer:
   extraContainers:
     - name: nyl-v1
-      image: ghcr.io/niklasrosenstein/nyl/argocd-cmp:{{ NYL_VERSION }}
+      image: ghcr.io/helsing-ai/nyl/argocd-cmp:{{ NYL_VERSION }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 999

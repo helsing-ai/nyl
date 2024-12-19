@@ -2,7 +2,7 @@
 
 ## 0.6.0
 
-* Upgraded `argocd-cmp-server` in `nyl/argocd-cmp` container image to `v2.13.1` (see [#46](https://github.com/NiklasRosenstein/nyl/pull/46))
+* Upgraded `argocd-cmp-server` in `nyl/argocd-cmp` container image to `v2.13.1` (see [#46](https://github.com/helsing-ai/nyl/pull/46))
 * Re-introduce `settings.generate_placeholders` in `nyl-project.toml`, but warn if it is used. Enabling the option will have the
     same effect as setting `on_lookup_failure = "CreatePlaceholder"` and take precedence over the original value of `on_lookup_failure`.
 
