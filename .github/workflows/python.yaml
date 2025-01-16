@@ -31,10 +31,18 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Install Linuxbrew
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-      - name: Install Prerequisites
-        run: brew install sops helm kyverno
+
+      # Install tools
+      - uses: kyverno/action-install-cli@v0.2.0
+        with:
+          release: 'v1.13.2'
+
+      - name: Install SOPS
+        run: |
+          curl -LO https://github.com/getsops/sops/releases/download/v3.9.3/sops-v3.9.3.linux.amd64
+          mv sops-v3.9.3.linux.amd64 /usr/local/bin/sops
+          chmod +x /usr/local/bin/sops
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
