@@ -40,3 +40,13 @@ dev-dependencies = [
     "types-pyyaml>=6.0.12.20240311",
     "types-requests>=2.32.0.20240712",
 ]
+
+[tool.mypy]
+explicit_package_bases = true
+namespace_packages = true
+show_column_numbers = true
+strict = true
+mypy_path = ["src"]
+
+[tool.ruff]
+line-length = 120

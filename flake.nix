@@ -108,6 +108,6 @@
         '';
 
         devShells.default =
-          pkgs.mkShell { buildInputs = [ uvProject.venv.dev ]; };
+          pkgs.mkShell { buildInputs = [ uvProject.venv.dev ] ++ dependencies; };
       });
 }
