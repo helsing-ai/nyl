@@ -218,9 +218,10 @@ def template(
                 skip_resources=[PostProcessor],
             )
 
-        # Find any PostProcessor resources and apply them.
+        # Find any PostProcessor resources and apply them. We apply the post-processors only later however
+        # because it might cause resources without a `namespace: default` field to get that set. We want to have
+        # an opportunity to fill that in ourselves first.
         source.manifests, post_processors = PostProcessor.extract_from_list(source.manifests)
-        source.manifests = PostProcessor.apply_all(source.manifests, post_processors, source.file)
 
         # Find the namespaces that are defined in the file. If we find any manifests without a namespace, we will
         # inject that namespace name into them. Also find the applyset defined in the file.
@@ -330,6 +331,9 @@ def template(
                     source.file,
                     manifest["metadata"]["namespace"],
                 )
+
+        # Now apply the post-processor.
+        source.manifests = PostProcessor.apply_all(source.manifests, post_processors, source.file)
 
         if apply:
             logger.info("Kubectl-apply {} manifest(s) from '{}'", len(source.manifests), source.file)

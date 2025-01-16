@@ -9,3 +9,9 @@ id = "056ab3d5-fc80-449c-af24-d7bca6f3e522"
 type = "breaking change"
 description = "Instead of not assuming a default namespace when multiple `Namespace` resources are defined in a manifest file, pick the first one alphabetically when none have the `nyl.io/default-namespace: \"true\"` annotation"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "d0798272-7c1c-402d-8e04-d578cea6a410"
+type = "improvement"
+description = "Apply Nyl `PostProcessor` instructions at the end, after Nyl had a chance to fill in the manifest file's determined default namespace. Kyverno might add the `namespace: default` field to any resource that has no namespace set, making it impossbile for Nyl after the fact to tell which resources need to have their namespace injected."
+author = "@NiklasRosenstein"
