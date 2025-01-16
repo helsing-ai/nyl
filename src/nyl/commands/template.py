@@ -28,6 +28,7 @@ from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests
 
 DEFAULT_PROFILE = "default"
+DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/default-namespace"
 
 
 # Need an enum for typer
@@ -240,24 +241,10 @@ def template(
                 source.manifests.remove(manifest)
 
         # Determine what namespace to fill in if we encounter resources without it.
-        current_default_namespace = default_namespace
-        if current_default_namespace is None:
-            if len(namespaces) == 1:
-                current_default_namespace = next(iter(namespaces))
-            elif len(namespaces) == 0:
-                current_default_namespace = source.file.stem
-        elif len(namespaces) > 2 and current_default_namespace not in namespaces:
-            logger.error(
-                "The specified --default-namespace='{}' is not defined in manifest source file '{}', despite it "
-                "defining {} namespaces. If your manifest source file defines multiple namespaces, the specified "
-                "--default-namespace must be one of the namespaces defined in it (the file current defines "
-                "the following namespaces: {})",
-                default_namespace,
-                source.file,
-                len(namespaces),
-                ", ".join(namespaces),
-            )
-            exit(1)
+        if default_namespace is not None:
+            current_default_namespace = default_namespace
+        else:
+            current_default_namespace = get_default_namespace_for_manifest(source)
 
         if not applyset and project.config.settings.generate_applysets:
             if not current_default_namespace:
@@ -468,3 +455,75 @@ def is_cluster_scoped_resource(manifest: Manifest) -> bool:
         "StorageClass.storage.k8s.io",
         "ValidatingWebhookConfiguration.admissionregistration.k8s.io",
     }
+
+
+def get_default_namespace_for_manifest(source: ManifestsWithSource) -> str:
+    """
+    Given the contents of a manifest file, determine the fallback namespace to apply to resources that have been
+    recorded without a namespace.
+
+    Usually, in Kubernetes, when a namespaced resource has no `metadata.namespace` field, it is assumed that its
+    namespace is `"default"`. However, in Nyl we take various hints to fill in a more appropriate namespace for the
+    resource given the context in which it was recorded:
+
+    - If there is no `v1/Namespace` resource declared in the manifest, the fallback namespace is the name of the
+    manifest file (without the extension, which may be `.yml`, `.yaml` or `.nyl.yaml`).
+
+    - If there is exactly one `v1/Namespace` resource declared in the manifest, that namespace's name is used as the
+    fallback.
+
+    - If there are multiple `v1/Namespace` resources declared in the manifest, we pick the one with the
+    `nyl.io/default-namespace` label. If there is no such namespace, a warning is logged and we pick the first one
+    alphabetically.
+
+    Returns:
+        The name of the default namespace to resources in the given manifest source file.
+    """
+
+    namespace_resources = [x for x in source.manifests if is_namespace_resource(x)]
+
+    if len(namespace_resources) == 0:
+        use_namespace = source.file.stem
+        if use_namespace.endswith(".nyl"):
+            use_namespace = use_namespace[:-4]
+        logger.warning(
+            "Manifest '{}' does not define a Namespace resource. Using '{}' as the default namespace.",
+            source.file,
+            use_namespace,
+        )
+        return use_namespace
+
+    if len(namespace_resources) == 1:
+        logger.debug("Manifest '{}' defines exactly one Namespace resource. Using '{}' as the default namespace.")
+        return namespace_resources[0]["metadata"]["name"]
+
+    default_namespaces = {
+        x["metadata"]["name"]
+        for x in namespace_resources
+        if x["metadata"].get("annotations", {}).get(DEFAULT_NAMESPACE_ANNOTATION, "false") == "true"
+    }
+
+    if len(default_namespaces) == 0:
+        use_namespace = sorted(x["metadata"]["name"] for x in namespace_resources)[0]
+        logger.warning(
+            "Manifest '{}' defines {} namespaces, but none of them have the `{}` label. Using the first one "
+            "alphabetically ({}) as the default namespace.",
+            source.file,
+            len(namespace_resources),
+            DEFAULT_NAMESPACE_ANNOTATION,
+            use_namespace,
+        )
+        return use_namespace
+
+    if len(default_namespaces) > 1:
+        logger.error(
+            "Manifest '{}' defines {} namespaces, but more than one of them have the `{}` label. "
+            "The following namespaces have the `{}` label: {}",
+            source.file,
+            len(namespace_resources),
+            DEFAULT_NAMESPACE_ANNOTATION,
+            ", ".join(default_namespaces),
+        )
+        exit(1)
+
+    return default_namespaces.pop()

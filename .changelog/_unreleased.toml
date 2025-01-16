@@ -1,0 +1,11 @@
+[[entries]]
+id = "d86d5d47-3d02-4321-94a3-bea25c512ecc"
+type = "breaking change"
+description = "Recognize `nyl.io/default-namespace: \"true\"` on Namespace resources to choose between one of multiple namespaces defined in the same manifest file."
+author = "@NiklasRosenstein"
+
+[[entries]]
+id = "056ab3d5-fc80-449c-af24-d7bca6f3e522"
+type = "breaking change"
+description = "Instead of not assuming a default namespace when multiple `Namespace` resources are defined in a manifest file, pick the first one alphabetically when none have the `nyl.io/default-namespace: \"true\"` annotation"
+author = "@NiklasRosenstein"
