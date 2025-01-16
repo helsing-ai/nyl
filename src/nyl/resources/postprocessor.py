@@ -1,6 +1,5 @@
 from itertools import chain
 import subprocess
-import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -10,7 +9,6 @@ import yaml
 from loguru import logger
 
 from nyl.resources import API_VERSION_INLINE, NylResource
-from nyl.tools.kubernetes import resource_locator
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.types import Manifests
