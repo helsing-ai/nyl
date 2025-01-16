@@ -1058,9 +1058,12 @@
 resources defined in the same <a href="../../../glossary/#manifest">Manifest</a> as the <code>PostProcessor</code>. This resource does
 not accept a <code>metadata</code> field.</p>
 <h2 id="prerequisites">Prerequisites</h2>
-<ul>
-<li>You need the <a href="https://kyverno.io/docs/kyverno-cli/"><code>kyverno</code> CLI</a> installed </li>
-</ul>
+<p>You need the <a href="https://kyverno.io/docs/kyverno-cli/"><code>kyverno</code> CLI</a> &gt;1.13.x installed </p>
+<div class="admonition danger">
+<p class="admonition-title">Danger</p>
+<p>In Kyverno 1.12.6, the <code>kyverno apply</code> command with the <code>-o</code> option outputs only the mutated resources. In
+Kyverno 1.13.2, all resources are outputted. Nyl relies on the latter behavior.</p>
+</div>
 <h2 id="api-spec">API Spec</h2>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inline.nyl.io/v1</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">PostProcessor</span>
