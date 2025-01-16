@@ -32,7 +32,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Install tools
       - uses: kyverno/action-install-cli@v0.2.0
         with:
           release: 'v1.13.2'
@@ -47,6 +46,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.5.20"
+
       - run: uv sync
       - run: uv run pytest .
       - run: uv run mypy .
