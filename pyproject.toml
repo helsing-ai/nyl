@@ -50,3 +50,12 @@ mypy_path = ["src"]
 
 [tool.ruff]
 line-length = 120
+
+[tool.slap.test]
+pytest = "uv run pytest ."
+mypy = "uv run mypy ."
+ruff-check = "uv run ruff check ."
+ruff-fmt = "uv run ruff format --check ."
+
+[tool.slap.run]
+fmt = "uv run ruff check --fix . && uv run ruff format ."
