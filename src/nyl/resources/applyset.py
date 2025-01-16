@@ -1,10 +1,12 @@
 import base64
 import hashlib
 from dataclasses import dataclass
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Iterable
 
 from databind.core import SerializeDefaults
 
+from kubernetes.dynamic.client import DynamicClient
+from kubernetes.dynamic.resource import Resource
 from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
 from nyl.tools.types import Manifests
 
@@ -208,6 +210,17 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
             )
         )
 
+    def iter_applyset_members(self, client: DynamicClient) -> Iterable[Resource]:
+        """ Iterate over all resources in the cluster that are part of this ApplySet. """
+
+        resources = client.resources.search()
+
+        for group_kinds in (self.contains_group_kinds or []):
+            # Find the corresponding resource class.
+            for resource in resources:
+                if get_canonical_resource_kind_name(resource.group_version, resource.kind) == group_kinds:
+                    yield resource
+
 
 def calculate_applyset_id(*, name: str, namespace: str = "", group: str) -> str:
     """
@@ -236,4 +249,5 @@ def get_canonical_resource_kind_name(api_version: str, kind: str) -> str:
         kind: The kind of the resource.
     """
 
-    return (f"{kind}." + (api_version.split("/")[0] if "/" in api_version else "")).rstrip(".")
+    # reference: https://kubernetes.io/docs/reference/labels-annotations-taints/#applyset-kubernetes-io-contains-group-kinds
+    return (f"{kind}s." + (api_version.split("/")[0] if "/" in api_version else "")).rstrip(".").lower()

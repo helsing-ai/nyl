@@ -344,6 +344,10 @@ def template(
                     manifest["metadata"]["namespace"],
                 )
 
+        # If ApplySets are enabled, we can find which resources used to be part of an ApplySet, but no longer are.
+        if applyset is not None:
+            pass
+
         if apply:
             logger.info("Kubectl-apply {} manifest(s) from '{}'", len(source.manifests), source.file)
             kubectl.apply(

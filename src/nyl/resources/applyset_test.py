@@ -34,6 +34,6 @@ def test__ApplySet__dump() -> None:
 
 
 def test__get_canonical_resource_kind_name() -> None:
-    assert get_canonical_resource_kind_name("v1", "Pod") == "Pod"
-    assert get_canonical_resource_kind_name("apps/v1", "Deployment") == "Deployment.apps"
-    assert get_canonical_resource_kind_name("nyl.io/v1", "ApplySet") == "ApplySet.nyl.io"
+    assert get_canonical_resource_kind_name("v1", "Pod") == "Pod.v1"
+    assert get_canonical_resource_kind_name("apps/v1", "Deployment") == "Deployment.apps/v1"
+    assert get_canonical_resource_kind_name("nyl.io/v1", "ApplySet") == "ApplySet.nyl.io/v1"
