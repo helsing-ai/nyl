@@ -21,3 +21,9 @@ id = "8a3b94a4-0dd9-45a0-8cb2-bd679979527e"
 type = "fix"
 description = "Update `PostProcessor`, pointing Kyverno to a directory and expecting it to output all manifest, not just the mutated ones. The `PostProcessor` is now invoked at the very end, even after Nyl patches resources with the default namespace in the current manifest file."
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "843a3744-7e50-49d3-8dc5-8800e866ca01"
+type = "fix"
+description = "fix #57 -- `ARGOCD_APP_NAMESPACE` and the `--default-namespace` option are used now only when no namespace is defined in the manifest file"
+author = "@NiklasRosenstein"

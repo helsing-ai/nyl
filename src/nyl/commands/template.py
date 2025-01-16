@@ -241,12 +241,7 @@ def template(
                 applyset = ApplySet.load(manifest)
                 source.manifests.remove(manifest)
 
-        # Determine what namespace to fill in if we encounter resources without it.
-        if default_namespace is not None:
-            current_default_namespace = default_namespace
-        else:
-            current_default_namespace = get_default_namespace_for_manifest(source)
-
+        current_default_namespace = get_default_namespace_for_manifest(source, default_namespace)
         if not applyset and project.config.settings.generate_applysets:
             if not current_default_namespace:
                 logger.opt(ansi=True).error(
@@ -461,7 +456,7 @@ def is_cluster_scoped_resource(manifest: Manifest) -> bool:
     }
 
 
-def get_default_namespace_for_manifest(source: ManifestsWithSource) -> str:
+def get_default_namespace_for_manifest(source: ManifestsWithSource, fallback: str | None = None) -> str:
     """
     Given the contents of a manifest file, determine the fallback namespace to apply to resources that have been
     recorded without a namespace.
@@ -470,8 +465,8 @@ def get_default_namespace_for_manifest(source: ManifestsWithSource) -> str:
     namespace is `"default"`. However, in Nyl we take various hints to fill in a more appropriate namespace for the
     resource given the context in which it was recorded:
 
-    - If there is no `v1/Namespace` resource declared in the manifest, the fallback namespace is the name of the
-    manifest file (without the extension, which may be `.yml`, `.yaml` or `.nyl.yaml`).
+    - If there is no `v1/Namespace` resource declared in the manifest, the *fallback* namespace is used, and if not
+    set, the name of the manifest file (without the extension, which may be `.yml`, `.yaml` or `.nyl.yaml`).
 
     - If there is exactly one `v1/Namespace` resource declared in the manifest, that namespace's name is used as the
     fallback.
@@ -487,6 +482,8 @@ def get_default_namespace_for_manifest(source: ManifestsWithSource) -> str:
     namespace_resources = [x for x in source.manifests if is_namespace_resource(x)]
 
     if len(namespace_resources) == 0:
+        if fallback is not None:
+            return fallback
         use_namespace = source.file.stem
         if use_namespace.endswith(".nyl"):
             use_namespace = use_namespace[:-4]
