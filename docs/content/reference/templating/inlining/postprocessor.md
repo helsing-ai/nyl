@@ -6,7 +6,11 @@ not accept a `metadata` field.
 
 ## Prerequisites
 
-* You need the [`kyverno` CLI](https://kyverno.io/docs/kyverno-cli/) installed 
+You need the [`kyverno` CLI](https://kyverno.io/docs/kyverno-cli/) >1.13.x installed 
+
+!!! danger
+    In Kyverno 1.12.6, the `kyverno apply` command with the `-o` option outputs only the mutated resources. In
+    Kyverno 1.13.2, all resources are outputted. Nyl relies on the latter behavior.
 
 ## API Spec
 
