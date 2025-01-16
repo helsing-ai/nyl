@@ -499,7 +499,7 @@ def get_default_namespace_for_manifest(source: ManifestsWithSource) -> str:
 
     if len(namespace_resources) == 1:
         logger.debug("Manifest '{}' defines exactly one Namespace resource. Using '{}' as the default namespace.")
-        return namespace_resources[0]["metadata"]["name"]
+        return namespace_resources[0]["metadata"]["name"]  # type: ignore[no-any-return]
 
     default_namespaces = {
         x["metadata"]["name"]
@@ -530,4 +530,4 @@ def get_default_namespace_for_manifest(source: ManifestsWithSource) -> str:
         )
         exit(1)
 
-    return default_namespaces.pop()
+    return default_namespaces.pop()  # type: ignore[no-any-return]

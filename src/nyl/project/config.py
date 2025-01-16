@@ -47,7 +47,7 @@ class ProjectSettings:
     file.
     """
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.generate_placeholders is not None:
             logger.warning(
                 "The 'generate_placeholders' setting is deprecated and will be removed in a future version. "
