@@ -15,3 +15,9 @@ id = "d0798272-7c1c-402d-8e04-d578cea6a410"
 type = "improvement"
 description = "Apply Nyl `PostProcessor` instructions at the end, after Nyl had a chance to fill in the manifest file's determined default namespace. Kyverno might add the `namespace: default` field to any resource that has no namespace set, making it impossbile for Nyl after the fact to tell which resources need to have their namespace injected."
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "8a3b94a4-0dd9-45a0-8cb2-bd679979527e"
+type = "fix"
+description = "Update `PostProcessor`, pointing Kyverno to a directory and expecting it to output all manifest, not just the mutated ones. The `PostProcessor` is now invoked at the very end, even after Nyl patches resources with the default namespace in the current manifest file."
+author = "@NiklasRosenstein"

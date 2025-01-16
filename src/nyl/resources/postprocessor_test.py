@@ -29,6 +29,7 @@ def test__PostProcessor__extract_from_list() -> None:
 def test__PostProcessor__process__inlinePolicy() -> None:
     manifest = Manifests(
         [
+            # A resource that we expect Kyverno to mutate.
             Manifest(
                 {
                     "apiVersion": "v1",
@@ -43,7 +44,16 @@ def test__PostProcessor__process__inlinePolicy() -> None:
                         ]
                     },
                 }
-            )
+            ),
+            # A Service resource that we don't expect it to mutate.
+            Manifest(
+                {
+                    "apiVersion": "v1",
+                    "kind": "Service",
+                    "metadata": {"name": "foo", "namespace": "foo"},
+                    "spec": {"selector": {"app": "foo"}},
+                }
+            ),
         ]
     )
 
@@ -130,5 +140,11 @@ def test__PostProcessor__process__inlinePolicy() -> None:
                     },
                 },
             },
-        }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {"name": "foo", "namespace": "foo"},
+            "spec": {"selector": {"app": "foo"}},
+        },
     ]

@@ -1,3 +1,4 @@
+from itertools import chain
 import subprocess
 import sys
 from dataclasses import dataclass, field
@@ -46,6 +47,10 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
     Configuration for post-processing Kubernetes manifests in a file. Note that the post-processing is always
     scoped to the file that the processor is defined in. Post processors will be applied after all inline resources
     are reconciled.
+
+    Important: Kyverno injects `namespace: default` into resources that don't have it. Because Nyl implements its
+    own way of backfilling the `namespace` metadata field, the PostProcessor should be run _after_ that fallback
+    is applied.
     """
 
     # metadata: ObjectMetadata
@@ -58,8 +63,6 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
         """
 
         if self.spec.kyverno.policyFiles or self.spec.kyverno.inlinePolicies:
-            logger.info("Applying Kyverno policies to manifests from '{}': {}", source_file.name, self.spec.kyverno)
-
             policy_paths = []
 
             for policy in map(Path, self.spec.kyverno.policyFiles):
@@ -83,10 +86,18 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
                     policy_paths.append(inline_dir.joinpath(key))
                     policy_paths[-1].write_text(yaml.safe_dump(value))
 
+                logger.info(
+                    "Applying {} Kyverno {} to manifests from '{}'.",
+                    len(policy_paths),
+                    "policy" if len(policy_paths) == 1 else "policies",
+                    source_file.name,
+                )
+
                 # Write manifests to a file.
                 manifests_file = tmp / "manifests.yaml"
                 manifests_file.write_text(yaml.safe_dump_all(manifests))
-                output_file = tmp / "output.yaml"
+                output_dir = tmp / "output"
+                output_dir.mkdir()
 
                 command = [
                     "kyverno",
@@ -94,19 +105,30 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
                     *map(str, policy_paths),
                     f"--resource={manifests_file}",
                     "-o",
-                    str(output_file),
+                    str(output_dir),
                 ]
                 logger.debug("$ {}", lazy_str(pretty_cmd, command))
-                subprocess.check_call(command, stdout=sys.stderr)  # TODO: Catch output?
+                result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+                if result.returncode != 0:
+                    logger.error("Kyverno stdout:\n{}", result.stdout.decode())
+                    raise RuntimeError("Kyverno failed to apply policies to manifests. See logs for more details")
+                else:
+                    logger.debug("Kyverno stdout:\n{}", result.stdout.decode())
 
-                # Kyverno only prints the mutated manifests. We assume their name/kind doesn't change and
-                # merge them back into the original list.
-                mutated_manifests = Manifests(list(filter(None, yaml.safe_load_all(output_file.read_text()))))
+                # Load all resources (Kyverno generates one file per resource, including unchanged ones).
+                mutated_manifests = Manifests(
+                    list(chain(*(filter(None, yaml.safe_load_all(file.read_text())) for file in output_dir.iterdir())))
+                )
+                if len(mutated_manifests) != len(manifests):
+                    # Showing identifies for manifests that have been added or removed is not very helpful because
+                    # Kyverno will add `namespace: default` to those without the field, which changes the identifier.
+                    raise RuntimeError(
+                        "Unexpected behaviour of `kyverno apply` command: The number of manifests generated in the "
+                        f"output folder ({len(mutated_manifests)}) does not match the number of input manifests "
+                        f"({len(manifests)})."
+                    )
 
-                logger.info("  Mutated manifests: {}", ", ".join(map(resource_locator, mutated_manifests)))
-                keyed_manifests = {resource_locator(m): m for m in manifests}
-                keyed_manifests.update({resource_locator(m): m for m in mutated_manifests})
-                manifests = Manifests(list(keyed_manifests.values()))
+                manifests = mutated_manifests
 
         return manifests
 
