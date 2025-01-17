@@ -5,12 +5,12 @@ weight: 5
 # HelmChart
 
 Nyl allows you to inline Helm charts by specifying a `HelmChart` resource in your manifest. Just like any other
-resource, the Helm chart resource values can be templated using Nyl's [structured templating](../templating/basics.md)
+resource, the Helm chart resource values can be templated using Nyl's [structured templating](../basics.md)
 (for example to inject secrets), and are then rendered to Kubernetes resources that are inlined in your configuration.
 
 __Example__
 
-```yaml 
+```yaml
 apiVersion: inline.nyl.io/v1
 kind: HelmChart
 metadata:
@@ -26,6 +26,71 @@ spec:
       service:
         type: LoadBalancer
 ```
+
+## ChartRef
+
+The `.spec.chart` field defines the source of the Helm chart. You can source charts from a Helm HTTP(S) or OCI repository, a Git repository or a local directory. Local chart paths are first resolved in the Nyl search path that can be defined in the [Project settings](../../configuration/projects.md).
+
+!!! note
+    We highly recommend to add a as a comment the link to <artifacthub.io>, if available. This allows you to easily
+    look up the chart version, values and documentation.
+
+=== "HTTP(S) repository"
+
+    ```yaml
+    # ...
+    spec:
+      chart:
+        # https://artifacthub.io/packages/helm/bitnami/nginx
+        repository: https://charts.bitnami.com/bitnami
+        name: nginx
+        version: 18.3.5 # 1.27.3
+    ```
+
+=== "OCI repository"
+
+    ```yaml
+    # ...
+    spec:
+      chart:
+        # https://artifacthub.io/packages/helm/bitnami/nginx
+        repository: oci://registry-1.docker.io/bitnamicharts
+        name: nginx
+        version: 18.3.5 # 1.27.3
+    ```
+
+    Note how the OCI URL does not contain the chart name. It is specified separately in the `name` field.
+
+=== "Git repository"
+
+    ```yaml
+    # ...
+    spec:
+      chart:
+        # This can be any valid URL that can be used with `git clone`, plus an optional URL query parameter that is
+        # either `ref` (for a Git reF) or `rev` (or a Git commit SHA).
+        git: https://github.com/bitnami/charts?rev=e808ba0
+
+        # If the chart is not located at the root of the repository, point to its subdirectory.
+        path: bitnami/nginx
+    ```
+
+=== "Local directory"
+
+    ```yaml
+    # ...
+    spec:
+      chart:
+        # Explicitly relative paths (e.g. starting with `./`) are resolved relative to the manifest source file that
+        # defines the `HelmChart` resource.
+        path: ./charts/nginx
+
+        # Absolute paths are resolved absolute in the local filesystem. This is not usually useful except for testing.
+        path: /path/to/chart
+
+        # Any other path is resolved in the Nyl project search path.
+        path: nginx
+    ```
 
 ### Comparison to native ArgoCD Helm applications
 

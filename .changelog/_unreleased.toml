@@ -3,3 +3,9 @@ id = "00755f35-1e28-4946-9cbb-eccb2735b9fb"
 type = "feature"
 description = "Add `nyl add namespace` command"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "1a17887c-ed8a-40a9-9ff5-11b594c20dd4"
+type = "docs"
+description = "Fix links in docs and add information on how to use the `HelmChart.spec.chart` field"
+author = "@NiklasRosenstein"

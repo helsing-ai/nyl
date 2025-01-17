@@ -8,7 +8,7 @@ Nyl components are effectively templates that you can instantiate them similar t
 are treated in a way similar to CRDs, only that they will never to pushed to the Kubernetes API server and instead be
 replaced throuhg a first reconcilation phase during `nyl template`.
 
-Components are built on top of Helm chart [inlining](./inlining.md#helm-charts).
+Components are built on top of Helm chart [inlining](./inlining/helmcharts.md).
 
 ## How Nyl looks for components
 
