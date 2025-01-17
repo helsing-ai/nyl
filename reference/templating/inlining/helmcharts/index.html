@@ -1151,6 +1151,12 @@ resource, the Helm chart resource values can be templated using Nyl's <a href=".
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="nt">service</span><span class="p">:</span>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">        </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LoadBalancer</span>
 </span></code></pre></div>
+<p>When writing Helm charts, we discourage from using <code>namespace: {{ .Release.Namespace }}</code>. This is because when you
+instantiate a <code>HelmChart</code> in Nyl without specifying a <code>.metadata.namespace</code>, the Helm chart will be templated without
+the <code>--namespace</code> option. This will have Helm assume <code>.Release.Namespace == "default"</code>, thus all <code>namespace</code> fields
+in the generated resource will be set to <code>default</code>. This is not what you want, as it will prevent Nyl from injecting the
+appropriate namespace based on the context of your local manifest file.</p>
+<p>If you are dealing with a Helm chart that does use <code>namespace: {{ .Release.Namespace }}</code>, be sure to set the <code>.metadata.namespace</code> field of your Nyl <code>HelmChart</code> resource.</p>
 <h2 id="chartref">ChartRef</h2>
 <p>The <code>.spec.chart</code> field defines the source of the Helm chart. You can source charts from a Helm HTTP(S) or OCI repository, a Git repository or a local directory. Local chart paths are first resolved in the Nyl search path that can be defined in the <a href="../../../configuration/projects/">Project settings</a>.</p>
 <div class="admonition note">
