@@ -124,10 +124,11 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
 
             if policy_files:
                 logger.info(
-                    "Applying {} Kyverno {} to manifests from '{}'.",
+                    "Applying {} Kyverno {} to manifests from '{}': {}",
                     len(policy_files),
                     "policy" if len(policy_files) == 1 else "policies",
                     source_file.name,
+                    ", ".join(f"{policy_file.name}" for policy_file in policy_files),
                 )
 
                 manifests = apply_kyverno_policies(

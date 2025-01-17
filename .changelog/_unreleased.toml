@@ -51,3 +51,9 @@ id = "2eed140a-4d16-448a-96fb-997b3ca81297"
 type = "refactor"
 description = "Refactor `PostProcessor` implementation for generating policy files and invoking Kyverno"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "320c1dce-1ba6-451b-9f25-a279ae8b9eb2"
+type = "improvement"
+description = "`PostProcessor` log for invoking Kyverno now lists the policy file paths that are going to be applied"
+author = "@NiklasRosenstein"
