@@ -29,7 +29,7 @@ from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests
 
 DEFAULT_PROFILE = "default"
-DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/default-namespace"
+DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/is-default-namespace"
 
 
 # Need an enum for typer
@@ -431,7 +431,7 @@ def get_default_namespace_for_manifest(source: ManifestsWithSource, fallback: st
     fallback.
 
     - If there are multiple `v1/Namespace` resources declared in the manifest, we pick the one with the
-    `nyl.io/default-namespace` label. If there is no such namespace, a warning is logged and we pick the first one
+    `nyl.io/is-default-namespace` label. If there is no such namespace, a warning is logged and we pick the first one
     alphabetically.
 
     Returns:

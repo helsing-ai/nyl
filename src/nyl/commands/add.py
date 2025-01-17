@@ -33,7 +33,7 @@ def namespace(
     """
     Add a Kubernetes `Namespace` resource definition to the top of the specified manifest file.
 
-    If this is the first namespace defined in the manifest, it will be annotated with `nyl.io/default-namespace`.
+    If this is the first namespace defined in the manifest, it will be annotated with `nyl.io/is-default-namespace`.
     """
 
     if manifest.exists():

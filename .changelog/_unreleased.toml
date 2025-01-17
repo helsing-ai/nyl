@@ -21,3 +21,9 @@ id = "242fa8b1-225f-42f4-bf7f-fe6af806f0b5"
 type = "docs"
 description = "Add note to discurage from using `{{ .Release.Namespace }}` in Helm charts"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "a09f0665-99a6-4a54-b0eb-afe4f719a320"
+type = "breaking change"
+description = "Rename annotation `nyl.io/default-namespace` to `nyl.io/is-default-namespace`"
+author = "@NiklasRosenstein"
