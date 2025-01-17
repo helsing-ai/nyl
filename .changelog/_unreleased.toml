@@ -39,3 +39,15 @@ id = "cdbd2567-9801-4514-8552-6fdc352a8185"
 type = "improvement"
 description = "Fix deprecation warnings of using the `loguru.logger.opt(ansi)` keyword argument and use the new `colors` kwarg instead"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "dd1038ab-19cf-406a-bc06-ccc14ad8fbbb"
+type = "feature"
+description = "Add `PostProcessor.spec.kyvernoRules` field as a shorthand for defining Kyverno policies in a Nyl manifest."
+author = "@NiklasRosenstein"
+
+[[entries]]
+id = "2eed140a-4d16-448a-96fb-997b3ca81297"
+type = "refactor"
+description = "Refactor `PostProcessor` implementation for generating policy files and invoking Kyverno"
+author = "@NiklasRosenstein"

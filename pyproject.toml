@@ -58,4 +58,4 @@ ruff-check = "uv run ruff check ."
 ruff-fmt = "uv run ruff format --check ."
 
 [tool.slap.run]
-fmt = "uv run ruff check --fix . && uv run ruff format ."
+fmt = "uv run ruff format . && uv run ruff check --fix ."

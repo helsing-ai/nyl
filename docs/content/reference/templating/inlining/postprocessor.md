@@ -17,7 +17,10 @@ You need the [`kyverno` CLI](https://kyverno.io/docs/kyverno-cli/) >1.13.x insta
 ```yaml
 apiVersion: inline.nyl.io/v1
 kind: PostProcessor
+metadata:
+  name: my-post-processor
 spec:
+  # Configure Kyverno policies to apply.
   kyverno:
     # A list of files that each contain a Kyverno policy resource, usually a `ClusterPolicy`. The paths are first
     # considered relative to the manifest that this resource is defined in, and will then be searched in the project
@@ -33,7 +36,36 @@ spec:
         kind: ClusterPolicy
         metadata:
           name: enforce-pod-security-context
-        spec: {} # ...
+        spec:
+          rules:
+          - name: my-rule
+            match:
+              resources:
+                kinds:
+                  - Pod
+            validate:
+              message: "Pod must have security context"
+              pattern:
+                spec:
+                  securityContext:
+                    runAsNonRoot: true
+
+  # Define rules for a single Kyverno `ClusterPolicy` to apply. The `name` field of the rule configuration may be
+  # ommited. Applies after policies defined in `kyverno`.
+  #
+  # To find more about Kyverno policies and rules, read https://kyverno.io/docs/writing-policies/.
+  kyvernoRules:
+  - match:
+      resources:
+        kinds:
+          - Service
+    mutate:
+      patchStrategicMerge:
+        spec:
+          (type): LoadBalancer
+          allocateLoadBalancerNodePorts: false
+          loadBalancerClass: ngrok
+
 ```
 
 ## Example
