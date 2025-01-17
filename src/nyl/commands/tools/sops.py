@@ -54,7 +54,7 @@ def re_encrypt(
             logger.error("no `file` argument was specified and no SOPS file could be detected in your configuration")
             sys.exit(1)
 
-    logger.opt(ansi=True).info("re-encrypting file '<blue>{}</>'", lazy_str(lambda f: str(shorter_path(f)), file))
+    logger.opt(colors=True).info("re-encrypting file '<blue>{}</>'", lazy_str(lambda f: str(shorter_path(f)), file))
 
     if file_type is None:
         file_type = detect_sops_format(file.suffix)

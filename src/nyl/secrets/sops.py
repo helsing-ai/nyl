@@ -66,7 +66,7 @@ class SopsFile(SecretProvider):
             if input_type is not None:
                 command += ["--input-type", input_type]
             command.append(str(self.path))
-            logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
+            logger.opt(colors=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
             try:
                 self._cache = json.loads(
                     subprocess.run(
@@ -84,7 +84,7 @@ class SopsFile(SecretProvider):
 
     def save(self, output_type: str) -> None:
         command = ["sops", "--output-type", output_type, "--input-type", "json", "--encrypt", "/dev/stdin"]
-        logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
+        logger.opt(colors=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
         output = subprocess.run(
             command,
             text=True,
@@ -127,13 +127,13 @@ class SopsFile(SecretProvider):
         sops_key = self._key2sops(key)
         command = ["sops", "set", str(self.path), sops_key, json.dumps(value)]
         safe_command = ["sops", "set", str(self.path), sops_key, "MASKED"]
-        logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, safe_command))
+        logger.opt(colors=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, safe_command))
         subprocess.run(command, env=self._getenv(), check=True)
 
     def unset(self, key: str, /) -> None:
         sops_key = self._key2sops(key)
         command = ["sops", "unset", str(self.path), sops_key]
-        logger.opt(ansi=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
+        logger.opt(colors=True).debug("Running command $ <yellow>{}</>", lazy_str(pretty_cmd, command))
         try:
             subprocess.run(command, env=self._getenv(), text=True, capture_output=True, check=True)
         except subprocess.CalledProcessError as exc:

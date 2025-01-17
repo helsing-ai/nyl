@@ -76,7 +76,7 @@ def get_profile_kubernetes_client(profiles: ProfileManager, profile: str | None)
             active = profiles.activate_profile(profile)
             load_kube_config(str(active.kubeconfig))
         else:
-            logger.opt(ansi=True).info(
+            logger.opt(colors=True).info(
                 "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
             )
             load_kube_config()
@@ -147,7 +147,7 @@ def template(
         if not paths:
             logger.error("<cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</> is set, but empty.")
             exit(1)
-        logger.opt(ansi=True).info(
+        logger.opt(colors=True).info(
             "Using paths from <cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</>: <blue>{}</>",
             lazy_str(lambda: ", ".join(map(str, paths))),
         )
@@ -208,7 +208,7 @@ def template(
     )
 
     for source in load_manifests(paths):
-        logger.opt(ansi=True).info("Rendering manifests from <blue>{}</>.", source.file)
+        logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
         source.manifests = template_engine.evaluate(source.manifests)
         if inline:
@@ -234,7 +234,7 @@ def template(
                 namespaces.add(manifest["metadata"]["name"])
             elif ApplySet.matches(manifest):
                 if applyset is not None:
-                    logger.opt(ansi=True).error(
+                    logger.opt(colors=True).error(
                         "Multiple ApplySet resources defined in <yellow>{}</>, there can only be one per source.",
                         source.file,
                     )
@@ -245,7 +245,7 @@ def template(
         current_default_namespace = get_default_namespace_for_manifest(source, default_namespace)
         if not applyset and project.config.settings.generate_applysets:
             if not current_default_namespace:
-                logger.opt(ansi=True).error(
+                logger.opt(colors=True).error(
                     "No default namespace defined for <yellow>{}</>, but it is required for the automatically "
                     "generated nyl.io/v1/ApplySet resource (the ApplySet is named after the default namespace).",
                     source.file,
@@ -254,7 +254,7 @@ def template(
 
             applyset_name = current_default_namespace
             applyset = ApplySet.new(applyset_name)
-            logger.opt(ansi=True).info(
+            logger.opt(colors=True).info(
                 "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).", source.file, applyset_name
             )
 
@@ -268,7 +268,7 @@ def template(
 
             if apply:
                 # We need to ensure that ApplySet parent object exists before invoking `kubectl apply --applyset=...`.
-                logger.opt(ansi=True).info(
+                logger.opt(colors=True).info(
                     "Kubectl-apply ApplySet resource <yellow>{}</> from <cyan>{}</>.",
                     applyset.reference,
                     source.file,
@@ -289,7 +289,7 @@ def template(
                 continue
 
             if "metadata" not in manifest:
-                logger.opt(ansi=True).error(
+                logger.opt(colors=True).error(
                     "A manifest in <yellow>'{}'</> has no <cyan>metadata</> key:\n\n{}",
                     source.file,
                     indent(yaml.dumps(manifest), "  "),

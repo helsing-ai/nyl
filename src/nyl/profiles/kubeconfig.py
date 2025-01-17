@@ -62,7 +62,7 @@ class KubeconfigManager:
                 raw_kubeconfig = Path(os.getenv("KUBECONFIG", os.path.expanduser("~/.kube/config")))
                 if not raw_kubeconfig.exists():
                     raise FileNotFoundError(f"Kubeconfig file '{raw_kubeconfig}' does not exist.")
-                logger.opt(ansi=True).info("Using kubeconfig <yellow>{}</>.", raw_kubeconfig)
+                logger.opt(colors=True).info("Using kubeconfig <yellow>{}</>.", raw_kubeconfig)
 
             case KubeconfigFromSsh():
                 raw_kubeconfig = self._state_dir / profile_name / "kubeconfig.orig"
@@ -81,12 +81,12 @@ class KubeconfigManager:
 
                 # Fetch the Kubeconfig file.
                 if not raw_kubeconfig.exists() or force_refresh:
-                    logger.opt(ansi=True).info("Fetching kubeconfig with <yellow>$ {}</>.", pretty_cmd(command))
+                    logger.opt(colors=True).info("Fetching kubeconfig with <yellow>$ {}</>.", pretty_cmd(command))
                     raw_kubeconfig.parent.mkdir(parents=True, exist_ok=True)
                     kubeconfig_content = subprocess.check_output(command, text=True)
                     Path(raw_kubeconfig).write_text(kubeconfig_content)
                 else:
-                    logger.opt(ansi=True).info(
+                    logger.opt(colors=True).info(
                         "Using <u>cached</> kubeconfig from <yellow>$ {}</>.", pretty_cmd(command)
                     )
             case _:

@@ -54,7 +54,7 @@ def run(
         # Check if the context exists in the kubeconfig.
         kubeconfig = Path(os.environ.get("KUBECONFIG", "~/.kube/config")).expanduser()
         if not kubeconfig.is_file():
-            logger.opt(ansi=True).info("Profile <yellow>{}</> not found.", profile_name)
+            logger.opt(colors=True).info("Profile <yellow>{}</> not found.", profile_name)
             sys.exit(1)
 
         try:
@@ -62,11 +62,11 @@ def run(
             kubeconfig_data = _trim_to_context(kubeconfig_data, profile_name)
         except ValueError:
             logger.debug("Failed to parse the kubeconfig file/find context '{}'.", profile_name)
-            logger.opt(ansi=True).info("Profile <yellow>{}</> not found.", profile_name)
+            logger.opt(colors=True).info("Profile <yellow>{}</> not found.", profile_name)
             sys.exit(1)
         else:
             if not inherit_kubeconfig:
-                logger.opt(ansi=True).error(
+                logger.opt(colors=True).error(
                     "Found context <yellow>{}</> in the kubeconfig ({}), but no Nyl profile with that name. "
                     "Consider using --inherit-kubeconfig,-I to run the command in that Kubernetes context.",
                     profile_name,
@@ -74,7 +74,7 @@ def run(
                 )
                 sys.exit(1)
 
-            logger.opt(ansi=True).info(
+            logger.opt(colors=True).info(
                 "Falling back to context <yellow>{}</> from the kubeconfig ({}) due to --inherit-kubeconfig,-I option.",
                 profile_name,
                 kubeconfig,
@@ -89,7 +89,7 @@ def run(
             kubeconfig.chmod(0o600)
 
     profile = ActivatedProfile(kubeconfig)
-    logger.opt(ansi=True).info(
+    logger.opt(colors=True).info(
         "Running command `<blue>{}</>` with {} <yellow>{}</>.",
         lazy_str(pretty_cmd, command),
         kind,

@@ -82,16 +82,16 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             #       we could consider querying the repository or allow for some kind of chartPullPolicy.
             if not cache_dir.is_dir() or not any(cache_dir.iterdir()):
                 cache_dir.mkdir(parents=True, exist_ok=True)
-                logger.opt(ansi=True).debug(
+                logger.opt(colors=True).debug(
                     "Pulling Helm chart '{}' from repository '{}' with command $ <yellow>{}</>",
                     chart,
                     repository,
                     pretty_cmd(command),
                 )
-                logger.opt(ansi=True).trace("Using cache directory <yellow>{}</>", cache_dir)
+                logger.opt(colors=True).trace("Using cache directory <yellow>{}</>", cache_dir)
                 subprocess.check_call(command, cwd=cache_dir, stdout=sys.stderr)
             else:
-                logger.opt(ansi=True).debug("Using cached Helm chart '{}' from repository '{}'", chart, repository)
+                logger.opt(colors=True).debug("Using cached Helm chart '{}' from repository '{}'", chart, repository)
 
             chart = str(next(cache_dir.iterdir()))
             repository = None
@@ -196,7 +196,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             #     command.append("--set")
             #     command.append(f"{key}={json.dumps(value)}")
 
-            logger.opt(ansi=True).debug(
+            logger.opt(colors=True).debug(
                 "Generating manifests with Helm: $ <yellow>{}</>", " ".join(map(shlex.quote, command))
             )
             try:

@@ -62,7 +62,7 @@ class ProfileManager:
                                 point to the activated profile's Kubeconfig file.
         """
 
-        logger.opt(ansi=True).info("Activating profile <magenta>{}</>...", profile_name)
+        logger.opt(colors=True).info("Activating profile <magenta>{}</>...", profile_name)
 
         profile = self.config.profiles[profile_name]
 
@@ -102,7 +102,7 @@ class ProfileManager:
         )
 
         api_server = f"https://{raw_kubeconfig.api_host}:{raw_kubeconfig.api_port}"
-        logger.opt(ansi=True).info("Waiting for API server connectivity (<blue>{}{}</>)", api_server, tun_description)
+        logger.opt(colors=True).info("Waiting for API server connectivity (<blue>{}{}</>)", api_server, tun_description)
         _wait_for_api_server(api_server, timeout)
 
         if update_process_env:

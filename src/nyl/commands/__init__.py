@@ -79,7 +79,7 @@ def _callback(
     logger.add(sys.stderr, level=LogLevel.ERROR.name if quiet else log_level.name, format=fmt)
     if log_file:
         logger.add(log_file, level=log_level.name, format=fmt)
-    logger.opt(ansi=True).debug("Nyl v{} run from <yellow>{}</>.", __version__, Path.cwd())
+    logger.opt(colors=True).debug("Nyl v{} run from <yellow>{}</>.", __version__, Path.cwd())
 
     # Log some helpful information for debugging purposes.
     logger.debug("Used command-line arguments: {}", lazy_str(pretty_cmd, sys.argv))
