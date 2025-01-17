@@ -9,3 +9,9 @@ id = "1a17887c-ed8a-40a9-9ff5-11b594c20dd4"
 type = "docs"
 description = "Fix links in docs and add information on how to use the `HelmChart.spec.chart` field"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "3f471926-8529-4e46-8d73-41c2825a3578"
+type = "feature"
+description = "Add `nyl add chart` command"
+author = "@NiklasRosenstein"

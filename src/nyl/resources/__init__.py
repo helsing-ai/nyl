@@ -6,6 +6,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import ClassVar, Collection, cast
 
+from databind.core import SerializeDefaults
 from databind.json import dump as ser
 from databind.json import load as deser
 from typing_extensions import Self
@@ -107,7 +108,7 @@ class NylResource(ABC):
         Dump the resource to a manifest.
         """
 
-        manifest = cast(Manifest, ser(self, type(self)))
+        manifest = cast(Manifest, ser(self, type(self), settings=[SerializeDefaults(False)]))
         manifest["apiVersion"] = self.API_VERSION
         manifest["kind"] = self.KIND
         return Manifest(manifest)
