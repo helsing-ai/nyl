@@ -1091,7 +1091,7 @@
 <p>Nyl components are effectively templates that you can instantiate them similar to standard Kubernetes resources. They
 are treated in a way similar to CRDs, only that they will never to pushed to the Kubernetes API server and instead be
 replaced throuhg a first reconcilation phase during <code>nyl template</code>.</p>
-<p>Components are built on top of Helm chart <a href="./inlining.md#helm-charts">inlining</a>.</p>
+<p>Components are built on top of Helm chart <a href="../inlining/helmcharts/">inlining</a>.</p>
 <h2 id="how-nyl-looks-for-components">How Nyl looks for components</h2>
 <p>Nyl by default looks for components in a <code>components/</code> directory relative to your <code>nyl-project.ext</code> (or relative to
 your current working directory if there is no <code>nyl-project.&lt;ext&gt;</code>). You can also override the path where Nyl looks in
