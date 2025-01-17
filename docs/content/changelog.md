@@ -1,6 +1,34 @@
 # Changelog
 
-## 0.7.0
+## 0.7.2 (2025-01-17)
+
+<table><tr><th>Type</th><th>Description</th><th>PR</th><th>Issues</th><th>Author</th></tr>
+  <tr><td>Feature</td><td>
+
+Add `nyl add namespace` command</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Docs</td><td>
+
+Fix links in docs and add information on how to use the `HelmChart.spec.chart` field</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Feature</td><td>
+
+Add `nyl add chart` command</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Docs</td><td>
+
+Add note to discurage from using `{{ .Release.Namespace }}` in Helm charts</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Breaking change</td><td>
+
+Rename annotation `nyl.io/default-namespace` to `nyl.io/is-default-namespace`</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+</table>
+
+## 0.7.1 (2025-01-17)
+
+<table><tr><th>Type</th><th>Description</th><th>PR</th><th>Issues</th><th>Author</th></tr>
+  <tr><td>Fix</td><td>
+
+Fixed a bug where pulling two different charts with the same version number from the same repository conflated the cache key and ended up with Nyl using the wrong chart (that which has been pulled first).</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+</table>
+
+## 0.7.0 (2025-01-17)
 
 <table><tr><th>Type</th><th>Description</th><th>PR</th><th>Issues</th><th>Author</th></tr>
   <tr><td>Breaking change</td><td>
