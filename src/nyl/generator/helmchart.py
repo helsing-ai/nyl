@@ -67,7 +67,8 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
 
             parsed = urlparse(chart_ref.repository)
             cache_dir = (
-                self.chart_cache_dir / f"{parsed.scheme}-{parsed.hostname}-{parsed.path.replace('/', '-').lstrip('-')}"
+                self.chart_cache_dir
+                / f"{parsed.scheme}-{parsed.hostname}-{(parsed.path.replace('/', '-') + '-' + chart).lstrip('-')}"
             )
             command = ["helm", "pull", chart]
             if repository:

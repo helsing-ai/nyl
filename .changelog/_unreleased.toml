@@ -1,0 +1,5 @@
+[[entries]]
+id = "b7adb487-a449-49c4-8ef9-402625228b0d"
+type = "fix"
+description = "Fixed a bug where pulling two different charts with the same version number from the same repository conflated the cache key and ended up with Nyl using the wrong chart (that which has been pulled first)."
+author = "@NiklasRosenstein"
