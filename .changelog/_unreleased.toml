@@ -57,3 +57,12 @@ id = "320c1dce-1ba6-451b-9f25-a279ae8b9eb2"
 type = "improvement"
 description = "`PostProcessor` log for invoking Kyverno now lists the policy file paths that are going to be applied"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "138bdc5d-848b-45fe-a5f4-4c658535339d"
+type = "fix"
+description = "`nyl new chart` now generates 2-space indented YAML and has a more complete template"
+author = "@NiklasRosenstein"
+issues = [
+    "https://github.com/NiklasRosenstein/nyl/issues/47",
+]

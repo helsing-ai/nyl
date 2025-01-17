@@ -52,7 +52,11 @@ def chart(dir: Path) -> None:
         dir,
         "values.yaml",
         """
-        image: my/image:tag
+        image:
+          repository: my/image
+          tag: 1.0.0
+          pullPolicy: IfNotPresent
+          pullSecret: ""
         """,
     )
 
@@ -82,20 +86,25 @@ def chart(dir: Path) -> None:
         apiVersion: apps/v1
         kind: Deployment
         metadata:
-            name: {{ .Release.Name }}
+          name: {{ .Release.Name }}
         spec:
-            replicas: 1
-            selector:
+          replicas: 1
+          selector:
             matchLabels:
-                app: {{ .Release.Name }}
-            template:
+              app.kubernetes.io/name: {{ .Release.Name }}
+          template:
             metadata:
-                labels:
-                app: {{ .Release.Name }}
+              labels:
+                app.kubernetes.io/name: {{ .Release.Name }}
             spec:
-                containers:
-                - name: {{ .Release.Name }}
-                image: {{ .Values.image }}
+              {{- if .Values.image.pullSecret }}
+              imagePullSecrets:
+              - name: {{ .Values.image.pullSecret }}
+              {{- end }}
+              containers:
+              - name: {{ .Release.Name }}
+                image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+                imagePullPolicy: {{ .Values.image.pullPolicy }}
         """,
     )
 
