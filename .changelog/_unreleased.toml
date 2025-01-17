@@ -15,3 +15,9 @@ id = "3f471926-8529-4e46-8d73-41c2825a3578"
 type = "feature"
 description = "Add `nyl add chart` command"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "242fa8b1-225f-42f4-bf7f-fe6af806f0b5"
+type = "docs"
+description = "Add note to discurage from using `{{ .Release.Namespace }}` in Helm charts"
+author = "@NiklasRosenstein"

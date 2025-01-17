@@ -27,6 +27,14 @@ spec:
         type: LoadBalancer
 ```
 
+When writing Helm charts, we discourage from using `namespace: {{ .Release.Namespace }}`. This is because when you
+instantiate a `HelmChart` in Nyl without specifying a `.metadata.namespace`, the Helm chart will be templated without
+the `--namespace` option. This will have Helm assume `.Release.Namespace == "default"`, thus all `namespace` fields
+in the generated resource will be set to `default`. This is not what you want, as it will prevent Nyl from injecting the
+appropriate namespace based on the context of your local manifest file.
+
+If you are dealing with a Helm chart that does use `namespace: {{ .Release.Namespace }}`, be sure to set the `.metadata.namespace` field of your Nyl `HelmChart` resource.
+
 ## ChartRef
 
 The `.spec.chart` field defines the source of the Helm chart. You can source charts from a Helm HTTP(S) or OCI repository, a Git repository or a local directory. Local chart paths are first resolved in the Nyl search path that can be defined in the [Project settings](../../configuration/projects.md).
