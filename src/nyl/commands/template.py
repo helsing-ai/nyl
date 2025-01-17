@@ -24,6 +24,7 @@ from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
+from nyl.tools.kubernetes import populate_namespace_to_resources
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests
 
@@ -279,8 +280,7 @@ def template(
                 print("---")
                 print(yaml.dumps(applyset.dump()))
 
-        # Find all manifests without a namespace and inject the namespace name into them.
-        # If there is an applyset, ensure they are marked as part of the applyset.
+        # Validate resources.
         for manifest in source.manifests:
             # Inline resources often don't have metadata and they are not persisted to the cluster, hence
             # we don't need to process them here.
@@ -296,36 +296,13 @@ def template(
                 )
                 exit(1)
 
-            if applyset is not None and applyset_part_of:
+        # Tag resources as part of the current apply set, if any.
+        if applyset is not None and applyset_part_of:
+            for manifest in source.manifests:
                 if APPLYSET_LABEL_PART_OF not in (labels := manifest["metadata"].setdefault("labels", {})):
                     labels[APPLYSET_LABEL_PART_OF] = applyset.id
 
-            if not is_cluster_scoped_resource(manifest) and "namespace" not in manifest["metadata"]:
-                if not current_default_namespace:
-                    logger.error(
-                        "A namespace-scoped manifest in '{}' has no namespace, and no default namespace is defined. "
-                        "Try defining a single namespace in the manifest source file, naming the manifest source file "
-                        "the same as that default namespace or passing the --default-namespace option.",
-                        source.file,
-                    )
-                    exit(1)
-
-                logger.trace(
-                    "Injecting namespace '{}' into manifest {}/{}.",
-                    current_default_namespace,
-                    manifest["kind"],
-                    manifest["metadata"]["name"],
-                )
-                manifest["metadata"]["namespace"] = current_default_namespace
-
-            elif not is_cluster_scoped_resource(manifest) and manifest["metadata"]["namespace"] not in namespaces:
-                logger.warning(
-                    "Resource '{}/{}' in '{}' references namespace '{}', which is not defined in the file.",
-                    manifest["kind"],
-                    manifest["metadata"]["name"],
-                    source.file,
-                    manifest["metadata"]["namespace"],
-                )
+        populate_namespace_to_resources(source.manifests, current_default_namespace)
 
         # Now apply the post-processor.
         source.manifests = PostProcessor.apply_all(source.manifests, post_processors, source.file)
@@ -436,24 +413,6 @@ def is_namespace_resource(manifest: Manifest) -> bool:
     """
 
     return manifest.get("apiVersion") == "v1" and manifest.get("kind") == "Namespace"
-
-
-def is_cluster_scoped_resource(manifest: Manifest) -> bool:
-    """
-    Check if a manifest is a cluster scoped resource.
-    """
-
-    # HACK: We should probably just list the resources via the Kubectl API?
-    fqn = manifest.get("kind", "") + "." + manifest.get("apiVersion", "").split("/")[0]
-    return fqn in {
-        "ClusterRole.rbac.authorization.k8s.io",
-        "ClusterRoleBinding.rbac.authorization.k8s.io",
-        "CustomResourceDefinition.apiextensions.k8s.io",
-        "IngressClass.networking.k8s.io",
-        "Namespace.v1",
-        "StorageClass.storage.k8s.io",
-        "ValidatingWebhookConfiguration.admissionregistration.k8s.io",
-    }
 
 
 def get_default_namespace_for_manifest(source: ManifestsWithSource, fallback: str | None = None) -> str:

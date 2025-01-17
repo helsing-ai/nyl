@@ -13,6 +13,7 @@ from loguru import logger
 from nyl.generator import Generator
 from nyl.resources.helmchart import ChartRef, HelmChart, ReleaseMetadata
 from nyl.tools import yaml
+from nyl.tools.kubernetes import populate_namespace_to_resources
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.types import Manifests
 
@@ -209,5 +210,8 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 )
 
             manifests = Manifests(list(filter(None, yaml.loads_all(result.stdout.decode()))))
+
+            if release.namespace:
+                populate_namespace_to_resources(manifests, release.namespace)
 
             return manifests

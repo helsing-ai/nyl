@@ -32,3 +32,38 @@ def resource_locator(manifest: Manifest) -> str:
         f"{manifest['apiVersion']}/{manifest['kind']}/"
         f"{manifest['metadata'].get('namespace', '')}/{manifest['metadata']['name']}"
     )
+
+
+def populate_namespace_to_resources(resources: list[Manifest], namespace: str) -> None:
+    """
+    Populate the `namespace` field of all resources that don't have it, excluding those that are cluster-scoped.
+
+    Note that the heuristics for determining which resource kind is cluster-scoped is lackluster, check
+    :meth:`is_cluster_scoped_resource` for details.
+    """
+
+    for resource in resources:
+        if (
+            "metadata" in resource
+            and "namespace" not in resource["metadata"]
+            and not is_cluster_scoped_resource(resource)
+        ):
+            resource["metadata"]["namespace"] = namespace
+
+
+def is_cluster_scoped_resource(manifest: Manifest) -> bool:
+    """
+    Check if a manifest is a cluster scoped resource.
+    """
+
+    # HACK: We should probably just list the resources via the Kubectl API?
+    fqn = manifest.get("kind", "") + "." + manifest.get("apiVersion", "").split("/")[0]
+    return fqn in {
+        "ClusterRole.rbac.authorization.k8s.io",
+        "ClusterRoleBinding.rbac.authorization.k8s.io",
+        "CustomResourceDefinition.apiextensions.k8s.io",
+        "IngressClass.networking.k8s.io",
+        "Namespace.v1",
+        "StorageClass.storage.k8s.io",
+        "ValidatingWebhookConfiguration.admissionregistration.k8s.io",
+    }
