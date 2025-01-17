@@ -1140,6 +1140,8 @@ inspected in ArgoCD or via <code>kubectl</code>.</p>
 application, you would need to create a Helm chart that includes all the other charts. However, this can lead to a
 complicated setup that is hard to maintain: It either requires you to repeat the same values in multiple places, or
 all subcharts support <code>globals</code>.</p>
+<p>The <code>HelmChart</code> generator populates its own Kubernetes namespace to that of its generated resources that lack a
+namespace.</p>
 <h4 id="secret-injection">Secret injection</h4>
 <p>Natively, ArgoCD applications do not support injecting secrets into the Helm chart values. With Nyl, you can connect
 to a secrets provider and inject secrets into the generated resources or the value of a Helm chart parameter. Your
