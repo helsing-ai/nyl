@@ -52,6 +52,9 @@ application, you would need to create a Helm chart that includes all the other c
 complicated setup that is hard to maintain: It either requires you to repeat the same values in multiple places, or
 all subcharts support `globals`.
 
+The `HelmChart` generator populates its own Kubernetes namespace to that of its generated resources that lack a
+namespace.
+
 #### Secret injection
 
 Natively, ArgoCD applications do not support injecting secrets into the Helm chart values. With Nyl, you can connect
