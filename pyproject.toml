@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nyl"
-version = "0.0.0"  # sed'ed on publish in CI
+version = "0.7.0"
 description = "Advanced templating engine for Kubernetes and GitOps."
 authors = [
     {name = "Niklas Rosenstein", email = "rosensteinniklas@gmail.com"},
