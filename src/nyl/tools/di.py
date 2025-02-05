@@ -75,7 +75,7 @@ class DefaultDependenciesProvider(DependenciesProvider):
             raise DependencyNotSatisfiedError(object_type)
 
 
-class DependencyNotSatisfiedError(RuntimeError):
+class DependencyNotSatisfiedError(Exception):
     def __init__(self, object_type: type[T]) -> None:
         self.object_type = object_type
 

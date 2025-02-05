@@ -13,7 +13,7 @@ from nr.stream import Optional
 
 from .config import ProfileConfig, SshTunnel
 from .kubeconfig import KubeconfigManager
-from .tunnel import TunnelManager, TunnelSpec
+from .tunnel import TunnelManager, TunnelSpec, TunnelSpecForwarding, TunnelSpecLocator
 
 
 @dataclass
@@ -159,8 +159,8 @@ def _wait_for_api_server(url: str, timeout: float) -> None:
 
 def get_tunnel_spec(config_file: Path, profile: str, conf: SshTunnel) -> TunnelSpec:
     return TunnelSpec(
-        locator=TunnelSpec.Locator(str(config_file), profile),
-        forwardings={"kubernetes": TunnelSpec.Forwarding(host="localhost", port=6443)},
+        locator=TunnelSpecLocator(str(config_file), profile),
+        forwardings={"kubernetes": TunnelSpecForwarding(host="localhost", port=6443)},
         user=conf.user,
         host=conf.host,
         identity_file=conf.identity_file,

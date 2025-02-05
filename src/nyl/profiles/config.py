@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import ClassVar, Literal
 
 from loguru import logger
 
@@ -126,9 +126,9 @@ class SshTunnel:
 
 @dataclass
 class ProfileConfig:
-    FILENAMES = ["nyl-profiles.yaml", "nyl-profiles.toml", "nyl-profiles.json"]
-    GLOBAL_CONFIG_DIR = Path.home() / ".config" / "nyl"
-    STATE_DIRNAME = ".nyl"
+    FILENAMES: ClassVar = ["nyl-profiles.yaml", "nyl-profiles.toml", "nyl-profiles.json"]
+    GLOBAL_CONFIG_DIR: ClassVar = Path.home() / ".config" / "nyl"
+    STATE_DIRNAME: ClassVar = ".nyl"
 
     file: Path | None
     profiles: dict[str, Profile]

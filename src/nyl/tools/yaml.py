@@ -6,10 +6,11 @@ from yaml import SafeDumper, SafeLoader
 
 
 class PatchedSafeLoader(SafeLoader):
-    yaml_implicit_resolvers = SafeLoader.yaml_implicit_resolvers.copy()
-
-    # See https://github.com/yaml/pyyaml/issues/89
-    yaml_implicit_resolvers.pop("=")
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # See https://github.com/yaml/pyyaml/issues/89
+        super().__init__(*args, **kwargs)
+        self.yaml_implicit_resolvers = self.yaml_implicit_resolvers.copy()
+        self.yaml_implicit_resolvers.pop("=")
 
 
 class PatchedSafeDumper(SafeDumper):
