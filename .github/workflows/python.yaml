@@ -47,7 +47,7 @@ jobs:
         with:
           version: "0.5.20"
 
-      - run: uv sync
+      - run: uv sync --extra dev
       - run: uv run pytest .
       - run: uv run mypy .
       - run: uv run ruff check .
