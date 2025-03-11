@@ -40,7 +40,7 @@ RUN \
 FROM fetch-bin-base AS argocd-bin
 # Find ArgoCD releases at https://github.com/argoproj/argo-cd/releases
 # renovate: datasource=github-releases depName=argocd packageName=argoproj/argo-cd
-ARG ARGOCD_VERSION=v2.14.4
+ARG ARGOCD_VERSION=v2.14.5
 RUN curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-$(cat /BINARY_ARCH) \
     && chmod +x /usr/local/bin/argocd \
     && upx /usr/local/bin/argocd \
