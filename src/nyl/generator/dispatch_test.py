@@ -1,6 +1,7 @@
 import importlib
 import pkgutil
 from pathlib import Path
+from typing import cast
 from unittest.mock import MagicMock
 
 from loguru import logger
@@ -25,7 +26,8 @@ def test__DispatchingGenerator__default__creates_generator_for_every_nyl_inline_
                 isinstance(value, type)
                 and issubclass(value, NylResource)
                 and value != NylResource
-                and value.__module__ == info.name
+                and cast(object, value).__module__
+                == info.name  # note: see https://github.com/python/typeshed/issues/12128
                 and value.API_VERSION == API_VERSION_INLINE
             ):
                 resource_kinds.add(value.KIND)

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from loguru import logger
 
@@ -11,7 +12,7 @@ from nyl.tools.loads import loadf
 
 @dataclass
 class SecretsConfig:
-    FILENAMES = ["nyl-secrets.yaml", "nyl-secrets.toml", "nyl-secrets.json"]
+    FILENAMES: ClassVar = ["nyl-secrets.yaml", "nyl-secrets.toml", "nyl-secrets.json"]
 
     file: Path | None
     providers: dict[str, SecretProvider]

@@ -12,7 +12,7 @@ from typer import Argument, Typer
 from nyl.commands import PROVIDER
 from nyl.profiles import get_tunnel_spec
 from nyl.profiles.config import ProfileConfig
-from nyl.profiles.tunnel import TunnelManager, TunnelSpec, TunnelStatus
+from nyl.profiles.tunnel import TunnelManager, TunnelSpec, TunnelSpecForwarding, TunnelSpecLocator, TunnelStatus
 from nyl.tools.fs import shorter_path
 from nyl.tools.typer import new_typer
 
@@ -98,8 +98,8 @@ def start(profile_name: str = Argument("default", envvar="NYL_PROFILE")) -> None
 
     # TODO: Know the Kubernetes host/port to forward.
     spec = TunnelSpec(
-        locator=TunnelSpec.Locator(str(config.file), profile_name),
-        forwardings={"kubernetes": TunnelSpec.Forwarding(host="localhost", port=6443)},
+        locator=TunnelSpecLocator(str(config.file), profile_name),
+        forwardings={"kubernetes": TunnelSpecForwarding(host="localhost", port=6443)},
         user=profile.tunnel.user,
         host=profile.tunnel.host,
         identity_file=profile.tunnel.identity_file,
@@ -123,4 +123,4 @@ def stop(profile_name: str = Argument("default", envvar="NYL_PROFILE"), all: boo
 
     config = PROVIDER.get(ProfileConfig)
     with TunnelManager() as manager:
-        manager.close_tunnel(TunnelSpec.Locator(str(config.file), profile_name))
+        manager.close_tunnel(TunnelSpecLocator(str(config.file), profile_name))

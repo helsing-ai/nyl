@@ -4,7 +4,7 @@ import signal
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, ClassVar, Iterable, Literal
 
 from loguru import logger
 from stablehash import stablehash
@@ -14,28 +14,30 @@ from nyl.tools.shell import pretty_cmd
 
 
 @dataclass
+class TunnelSpecForwarding:
+    host: str
+    port: int
+
+
+@dataclass(frozen=True)
+class TunnelSpecLocator:
+    config_file: str
+    profile: str
+
+    def __str__(self) -> str:
+        return f"{self.config_file}:{self.profile}"
+
+
+@dataclass
 class TunnelSpec:
     """
     Defines an SSH tunel that is to be opened.
     """
 
-    @dataclass
-    class Forwarding:
-        host: str
-        port: int
-
-    @dataclass(frozen=True)
-    class Locator:
-        config_file: str
-        profile: str
-
-        def __str__(self) -> str:
-            return f"{self.config_file}:{self.profile}"
-
-    locator: Locator
+    locator: TunnelSpecLocator
     " Locator for where the tunnel spec is defined."
 
-    forwardings: dict[str, Forwarding]
+    forwardings: dict[str, TunnelSpecForwarding]
     """ A map from forwarding alias to forwarding configuration. The local ports will be randomly assigned.
     and must be obtained from the [TunnelStatus]. """
 
@@ -77,7 +79,7 @@ class TunnelManager:
     Before the tunnel manager can be used, its context manager must be entered to lock the global state.
     """
 
-    DEFAULT_STATE_DIR = Path.home() / ".nyl" / "tunnels"
+    DEFAULT_STATE_DIR: ClassVar = Path.home() / ".nyl" / "tunnels"
 
     def __init__(self, state_dir: Path | None = None) -> None:
         """
@@ -136,7 +138,7 @@ class TunnelManager:
             self._store.set(key, (spec, status))
             yield spec, status
 
-    def get_tunnel(self, locator: TunnelSpec.Locator) -> tuple[TunnelSpec, TunnelStatus] | None:
+    def get_tunnel(self, locator: TunnelSpecLocator) -> tuple[TunnelSpec, TunnelStatus] | None:
         """
         Retrieve the last known tunnel status and spec based on the tunnel locator.
         """
@@ -218,7 +220,7 @@ class TunnelManager:
 
         return status
 
-    def close_tunnel(self, locator: TunnelSpec.Locator) -> TunnelStatus:
+    def close_tunnel(self, locator: TunnelSpecLocator) -> TunnelStatus:
         """
         Close a tunnel by it's locator.
         """

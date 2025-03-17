@@ -78,15 +78,18 @@ class ComponentsGenerator(Generator[Manifest], resource_type=Manifest):
         if instance.remainder:
             raise RuntimeError(f"unexpected fields in component {instance.metadata}: {instance.remainder.keys()}")
 
-        match component:
-            case HelmComponent(path):
-                chart = HelmChart(
-                    metadata=instance.metadata,
-                    spec=HelmChartSpec(
-                        chart=ChartRef(path=str(path.resolve())),
-                        values={"metadata": resource["metadata"], **instance.spec},
-                    ),
-                )
-                return self.helm_generator.generate(chart)
-            case _:
-                raise RuntimeError(f"unexpected component type: {component}")
+        # match component:
+        #     case HelmComponent(path):
+        if isinstance(component, HelmComponent):
+            path = component.path
+            chart = HelmChart(
+                metadata=instance.metadata,
+                spec=HelmChartSpec(
+                    chart=ChartRef(path=str(path.resolve())),
+                    values={"metadata": resource["metadata"], **instance.spec},
+                ),
+            )
+            return self.helm_generator.generate(chart)
+        else:
+            # case _:
+            raise RuntimeError(f"unexpected component type: {component}")

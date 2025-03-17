@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Callable, ClassVar, Literal
 
 from loguru import logger
 
@@ -91,7 +91,7 @@ class ProjectConfig:
     Wrapper for the project configuration file.
     """
 
-    FILENAMES = ["nyl-project.yaml", "nyl-project.toml", "nyl-project.json"]
+    FILENAMES: ClassVar = ["nyl-project.yaml", "nyl-project.toml", "nyl-project.json"]
 
     file: Path | None
     config: Project
