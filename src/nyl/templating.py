@@ -2,9 +2,10 @@
 Implements Nyl's variant of structured templating.
 """
 
+from argparse import Namespace
 from collections.abc import Mapping
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Callable, ClassVar, Iterator, Literal, Sequence, TypeVar, cast
 
 from loguru import logger
@@ -172,6 +173,7 @@ class NylTemplateEngine:
 
     secrets: SecretProvider
     client: ApiClient
+    locals: Namespace = field(default_factory=Namespace)
     on_lookup_failure: Literal["Error", "CreatePlaceholder", "SkipResource"] = "Error"
 
     def __post_init__(self) -> None:
@@ -194,7 +196,7 @@ class NylTemplateEngine:
                 NylTemplateEngine.current = prev
 
     def _new_engine(self) -> _TemplateEngine:
-        return _TemplateEngine({"secrets": self.secrets, **registered_functions})
+        return _TemplateEngine({"secrets": self.secrets, "locals": self.locals, **registered_functions})
 
     def evaluate(self, value: Manifests, recursive: bool = True) -> Manifests:
         result = []

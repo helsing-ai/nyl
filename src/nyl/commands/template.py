@@ -189,14 +189,6 @@ def template(
 
     secrets = PROVIDER.get(SecretsConfig)
 
-    template_engine = NylTemplateEngine(
-        secrets.providers[secrets_provider],
-        client,
-        on_lookup_failure=on_lookup_failure.to_literal()
-        if on_lookup_failure
-        else project.config.settings.on_lookup_failure,
-    )
-
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,
         search_path=project.config.settings.search_path,
@@ -209,6 +201,34 @@ def template(
 
     for source in load_manifests(paths):
         logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
+
+        template_engine = NylTemplateEngine(
+            secrets.providers[secrets_provider],
+            client,
+            on_lookup_failure=on_lookup_failure.to_literal()
+            if on_lookup_failure
+            else project.config.settings.on_lookup_failure,
+        )
+
+        # Look for objects that contain local variables and feed them into the template engine.
+        for manifest in source.manifests[:]:
+            if "apiVersion" in manifest or "kind" in manifest:
+                continue
+            if not any(k.startswith("$") for k in manifest.keys()):
+                # Neither a Kubernetes object, nor one defining local variables. Hmm..
+                continue
+            if any(not k.startswith("$") for k in manifest.keys()):
+                # Can't have keys that don't start with `$` in a local variable object.
+                logger.opt(colors=True).error(
+                    "A manifest in <yellow>'{}'</> has keys that don't start with `$`:\n\n{}",
+                    source.file,
+                    yaml.dumps(manifest),
+                )
+                exit(1)
+            for key, value in manifest.items():
+                assert key.startswith("$"), key
+                setattr(template_engine.locals, key[1:], value)
+            source.manifests.remove(manifest)
 
         # Begin populating the default namespace to resources.
         current_default_namespace = get_default_namespace_for_manifest(source, default_namespace)
