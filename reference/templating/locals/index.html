@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../../configuration-api/secrets/">
+        <link rel="prev" href="../basics/">
       
       
-        <link rel="next" href="../locals/">
+        <link rel="next" href="../secrets/">
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
@@ -20,7 +20,7 @@
     
     
       
-        <title>Basics - nyl</title>
+        <title>Local Variables - nyl</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#basics" class="md-skip">
+        <a href="#local-variables" class="md-skip">
           Skip to content
         </a>
       
@@ -106,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Basics
+              Local Variables
             
           </span>
         </div>
@@ -731,6 +731,27 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../basics/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Basics
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -747,7 +768,7 @@
           
   
   <span class="md-ellipsis">
-    Basics
+    Local Variables
   </span>
   
 
@@ -758,7 +779,7 @@
         
   
   <span class="md-ellipsis">
-    Basics
+    Local Variables
   </span>
   
 
@@ -780,9 +801,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-expressions" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
-      Basic Expressions
+      Example
     </span>
   </a>
   
@@ -792,27 +813,6 @@
   
 </nav>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../locals/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Local Variables
-  </span>
-  
-
-      </a>
     </li>
   
 
@@ -1015,9 +1015,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-expressions" class="md-nav__link">
+  <a href="#example" class="md-nav__link">
     <span class="md-ellipsis">
-      Basic Expressions
+      Example
     </span>
   </a>
   
@@ -1038,23 +1038,28 @@
                   
 
 
-<h1 id="basics">Basics</h1>
-<p>Nyl uses <a href="https://pypi.org/project/structured-templates/">structured-templates</a> to process Kubernetes manifests
-before they are applied. This allows you to write expressions in YAML values in the form of <code>${{ ... }}</code>, as well as
-some form of control flow using special keys like <code>if(...):</code> and <code>for(...)</code>.</p>
-<p>However, this is distinctly different from Helm templates which permit free-form generation of text, which later must
-be valid YAML.</p>
-<h2 id="basic-expressions">Basic Expressions</h2>
-<p>Basic expressions allow you to evaluate simple expressions in the form of <code>${{ ... }}</code>. This can be used to compute
-or retrieve a value, rather than statically typing it in the manifest. The expression result may be of any valid
-YAML type, not just strings.</p>
-<p>Currently, only the following names are available in the scope of the expression:</p>
-<ul>
-<li><code>secrets</code>: A reference to the secrets provider. This is used to retrieve secrets from the configured secrets
-  provider. See <a href="../secrets/">Secrets</a> for more information.</li>
-<li><code>locals</code>: A container for local variables defined in the same manifest. See <a href="../locals/">Local Variables</a> for more
-  information.</li>
-</ul>
+<h1 id="local-variables">Local Variables</h1>
+<p>You may define a YAML object in your Kubernetes manifest that is used to define variables that can later be accessed
+in the same manifest to achieve some level of DRY-ness. This is done by not setting any <code>apiVersion</code> or <code>kind</code>, and
+instead just define variables prefixed with <code>$</code>. Variables can later be accessed using the <code>${{ locals.var }}</code>.</p>
+<p>Note that expressions in values assigned to variables are not currently supported. This means that you cannot use e.g.
+<code>${{ secrets.get("my-secret") }}</code> in the value of a variable, nor can you use <code>${{ locals.var }}</code>.</p>
+<h2 id="example">Example</h2>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># my-app.yaml</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">$name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-app</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nn">---</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">metadata</span><span class="p">:</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ locals.name }}</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># ...</span>
+</span></code></pre></div>
+<blockquote>
+<p>Technically, such an object defining local variables can be defined anywhere in the manifest and more than once.
+By convention and to improve readability, it is recommended to define it at the top of the manifest. The object is not
+rendered in the final manifest.</p>
+</blockquote>
 
 
 
