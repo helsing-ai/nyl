@@ -15,3 +15,9 @@ id = "71dada10-a681-47d6-8399-5769a8ecf455"
 type = "improvement"
 description = "Improve help text of `nyl new component` command"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "3dc3cd0e-ad32-465b-b67c-0f18c8cb1b3e"
+type = "improvement"
+description = "`.metadata.labels` set on a `HelmChart` resource now propagate and overwrite labels on the resources it generates (note that this also applies to Nyl components using Helm charts)"
+author = "@NiklasRosenstein"

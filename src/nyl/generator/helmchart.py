@@ -215,4 +215,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             if release.namespace:
                 populate_namespace_to_resources(manifests, release.namespace)
 
+            for resource in manifests:
+                resource["metadata"].setdefault("labels", {}).update(res.metadata.labels or {})
+
             return manifests
