@@ -74,7 +74,7 @@ def chart(dir: Path) -> None:
                 "image"
             ],
             "properties": {
-                "annotations": {
+                "metadata": {
                     "type": "object",
                     "additionalProperties": true
                 },
