@@ -3,7 +3,8 @@ kind: StatefulSecret
 metadata:
   name: postgres-password
 stringData:
-  PASSWORD: {{ randhex(32) }}
+  PASSWORD: ${{ randhex(32) }}
+
 ---
 apiVersion: nyl.io/v1
 kind: HelmChart
@@ -16,4 +17,4 @@ spec:
     version: 15.5.16
   values:
     auth:
-      postgresPassword: {{ ref("Secret", "postgres-password", "PASSWORD") }}
+      postgresPassword: ${{ ref("Secret", "postgres-password", "PASSWORD") }}

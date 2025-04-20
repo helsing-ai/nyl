@@ -1,0 +1,10 @@
+[default.kubeconfig]
+type = "ssh"
+user = "root"
+host = "k3s.host.local"
+path = "/etc/rancher/k3s/k3s.yaml"
+
+[default.tunnel]
+type = "ssh"
+user = "root"
+host = "k3s.host.local"
