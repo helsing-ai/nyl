@@ -11,7 +11,7 @@ Requires Python 3.11 or newer.
 
 For some features, additional programs must be available:
 
-* [kubectl](https://kubernetes.io/de/docs/reference/kubectl/) for most operations
+* [kubectl](https://kubernetes.io/de/docs/reference/kubectl/) for applying
 * [kyverno](https://kyverno.io/docs/kyverno-cli/) ^1.13.x when using the Nyl `PostProcessor` resource
 * [sops](https://github.com/getsops/sops) when using the SOPS secrets provider
 
