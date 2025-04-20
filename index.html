@@ -295,6 +295,17 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Home
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="." class="md-nav__link md-nav__link--active">
         
   
@@ -304,6 +315,34 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -955,6 +994,23 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#features" class="md-nav__link">
+    <span class="md-ellipsis">
+      Features
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -970,7 +1026,23 @@
 
 <h1 id="welcome-to-the-nyl-documentation">Welcome to the Nyl documentation</h1>
 <p>Nyl is a flexible configuration management tool for Kubernetes resources that can be used to generate and deploy
-applications directly or integrate as an <a href="https://argoproj.github.io/argo-cd/operator-manual/config-management-plugins/">ArgoCD ConfigManagementPlugin</a>.</p>
+applications directly via the command-line and via an <a href="https://argoproj.github.io/argo-cd/operator-manual/config-management-plugins/">ArgoCD ConfigManagementPlugin</a>.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>
+<p><strong>Usability</strong>: Define your deployments once and let ArgoCD apply them, or apply the same deployment from the CLI when you
+  need to break the glass without having to twist and warp your configuration for the occasion.</p>
+</li>
+<li>
+<p><strong>End-to-end configuration</strong>: Not only codify your deployment configuration, but also how to connect to your cluster
+  when you use the CLI. From using the default kubeconfig, to connecting to your cluster via an SSH tunnel, Nyl got you.</p>
+</li>
+<li>
+<p><strong>Powerful templating</strong>: Load and inject secrets from external sources, instantiate Helm charts, post-process your
+  manifessts with Kyverno policies, streamline and standardize recurring configuration with Nyl components, lookup
+  existing objects in the target cluster, etc.</p>
+</li>
+</ul>
 
 
 
