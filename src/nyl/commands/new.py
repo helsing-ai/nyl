@@ -7,7 +7,7 @@ from pathlib import Path
 from textwrap import dedent
 
 from loguru import logger
-from typer import Option, Typer
+from typer import Argument, Option, Typer
 
 from nyl.commands import PROVIDER
 from nyl.project.config import ProjectConfig
@@ -118,11 +118,17 @@ def chart(dir: Path) -> None:
 
 @app.command()
 def component(
-    api_version: str,
-    kind: str,
+    api_version: str = Argument(help="API version of the component. Must be paired with the `kind` argument."),
+    kind: str = Argument(help="Kind of the component. Must be paired with the `api_version` argument."),
     type: ComponentType = Option("helm", help="The type of Nyl component to create."),
 ) -> None:
-    """Create the boilerplate for a Nyl component in the components directory."""
+    """
+    Create the boilerplate for a Nyl component in the components directory.
+
+    Note that this is equivalent to `nyl new chart components/{api_version}/{kind}`, assuming the current project's
+    component directory is `components/` (the default, relative to the project configuration file or current working
+    directory).
+    """
 
     components_path = PROVIDER.get(ProjectConfig).get_components_path()
     chart(components_path / api_version / kind)

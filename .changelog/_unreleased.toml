@@ -8,4 +8,10 @@ author = "@NiklasRosenstein"
 id = "3dc4e6b4-4a6d-4ed3-8e8b-5e9321cabb9a"
 type = "feature"
 description = "Add support for `NYL_ARGS` and `ARGOCD_ENV_NYL_ARGS` environment variables"
-author = "rosensteinniklas@gmail.com"
+author = "@NiklasRosenstein"
+
+[[entries]]
+id = "71dada10-a681-47d6-8399-5769a8ecf455"
+type = "improvement"
+description = "Improve help text of `nyl new component` command"
+author = "@NiklasRosenstein"
