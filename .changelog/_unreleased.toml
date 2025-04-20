@@ -1,0 +1,5 @@
+[[entries]]
+id = "ee341cce-af19-447c-88af-a62248924ab6"
+type = "improvement"
+description = "`nyl new component` now includes `metadata.labels` and `metadata.annotations` defaults in the generated `values.yaml`"
+author = "@NiklasRosenstein"

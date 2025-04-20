@@ -52,6 +52,9 @@ def chart(dir: Path) -> None:
         dir,
         "values.yaml",
         """
+        metadata:
+          annotations: {}
+          labels: {}
         image:
           repository: my/image
           tag: 1.0.0
@@ -71,6 +74,10 @@ def chart(dir: Path) -> None:
                 "image"
             ],
             "properties": {
+                "annotations": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
                 "image": {
                     "type": "string"
                 }
