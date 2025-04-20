@@ -2,6 +2,9 @@
 
 This page summarizes all environment variables that are used by Nyl.
 
+- `NYL_ARGS` &ndash; Additional command-line arguments to append to the Nyl invocation. Use with care, as options
+  accepted by a parent command are not accepted in a subcommand, and these arguments are only ever append to the
+  argument list.
 - `NYL_LOG_LEVEL` &ndash; The log level to use if `--log-level` is not specified. Defaults to `info`. Used by: `nyl`.
 - `NYL_PROFILE` &ndash; The name of the profile to use as defined in the closest `nyl-profiles.yaml` or
   `nyl-project.yaml` configuration file. Used by: `nyl profile`, `nyl template`, `nyl tun`.
@@ -12,6 +15,7 @@ This page summarizes all environment variables that are used by Nyl.
   Used by: `nyl profile`, `nyl template`, `nyl tun`.
 - `NYL_CACHE_DIR` &ndash; The directory where Nyl stores its cache, such as downloaded Helm charts and cloned
   repositories. Defaults to `cache/` relative to the `NYL_STATE_DIR`. Used by `nyl template`.
+- `ARGOCD_ENV_NYL_ARGS` &ndash; Same as `NYL_ARGS`, but is taken into account after.
 - `ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT` &mdash; This variable is only recognized by `nyl template` when the only positional argument
   it receives is `.` (i.e. the current working directory). The variable should be a comma-separated list of filenames
   that should be treated as if the files were passed as arguments to `nyl template` instead. This is used for the Nyl

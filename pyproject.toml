@@ -29,7 +29,7 @@ readme = "README.md"
 license = {text = "MIT"}
 
 [project.scripts]
-nyl = "nyl.commands:app"
+nyl = "nyl.commands:main"
 
 [tool.uv]
 dev-dependencies = [

@@ -6,6 +6,7 @@ applications directly or integrate as an ArgoCD ConfigManagementPlugin.
 import atexit
 import json
 import os
+import shlex
 import sys
 import time
 from dataclasses import dataclass
@@ -139,3 +140,16 @@ app.add_typer(profile.app)
 app.add_typer(secrets.app)
 app.add_typer(tools.app)
 app.add_typer(tun.app)
+
+
+def main() -> None:
+    additional_args = []
+    for env in ("NYL_ARGS", "ARGOCD_ENV_NYL_ARGS"):
+        if env in os.environ:
+            additional_args = shlex.split(args_string := os.environ[env])
+            logger.opt(colors=True).debug(
+                "Adding additional arguments from <cyan>{}</>: <yellow>{}</>", env, args_string
+            )
+    sys.argv += additional_args
+    logger.opt(colors=True).debug("Full Nyl command-line: <yellow>{}</>", shlex.join(sys.argv))
+    app()

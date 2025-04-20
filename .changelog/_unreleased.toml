@@ -3,3 +3,9 @@ id = "ee341cce-af19-447c-88af-a62248924ab6"
 type = "improvement"
 description = "`nyl new component` now includes `metadata.labels` and `metadata.annotations` defaults in the generated `values.yaml`"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "3dc4e6b4-4a6d-4ed3-8e8b-5e9321cabb9a"
+type = "feature"
+description = "Add support for `NYL_ARGS` and `ARGOCD_ENV_NYL_ARGS` environment variables"
+author = "rosensteinniklas@gmail.com"
