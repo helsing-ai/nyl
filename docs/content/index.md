@@ -18,5 +18,5 @@ applications directly via the command-line and via an [ArgoCD ConfigManagementPl
   when you use the CLI. From using the default kubeconfig, to connecting to your cluster via an SSH tunnel, Nyl got you.
 
 - **Powerful templating**: Load and inject secrets from external sources, instantiate Helm charts, post-process your
-  manifessts with Kyverno policies, streamline and standardize recurring configuration with Nyl components, lookup
+  manifests with Kyverno policies, streamline and standardize recurring configuration with Nyl components, lookup
   existing objects in the target cluster, etc.
