@@ -1041,9 +1041,9 @@
 <h1 id="local-variables">Local Variables</h1>
 <p>You may define a YAML object in your Kubernetes manifest that is used to define variables that can later be accessed
 in the same manifest to achieve some level of DRY-ness. This is done by not setting any <code>apiVersion</code> or <code>kind</code>, and
-instead just define variables prefixed with <code>$</code>. Variables can later be accessed using the <code>${{ locals.var }}</code>.</p>
+instead just define variables prefixed with <code>$</code>. Variables can later be accessed using the <code>${{ values.var }}</code>.</p>
 <p>Note that expressions in values assigned to variables are not currently supported. This means that you cannot use e.g.
-<code>${{ secrets.get("my-secret") }}</code> in the value of a variable, nor can you use <code>${{ locals.var }}</code>.</p>
+<code>${{ secrets.get("my-secret") }}</code> in the value of a variable, nor can you use <code>${{ values.var }}</code>.</p>
 <h2 id="example">Example</h2>
 <div class="language-yaml highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># my-app.yaml</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nt">$name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-app</span>
@@ -1052,7 +1052,7 @@ instead just define variables prefixed with <code>$</code>. Variables can later 
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">apps/v1</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
 </span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nt">metadata</span><span class="p">:</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ locals.name }}</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ values.name }}</span>
 </span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># ...</span>
 </span></code></pre></div>
 <blockquote>

@@ -842,6 +842,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#nyl.profiles.config.Profile.values" class="md-nav__link">
+    <span class="md-ellipsis">
+      values
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1397,6 +1406,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#nyl.profiles.config.Profile.values" class="md-nav__link">
+    <span class="md-ellipsis">
+      values
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1836,7 +1854,9 @@ back to the default location (per <code>KUBECONFIG</code> or otherwise <code>~/.
     <div class="doc doc-contents ">
 
 
-        <p>Represents a Kubernetes connection profile.</p>
+        <p>A profile embodies a set of configurations for a Kubernetes cluster that resources will be deployed to using Nyl.
+It defines the Kubeconfig to use, whether to use an SSH tunnel to reach the cluster, as well as global values that
+are accessible during rendering any manifest with the profile activated.</p>
 
 
 
@@ -1889,6 +1909,28 @@ back to the default location (per <code>KUBECONFIG</code> or otherwise <code>~/.
     <div class="doc doc-contents ">
 
         <p>Describe how to create an SSH tunnel to reach the Kubernetes cluster API.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h4 id="nyl.profiles.config.Profile.values" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+</h4>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Global values that are accessible during manifest rendering under the <code>values</code> object.</p>
     </div>
 
 </div>
