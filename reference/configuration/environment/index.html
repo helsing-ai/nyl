@@ -1110,6 +1110,10 @@
 ensure that only specifically supported variables can be set. The following such variables are supported by Nyl:</p>
 </blockquote>
 <ul>
+<li><code>ARGOCD_ENV_NYL_PROFILE</code> &ndash; Same as <code>NYL_PROFILE</code>, only that the profile's connection details will be ignored.
+  This should be used to pass the profile name to the Nyl plugin, as there is no way for it to automatically understand
+  what profile to use if the <code>default</code> profile does not apply. This variable is only recognized by the <code>nyl template</code>
+  command. The <code>NYL_PROFILE</code> variable takes precedence.</li>
 <li><code>ARGOCD_ENV_NYL_ARGS</code> &ndash; Same as <code>NYL_ARGS</code>, but is taken into account after.</li>
 <li><code>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</code> &mdash; This variable is only recognized by <code>nyl template</code> when the only positional argument
   it receives is <code>.</code> (i.e. the current working directory). The variable should be a comma-separated list of filenames
