@@ -3,7 +3,7 @@
 #: -----------------
 
 FROM python:3.13-alpine AS build
-COPY --from=ghcr.io/astral-sh/uv:0.6.14 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.7.2 /uv /bin/uv
 
 WORKDIR /opt/nyl
 
@@ -40,7 +40,7 @@ RUN \
 FROM fetch-bin-base AS argocd-bin
 # Find ArgoCD releases at https://github.com/argoproj/argo-cd/releases
 # renovate: datasource=github-releases depName=argocd packageName=argoproj/argo-cd
-ARG ARGOCD_VERSION=v2.14.10
+ARG ARGOCD_VERSION=v2.14.11
 RUN curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-$(cat /BINARY_ARCH) \
     && chmod +x /usr/local/bin/argocd \
     && upx /usr/local/bin/argocd \
@@ -68,7 +68,7 @@ RUN curl -fLO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/
 
 FROM fetch-bin-base AS kyverno-bin
 # renovate: datasource=github-releases depName=kyverno packageName=kyverno/kyverno
-ARG KYVERNO_VERSION=1.13.4
+ARG KYVERNO_VERSION=1.14.1
 RUN \
     case "$(uname -m)" in \
         x86_64) KYVERNO_ARCH='x86_64' ;; \
