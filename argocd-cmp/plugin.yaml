@@ -14,7 +14,10 @@ spec:
       command:
         - sh
         - -c
-        - find -name 'nyl-secrets.*' || find -name 'nyl-project.*'
+        - |
+          >&2 echo "PWD: $(pwd)"
+          >&2 echo "Files in dir: $(ls)"
+          find -name 'nyl-secrets.*' || find -name 'nyl-project.*'
 
   # init:
   #   command:
