@@ -1,0 +1,5 @@
+[[entries]]
+id = "6bb3d13e-dc2d-4379-97e0-d61199dea43d"
+type = "improvement"
+description = "Remove `nyl argocd discovery` command and use a simpler yet probably sufficient `find` command in the `ConfigManagementPlugin` manifest instead"
+author = "@NiklasRosenstein"

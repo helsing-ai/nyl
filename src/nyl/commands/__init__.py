@@ -123,7 +123,6 @@ def version() -> None:
 
 
 from . import add  # noqa: E402
-from . import argocd  # noqa: E402
 from . import crds  # noqa: F401,E402
 from . import new  # noqa: E402
 from . import profile  # noqa: E402
@@ -134,7 +133,6 @@ from . import tools  # noqa: E402
 from . import tun  # noqa: E402
 
 app.add_typer(add.app)
-app.add_typer(argocd.app)
 app.add_typer(new.app)
 app.add_typer(profile.app)
 app.add_typer(secrets.app)

@@ -14,7 +14,7 @@ spec:
       command:
         - sh
         - -c
-        - 'nyl --log-file=/var/log/nyl/${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log argocd discovery'
+        - find -name 'nyl-secrets.*' || find -name 'nyl-project.*'
 
   # init:
   #   command:
