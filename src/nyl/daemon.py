@@ -8,6 +8,7 @@ import argparse
 from dataclasses import dataclass, field
 import errno
 import fcntl
+import hashlib
 import os
 from pathlib import Path
 import pickle
@@ -185,6 +186,9 @@ class NylDaemon:
 
     def _do_run(self, client: PickleSocketTransport, message: Run) -> None:
         logger.info("Running command: %s", message)
+        logger.info(
+            "md5(SOPS_AGE_KEY): %s", hashlib.md5(os.environ.get("SOPS_AGE_KEY", "").encode("utf-8")).hexdigest()
+        )
 
         # Import the app here so that the fork can benefit from it being preloaded.
         from nyl.commands import app
@@ -242,6 +246,7 @@ class NylDaemon:
                             if not output:
                                 read_list.remove(fp)
                                 continue
+                            print("Output:", output, end="")
                             client.send(NylDaemon.Stdout(output) if fp == rout else NylDaemon.Stderr(output))
                     except BlockingIOError:
                         time.sleep(0.01)
