@@ -208,11 +208,11 @@ class NylDaemon:
                 os.environ.update(message.env)  # TODO: Maybe replace instead?
                 os.chdir(message.cwd)
                 app(message.args)
-            except SystemExit as e:
-                # This flush may seem unnecessary, but it is required before we call os._exit().
-                w1.flush()
-                w2.flush()
-                os._exit(e.code if isinstance(e.code, int) else 1 if isinstance(e.code, str) else 0)
+            # except SystemExit as e:
+            #     # This flush may seem unnecessary, but it is required before we call os._exit().
+            #     w1.flush()
+            #     w2.flush()
+            #     raise
             finally:
                 # Close the global ExitStack that is created by the app, since atexit handlers are
                 # not invoked in a forked process.
