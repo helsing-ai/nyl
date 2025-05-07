@@ -30,7 +30,7 @@ spec:
     command:
       - sh
       - -c
-      - 'nyl --log-file=/var/log/nyl/${ARGOCD_APP_NAMESPACE}-${ARGOCD_APP_NAME}.log template --in-cluster .'
+      - 'nyl template --in-cluster .'
 
   parameters: {}
 

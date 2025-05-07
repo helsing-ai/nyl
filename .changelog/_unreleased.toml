@@ -3,3 +3,9 @@ id = "6bb3d13e-dc2d-4379-97e0-d61199dea43d"
 type = "improvement"
 description = "Remove `nyl argocd discovery` command and use a simpler yet probably sufficient `find` command in the `ConfigManagementPlugin` manifest instead"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "6c3b6427-756d-46d6-83a7-c3f565b64983"
+type = "improvement"
+description = "The ArgoCD CMP no longer logs to a file, users should check the pod logs instead"
+author = "@NiklasRosenstein"
