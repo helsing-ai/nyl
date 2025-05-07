@@ -1,9 +1,11 @@
 import atexit
+import json
 import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from textwrap import indent
+import time
 from typing import Any, Literal, Optional, cast
 
 from loguru import logger
@@ -140,6 +142,8 @@ def template(
     """
     Render a package template into full Kubernetes resources.
     """
+
+    start_time = time.perf_counter()
 
     connect_with_profile = True
     if not profile and "ARGOCD_ENV_NYL_PROFILE" in os.environ:
@@ -371,6 +375,27 @@ def template(
             for manifest in source.manifests:
                 print("---")
                 print(yaml.dumps(manifest))
+
+    logger.log(
+        "METRIC",
+        "{}",
+        json.dumps(
+            {
+                "type": "metrics.nyl.io/v1/NylTemplate",
+                "data": {
+                    "duration_seconds": time.perf_counter() - start_time,
+                    "inputs": [str(p.absolute().relative_to(project.file.parent) if project.file else p) for p in paths],
+                    # See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
+                    "argocd_app_name": os.getenv("ARGOCD_APP_NAME"),
+                    "argocd_app_namespace": os.getenv("ARGOCD_APP_NAMESPACE"),
+                    "argocd_app_project_name": os.getenv("ARGOCD_APP_PROJECT_NAME"),
+                    "argocd_app_revision": os.getenv("ARGOCD_APP_REVISION"),
+                    "argocd_app_source_path": os.getenv("ARGOCD_APP_SOURCE_PATH"),
+                    "argocd_app_source_repo_url": os.getenv("ARGOCD_APP_SOURCE_REPO_URL"),
+                },
+            }
+        ),
+    )
 
 
 def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:

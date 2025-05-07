@@ -1,0 +1,5 @@
+[[entries]]
+id = "e7c7e8db-6db7-40f5-989b-05f1a5338a2a"
+type = "improvement"
+description = "Measure time of successful `nyl template` execution and log a line of level `\"METRIC\"` with a JSON metric payload"
+author = "@NiklasRosenstein"

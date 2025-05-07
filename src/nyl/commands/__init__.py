@@ -3,13 +3,10 @@ Nyl is a flexible configuration management tool for Kubernetes resources that ca
 applications directly or integrate as an ArgoCD ConfigManagementPlugin.
 """
 
-import atexit
-from contextlib import ExitStack
 import json
 import os
 import shlex
 import sys
-import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -70,14 +67,13 @@ def _callback(
     log_details: bool = Option(False, help="Include logger- and function names in the log message format."),
     log_file: Optional[Path] = Option(None, help="Additionally log to the given file."),
 ) -> None:
-    start_time = time.perf_counter()
-
     if log_details:
         fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_DETAILS_FORMAT} | {LOG_MESSAGE_FORMAT}"
     else:
         fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_MESSAGE_FORMAT}"
 
     logger.remove()
+    logger.level("METRIC", 40, "<green><bold>")
     logger.add(sys.stderr, level=LogLevel.ERROR.name if quiet else log_level.name, format=fmt)
     if log_file:
         logger.add(log_file, level=log_level.name, format=fmt)
@@ -103,18 +99,6 @@ def _callback(
             PROVIDER.get(ProfileManager), PROVIDER.get(ApiClientConfig).profile
         ),
     )
-
-    exit_stack = ExitStack()
-    PROVIDER.set(ExitStack, exit_stack)
-    atexit.register(exit_stack.close)
-
-    # HACK: If we don't wrap it in a lambda, Loguru fails with "ValueError: call stack is not deep enough".
-    # But we also need to wrap it so we capture the right end time.
-    def _finalize() -> None:
-        duration = time.perf_counter() - start_time
-        logger.debug("Finished (nyl {}) in {:.2f}s", lazy_str(pretty_cmd, sys.argv), duration)
-
-    exit_stack.callback(_finalize)
 
 
 @app.command()
