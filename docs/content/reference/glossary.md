@@ -20,7 +20,8 @@ auto-filling and resource post-processing applying only to all resources defined
 ### Resource
 
 A resource is a YAML document that follows the schema of a Kubernetes API resource or [Nyl inline resource][Nyl-inline].
-An example would be a Kubernetes `ConfigMap`, `Deployment`, `Pod` or a Nyl `HelmChart` or `PostProcessor`.
+An example would be a Kubernetes `ConfigMap`, `Deployment`, `Pod` or a Nyl `HelmChart` or `PostProcessor`. A list of
+resources is referred to as a `ResourceList` and is typically loaded from a manifest file.
 
 ### Secrets provider
 

@@ -11,7 +11,7 @@ from loguru import logger
 from nyl.resources import API_VERSION_INLINE, NylResource, ObjectMetadata
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
-from nyl.tools.types import Manifests
+from nyl.tools.types import ResourceList
 
 KyvernoPolicyDocument = dict[str, Any]
 KyvernoPolicyRulesDocument = dict[str, Any]
@@ -110,9 +110,9 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
 
     spec: PostProcessorSpec
 
-    def process(self, manifests: Manifests, source_file: Path) -> Manifests:
+    def process(self, resources: ResourceList, source_file: Path) -> ResourceList:
         """
-        Post-process the given manifests.
+        Post-process the given list of resources.
         """
 
         with TemporaryDirectory() as _tmp:
@@ -131,36 +131,36 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
                     ", ".join(f"{policy_file.name}" for policy_file in policy_files),
                 )
 
-                manifests = apply_kyverno_policies(
-                    resources=manifests,
+                resources = apply_kyverno_policies(
+                    resources=resources,
                     policy_files=policy_files,
                 )
 
-        return manifests
+        return resources
 
     @staticmethod
-    def extract_from_list(manifests: Manifests) -> tuple[Manifests, list["PostProcessor"]]:
+    def extract_from_list(resources: ResourceList) -> tuple[ResourceList, list["PostProcessor"]]:
         processors = []
-        new_manifests = Manifests([])
-        for manifest in list(manifests):
-            if processor := PostProcessor.maybe_load(manifest):
+        new_resources = ResourceList([])
+        for resource in list(resources):
+            if processor := PostProcessor.maybe_load(resource):
                 processors.append(processor)
             else:
-                new_manifests.append(manifest)
-        return new_manifests, processors
+                new_resources.append(resource)
+        return new_resources, processors
 
     @staticmethod
-    def apply_all(manifests: Manifests, processors: list["PostProcessor"], source_file: Path) -> Manifests:
+    def apply_all(resources: ResourceList, processors: list["PostProcessor"], source_file: Path) -> ResourceList:
         for processor in processors:
-            manifests = processor.process(manifests, source_file)
-        return manifests
+            resources = processor.process(resources, source_file)
+        return resources
 
 
 def apply_kyverno_policies(
-    resources: Manifests,
+    resources: ResourceList,
     policy_files: list[Path],
     kyverno_bin: Path | str = "kyverno",
-) -> Manifests:
+) -> ResourceList:
     with TemporaryDirectory() as _tmp:
         tmp = Path(_tmp)
 
@@ -191,7 +191,7 @@ def apply_kyverno_policies(
             logger.debug("Kyverno stdout:\n{}", result.stdout.decode())
 
         # Load all resources (Kyverno generates one file per resource, including unchanged ones).
-        new_resources = Manifests(
+        new_resources = ResourceList(
             list(chain(*(filter(None, yaml.safe_load_all(file.read_text())) for file in output_dir.iterdir())))
         )
         if len(new_resources) != len(resources):

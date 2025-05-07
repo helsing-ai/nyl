@@ -2,7 +2,7 @@ from loguru import logger
 
 from kubernetes.client.api_client import ApiClient
 from kubernetes.dynamic import DynamicClient
-from nyl.tools.types import Manifest
+from nyl.tools.types import Resource
 
 
 def discover_kubernetes_api_versions(client: ApiClient) -> set[str]:
@@ -19,7 +19,7 @@ def discover_kubernetes_api_versions(client: ApiClient) -> set[str]:
     return all_versions
 
 
-def resource_locator(manifest: Manifest) -> str:
+def resource_locator(manifest: Resource) -> str:
     """
     Create a string that contains the apiVersion, kind, namespace and name of a Kubernetes resource formatted as
 
@@ -34,7 +34,7 @@ def resource_locator(manifest: Manifest) -> str:
     )
 
 
-def populate_namespace_to_resources(resources: list[Manifest], namespace: str) -> None:
+def populate_namespace_to_resources(resources: list[Resource], namespace: str) -> None:
     """
     Populate the `namespace` field of all resources that don't have it, excluding those that are cluster-scoped.
 
@@ -51,7 +51,7 @@ def populate_namespace_to_resources(resources: list[Manifest], namespace: str) -
             resource["metadata"]["namespace"] = namespace
 
 
-def is_cluster_scoped_resource(manifest: Manifest) -> bool:
+def is_cluster_scoped_resource(manifest: Resource) -> bool:
     """
     Check if a manifest is a cluster scoped resource.
     """

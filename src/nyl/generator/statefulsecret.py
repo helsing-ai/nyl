@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from kubernetes.client.api_client import ApiClient
 from nyl.generator import Generator
 from nyl.resources.statefulsecret import StatefulSecret
-from nyl.tools.types import Manifest, Manifests
+from nyl.tools.types import Resource, ResourceList
 
 
 @dataclass
@@ -11,11 +11,11 @@ class StatefulSecretGenerator(Generator[StatefulSecret], resource_type=StatefulS
     client: ApiClient
     """ Kubernetes API client to use for looking up existing secret state."""
 
-    def generate(self, /, res: StatefulSecret) -> Manifests:
+    def generate(self, /, res: StatefulSecret) -> ResourceList:
         # TODO: Look up existing secret state.
-        return Manifests(
+        return ResourceList(
             [
-                Manifest(
+                Resource(
                     {
                         "apiVersion": "v1",
                         "kind": "Secret",

@@ -11,7 +11,7 @@ from databind.json import dump as ser
 from databind.json import load as deser
 from typing_extensions import Self
 
-from nyl.tools.types import Manifest
+from nyl.tools.types import Resource
 
 API_VERSION_K8S = "nyl.io/v1"
 API_VERSION_INLINE = "inline.nyl.io/v1"
@@ -40,7 +40,7 @@ class NylResource(ABC):
             cls.KIND = kind or cls.__name__
 
     @classmethod
-    def load(cls, manifest: Manifest) -> "Self":
+    def load(cls, manifest: Resource) -> "Self":
         """
         Load a Nyl resource from a manifest. If called directly on `NylResource`, this will deserialize into the
         appropriate subclass based on the `kind` field in the manifest. If the method is instead called on a subclass
@@ -65,14 +65,14 @@ class NylResource(ABC):
                 raise ValueError(f"Expected kind {cls.KIND!r}, got {manifest['kind']!r}")
             subcls = cls
 
-        manifest = Manifest(manifest)
+        manifest = Resource(manifest)
         manifest.pop("apiVersion")
         manifest.pop("kind")
 
         return cast(Self, deser(manifest, subcls))
 
     @classmethod
-    def maybe_load(cls, manifest: Manifest) -> "Self | None":
+    def maybe_load(cls, manifest: Resource) -> "Self | None":
         """
         Maybe load the manifest into a NylResource if the `apiVersion` matches. If the resource kind is not supported,
         an error will be raised. If this is called on a subclass of `NylResource`, the subclass's kind will also be
@@ -84,7 +84,7 @@ class NylResource(ABC):
         return None
 
     @classmethod
-    def matches(cls, manifest: Manifest, apiVersion: str | Collection[str] | None = None) -> bool:
+    def matches(cls, manifest: Resource, apiVersion: str | Collection[str] | None = None) -> bool:
         """
         Check if the manifest is a NylResource of the correct `apiVersion` and possibly `kind` (if called on a
         `NylResource` subclass).
@@ -103,15 +103,15 @@ class NylResource(ABC):
 
         return True
 
-    def dump(self) -> Manifest:
+    def dump(self) -> Resource:
         """
         Dump the resource to a manifest.
         """
 
-        manifest = cast(Manifest, ser(self, type(self), settings=[SerializeDefaults(False)]))
+        manifest = cast(Resource, ser(self, type(self), settings=[SerializeDefaults(False)]))
         manifest["apiVersion"] = self.API_VERSION
         manifest["kind"] = self.KIND
-        return Manifest(manifest)
+        return Resource(manifest)
 
 
 @dataclass

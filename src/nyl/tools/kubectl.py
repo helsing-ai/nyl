@@ -13,7 +13,7 @@ from loguru import logger
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
-from nyl.tools.types import Manifests
+from nyl.tools.types import ResourceList
 
 
 @dataclass
@@ -87,7 +87,7 @@ class Kubectl:
 
     def apply(
         self,
-        manifests: Manifests,
+        manifests: ResourceList,
         force_conflicts: bool = False,
         server_side: bool = True,
         applyset: str | None = None,
@@ -117,7 +117,7 @@ class Kubectl:
 
     def diff(
         self,
-        manifests: Manifests,
+        manifests: ResourceList,
         applyset: ApplySet | None = None,
         on_error: Literal["raise", "return"] = "raise",
     ) -> Literal["no-diff", "diff", "error"]:

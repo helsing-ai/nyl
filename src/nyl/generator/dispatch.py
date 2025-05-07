@@ -10,11 +10,11 @@ from nyl.generator import Generator
 from nyl.generator.components import ComponentsGenerator
 from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.tools.kubernetes import discover_kubernetes_api_versions
-from nyl.tools.types import Manifest, Manifests
+from nyl.tools.types import Resource, ResourceList
 
 
 @dataclass
-class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
+class DispatchingGenerator(Generator[Resource], resource_type=Resource):
     """
     Dispatches to the appropriate generator based on the resource type.
 
@@ -95,11 +95,11 @@ class DispatchingGenerator(Generator[Manifest], resource_type=Manifest):
 
     # Generator implementation
 
-    def generate(self, /, res: Manifest) -> Manifests:
+    def generate(self, /, res: Resource) -> ResourceList:
         if res["apiVersion"] != API_VERSION_INLINE:
             if self.fallback:
                 return self.fallback.generate(res)
-            return Manifests([res])
+            return ResourceList([res])
 
         nyl_resource = NylResource.load(res)
         if nyl_resource.KIND not in self.generators:

@@ -18,7 +18,7 @@ from nyl.commands.template import (
 from nyl.resources import ObjectMetadata
 from nyl.resources.helmchart import ChartRef, HelmChart, HelmChartSpec
 from nyl.tools.typer import new_typer
-from nyl.tools.types import Manifests
+from nyl.tools.types import ResourceList
 
 app: Typer = new_typer(name="add", help=__doc__)
 
@@ -27,7 +27,7 @@ MANIFEST_OPTION = Option(..., "-m", "--manifest", help="The manifest YAML file t
 
 @app.command()
 def namespace(
-    manifest: Path = MANIFEST_OPTION,
+    manifest_file: Path = MANIFEST_OPTION,
     name: str = Argument(help="Name of the namespace to add."),
 ) -> None:
     """
@@ -36,15 +36,15 @@ def namespace(
     If this is the first namespace defined in the manifest, it will be annotated with `nyl.io/is-default-namespace`.
     """
 
-    if manifest.exists():
-        content = manifest.read_text()
-        resources = load_manifests([manifest])[0]
+    if manifest_file.exists():
+        content = manifest_file.read_text()
+        manifest = load_manifests([manifest_file])[0]
     else:
         content = ""
-        resources = ManifestsWithSource(Manifests([]), manifest)
+        manifest = ManifestsWithSource(ResourceList([]), manifest_file)
 
-    if any(is_namespace_resource(x) and x["metadata"]["name"] == name for x in resources.manifests):
-        logger.error("Namespace '{}' already exists in {}.", name, manifest)
+    if any(is_namespace_resource(x) and x["metadata"]["name"] == name for x in manifest.resources):
+        logger.error("Namespace '{}' already exists in {}.", name, manifest_file)
         sys.exit(1)
 
     namespace: dict[str, Any] = {
@@ -55,16 +55,16 @@ def namespace(
         },
     }
 
-    as_default = not any(is_namespace_resource(x) for x in resources.manifests)
+    as_default = not any(is_namespace_resource(x) for x in manifest.resources)
     if as_default:
         namespace["metadata"]["annotations"] = {DEFAULT_NAMESPACE_ANNOTATION: "true"}
 
     if not content.lstrip().startswith("---"):
         content = f"---\n{content}"
     content = f"---\n{yaml.safe_dump(namespace, sort_keys=False)}\n{content}"
-    manifest.write_text(content)
+    manifest_file.write_text(content)
 
-    logger.info("Added {}namespace '{}' to {}.", "default " if as_default else "", name, manifest)
+    logger.info("Added {}namespace '{}' to {}.", "default " if as_default else "", name, manifest_file)
 
 
 @app.command()

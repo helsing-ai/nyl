@@ -17,7 +17,7 @@ from kubernetes.client.exceptions import ApiException
 from kubernetes.dynamic.client import DynamicClient
 from kubernetes.dynamic.resource import ResourceField, ResourceInstance
 from nyl.secrets import SecretProvider
-from nyl.tools.types import Manifest, Manifests
+from nyl.tools.types import Resource, ResourceList
 
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])
 registered_functions: dict[str, Callable[..., Any]] = {}
@@ -205,17 +205,17 @@ class NylTemplateEngine:
             }
         )
 
-    def evaluate(self, value: Manifests, recursive: bool = True) -> Manifests:
+    def evaluate(self, value: ResourceList, recursive: bool = True) -> ResourceList:
         result = []
         with self.as_current():
             for item in value:
                 try:
-                    result.append(cast(Manifest, self._new_engine().evaluate(item, recursive)))
+                    result.append(cast(Resource, self._new_engine().evaluate(item, recursive)))
                 except TemplateError as exc:
                     if isinstance(exc.__cause__, LookupError):
                         if self.on_lookup_failure == "CreatePlaceholder":
                             result.append(
-                                Manifest(
+                                Resource(
                                     {
                                         "apiVersion": "nyl.io/v1",
                                         "kind": "Placeholder",
@@ -237,7 +237,7 @@ class NylTemplateEngine:
                     raise
 
         result = LookupResourceWrapper.materialize(result)
-        return Manifests(result)
+        return ResourceList(result)
 
 
 def _get_resource_slug(api_version: str, kind: str, name: str, max_length: int = 63) -> str:

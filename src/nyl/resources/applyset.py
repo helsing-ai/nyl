@@ -6,7 +6,7 @@ from typing import Annotated, ClassVar
 from databind.core import SerializeDefaults
 
 from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
-from nyl.tools.types import Manifests
+from nyl.tools.types import ResourceList
 
 APPLYSET_LABEL_PART_OF = "applyset.kubernetes.io/part-of"
 """ Label key to use to associate objects with an ApplySet resource. """
@@ -152,7 +152,7 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
             self.metadata.annotations = {}
         self.metadata.annotations[APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS] = ",".join(sorted(value))
 
-    def set_group_kinds(self, manifests: Manifests) -> None:
+    def set_group_kinds(self, manifests: ResourceList) -> None:
         """
         Set the kinds of resources that are part of the ApplySet based on the specified manifests.
         """

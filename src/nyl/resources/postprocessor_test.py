@@ -1,13 +1,13 @@
 from pathlib import Path
 
 from nyl.resources.postprocessor import KyvernoSpec, PostProcessor, PostProcessorSpec
-from nyl.tools.types import Manifest, Manifests
+from nyl.tools.types import Resource, ResourceList
 
 
 def test__PostProcessor__extract_from_list() -> None:
-    manifest = Manifests(
+    input_resources = ResourceList(
         [
-            Manifest(
+            Resource(
                 {
                     "apiVersion": "v1",
                     "kind": "Pod",
@@ -17,20 +17,20 @@ def test__PostProcessor__extract_from_list() -> None:
                     },
                 }
             ),
-            Manifest({"apiVersion": "inline.nyl.io/v1", "kind": "PostProcessor", "spec": {"kyverno": {}}}),
+            Resource({"apiVersion": "inline.nyl.io/v1", "kind": "PostProcessor", "spec": {"kyverno": {}}}),
         ]
     )
 
-    updated_manifest, processors = PostProcessor.extract_from_list(manifest)
-    assert updated_manifest == [manifest[0]]
+    updated_resources, processors = PostProcessor.extract_from_list(input_resources)
+    assert updated_resources == [input_resources[0]]
     assert len(processors) == 1
 
 
 def test__PostProcessor__process__inlinePolicy() -> None:
-    manifest = Manifests(
+    input_resources = ResourceList(
         [
             # A resource that we expect Kyverno to mutate.
-            Manifest(
+            Resource(
                 {
                     "apiVersion": "v1",
                     "kind": "Pod",
@@ -46,7 +46,7 @@ def test__PostProcessor__process__inlinePolicy() -> None:
                 }
             ),
             # A Service resource that we don't expect it to mutate.
-            Manifest(
+            Resource(
                 {
                     "apiVersion": "v1",
                     "kind": "Service",
@@ -110,9 +110,9 @@ def test__PostProcessor__process__inlinePolicy() -> None:
         )
     )
 
-    updated_manifest = processor.process(manifest, Path("/"))
+    updated_resources = processor.process(input_resources, Path("/"))
 
-    assert updated_manifest == [
+    assert updated_resources == [
         {
             "apiVersion": "v1",
             "kind": "Pod",

@@ -1,0 +1,5 @@
+[[entries]]
+id = "4668b8d5-dacd-44d5-a2c4-a05e0511759b"
+type = "hygiene"
+description = "Rename `Manifest` and `Manifests` to `Resource` and `ResourceList` in codebase, and variable names/members accordingly"
+author = "@NiklasRosenstein"

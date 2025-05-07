@@ -5,8 +5,8 @@ T = TypeVar("T")
 Provider = Callable[[], T]
 """ Represents a provider function that returns an instance of a type. """
 
-Manifest = NewType("Manifest", dict[str, Any])
-""" Represents a Kubernetes manifest. """
+Resource = NewType("Resource", dict[str, Any])
+""" Represents a Kubernetes resource. """
 
-Manifests = NewType("Manifests", list[Manifest])
-""" Represents a list of Kubernetes manifests. """
+ResourceList = NewType("ResourceList", list[Resource])
+""" Represents a list of Kubernetes resource. """

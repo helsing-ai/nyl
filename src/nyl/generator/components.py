@@ -14,7 +14,7 @@ from nyl.generator import Generator
 from nyl.generator.helmchart import HelmChartGenerator
 from nyl.resources import ObjectMetadata
 from nyl.resources.helmchart import ChartRef, HelmChart, HelmChartSpec
-from nyl.tools.types import Manifest, Manifests
+from nyl.tools.types import Resource, ResourceList
 
 
 class Component:
@@ -39,7 +39,7 @@ class GenericComponent(Component):
 
 
 @dataclass
-class ComponentsGenerator(Generator[Manifest], resource_type=Manifest):
+class ComponentsGenerator(Generator[Resource], resource_type=Resource):
     search_path: Sequence[Path]
     """ A list of directories to search for a matching Nyl component. """
 
@@ -69,11 +69,11 @@ class ComponentsGenerator(Generator[Manifest], resource_type=Manifest):
 
     # Generator
 
-    def generate(self, /, resource: Manifest) -> Manifests:
+    def generate(self, /, resource: Resource) -> ResourceList:
         instance = deser(resource, GenericComponent)
         component = self.find_component(instance.apiVersion, instance.kind)
         if component is None:
-            return Manifests([resource])
+            return ResourceList([resource])
 
         if instance.remainder:
             raise RuntimeError(f"unexpected fields in component {instance.metadata}: {instance.remainder.keys()}")

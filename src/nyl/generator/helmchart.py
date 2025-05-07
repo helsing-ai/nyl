@@ -15,7 +15,7 @@ from nyl.resources.helmchart import ChartRef, HelmChart, ReleaseMetadata
 from nyl.tools import yaml
 from nyl.tools.kubernetes import populate_namespace_to_resources
 from nyl.tools.shell import pretty_cmd
-from nyl.tools.types import Manifests
+from nyl.tools.types import ResourceList
 
 ChartRepositoryVersion = tuple[str | None, str | None, str | None]
 
@@ -149,7 +149,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
 
     # Generator
 
-    def generate(self, /, res: HelmChart) -> Manifests:
+    def generate(self, /, res: HelmChart) -> ResourceList:
         repository, chart, version = self._materialize_chart(res.spec.chart)
         release = res.spec.release or ReleaseMetadata(name=res.metadata.name, namespace=res.metadata.namespace)
 
@@ -205,17 +205,17 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             except subprocess.CalledProcessError as e:
                 prefix = "    "
                 raise ValueError(
-                    f"Failed to generate manifests using Helm.\n{indent(str(e), prefix)}\n"
+                    f"Failed to generate resources using Helm.\n{indent(str(e), prefix)}\n"
                     f"stdout:\n{indent(e.stdout.decode(), prefix)}\n"
                     f"stderr:\n{indent(e.stderr.decode(), prefix)}"
                 )
 
-            manifests = Manifests(list(filter(None, yaml.loads_all(result.stdout.decode()))))
+            generated_resources = ResourceList(list(filter(None, yaml.loads_all(result.stdout.decode()))))
 
             if release.namespace:
-                populate_namespace_to_resources(manifests, release.namespace)
+                populate_namespace_to_resources(generated_resources, release.namespace)
 
-            for resource in manifests:
+            for resource in generated_resources:
                 resource["metadata"].setdefault("labels", {}).update(res.metadata.labels or {})
 
-            return manifests
+            return generated_resources
