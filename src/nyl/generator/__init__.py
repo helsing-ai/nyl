@@ -47,8 +47,9 @@ def reconcile_generator(
     Args:
         generator: The generator to use for generating manifests from Nyl resources.
         manifests: The list of manifests to reconcile.
-        on_generated: A callback to call on each generated manifest, giving the opportunity to modify it.
-                      This is used to pass the manifest through the `structured-templates` engine.
+        new_generation_callback: A callback to call on each generated manifest, giving the opportunity to modify it
+            or generate other manifests from it. This callback should return a Future, allowing the reconciliation to be
+            asynchronous. The callback should take a single argument, which is the manifest to generate from.
         skip_resources: A list of Nyl resources to ignore.
     """
 
