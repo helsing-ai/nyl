@@ -217,7 +217,7 @@ class NylDaemon:
                 # Close the global ExitStack that is created by the app, since atexit handlers are
                 # not invoked in a forked process.
                 try:
-                    PROVIDER.get(ExitStack)().close()
+                    PROVIDER.get(ExitStack).close()
                 except BaseException:
                     logger.exception("Error closing ExitStack")
                 w1.flush()
