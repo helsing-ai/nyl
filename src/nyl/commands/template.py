@@ -443,8 +443,8 @@ def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
 
     result = []
     for file in files:
-        resources_obj = ResourceList(list(map(Resource, filter(None, yaml.loads_all(file.read_text())))))
-        result.append(ManifestsWithSource(resources_obj, file))
+        resources = ResourceList(list(map(Resource, filter(None, yaml.loads_all(file.read_text())))))
+        result.append(ManifestsWithSource(resources, file))
 
     return result
 
