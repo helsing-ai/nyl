@@ -583,6 +583,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#other" class="md-nav__link">
+    <span class="md-ellipsis">
+      Other
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1077,6 +1086,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#other" class="md-nav__link">
+    <span class="md-ellipsis">
+      Other
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1150,6 +1168,13 @@ ensure that only specifically supported variables can be set. The following such
 <li><code>NYL_DAEMON_SOCK</code> &ndash; This variable is only used by the ArgoCD CMP <code>plugin.yaml</code>. If set, it tells the plugin
   to use the <code>nyl-daemon</code> in client mode instead of running <code>nyl template</code> directly and connect to the Nyl daemon using
   a Unix socket as specified in the variable value.</li>
+</ul>
+<h2 id="other">Other</h2>
+<ul>
+<li><code>NYL_PYROSCOPE_URL</code> &ndash; The Pyroscope server URL to use for profiling, optionally with basic auth credentials
+  in the format <code>http://username:password@host:port</code>. The application name may be specified with <code>?application_name=name</code>
+  and the tenant ID with <code>?tenant_id=id</code>. The application name and tenant ID are optional. The name defaults to <code>nyl</code>,
+  while the tenant ID defaults to no value. Any additional parameters are used as tags.</li>
 </ul>
 <div class="footnote">
 <hr />
