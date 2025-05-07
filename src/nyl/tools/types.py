@@ -9,4 +9,4 @@ Resource = NewType("Resource", dict[str, Any])
 """ Represents a Kubernetes resource. """
 
 ResourceList = NewType("ResourceList", list[Resource])
-""" Represents a list of Kubernetes resource. """
+""" Represents a list of Kubernetes resources. """

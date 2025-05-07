@@ -251,7 +251,8 @@ def template(
             if any(not k.startswith("$") for k in resource.keys()):
                 # Can't have keys that don't start with `$` in a local variable object.
                 logger.opt(colors=True).error(
-                    "A resource in <yellow>'{}'</> has keys that don't start with `$`:\n\n{}",
+                    "An object that looks like a local value definition in <yellow>'{}'</> has "
+                    "keys that don't start with `$`, which is not allowed in this context.\n\n{}",
                     source.file,
                     yaml.dumps(resource),
                 )
