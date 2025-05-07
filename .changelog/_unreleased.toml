@@ -3,3 +3,9 @@ id = "e7c7e8db-6db7-40f5-989b-05f1a5338a2a"
 type = "improvement"
 description = "Measure time of successful `nyl template` execution and log a line of level `\"METRIC\"` with a JSON metric payload"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "3e0e2141-a00c-441e-a637-c2c4dbcf3482"
+type = "improvement"
+description = "Fan out evaluation of Nyl inline resources using ThreadPoolExecutor"
+author = "@NiklasRosenstein"

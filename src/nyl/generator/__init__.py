@@ -4,6 +4,7 @@ This package contains everything related to the generation of Kubernetes manifes
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from concurrent.futures import Future, as_completed
 from typing import Any, ClassVar, Generic, Sequence, TypeVar
 
 from stablehash import stablehash
@@ -37,7 +38,7 @@ class Generator(ABC, Generic[T]):
 def reconcile_generator(
     generator: Generator[Manifest],
     manifests: Manifests,
-    new_generation_callback: Callable[[Manifest], Manifests],
+    new_generation_callback: Callable[[Manifest], Future[Manifests]],
     skip_resources: Sequence[type[NylResource]] = (),
 ) -> Manifests:
     """
@@ -51,7 +52,12 @@ def reconcile_generator(
         skip_resources: A list of Nyl resources to ignore.
     """
 
-    queue = Manifests(manifests)
+    queue: list[Future[Manifests]] = []
+
+    future = Future[Manifests]()
+    future.set_result(manifests)
+    queue.append(future)
+
     result = Manifests([])
     seen = set()
     loops = 0
@@ -60,17 +66,24 @@ def reconcile_generator(
         if loops > 1000:
             raise RuntimeError("Reconciliation loop limit exceeded (1000).")
 
-        resource = queue.pop(0)
-        resource_hash = stablehash(resource).hexdigest()
-        if resource_hash in seen:
-            result.append(resource)
-        else:
-            seen.add(resource_hash)
-            if any(t.matches(resource) for t in skip_resources):
-                queue.append(resource)
+        future = next(as_completed(queue))
+        queue.remove(future)
+        for resource in future.result():
+            resource_hash = stablehash(resource).hexdigest()
+            if resource_hash in seen:
+                # If we've seen this resource in its exact state before, then it has not been further expanded or
+                # transformed, and we consider it final.
+                result.append(resource)
+
             else:
-                for manifest in generator.generate(resource):
-                    queue.extend(new_generation_callback(manifest))
-            loops += 1
+                seen.add(resource_hash)
+                if any(t.matches(resource) for t in skip_resources):
+                    future = Future()
+                    future.set_result(Manifests([resource]))
+                    queue.append(future)
+                else:
+                    for manifest in generator.generate(resource):
+                        queue.append(new_generation_callback(manifest))
+                loops += 1
 
     return result

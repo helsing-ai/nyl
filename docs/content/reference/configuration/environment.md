@@ -17,6 +17,9 @@ This page summarizes all environment variables that are used by Nyl.
   Used by: `nyl profile`, `nyl template`, `nyl tun`.
 - `NYL_CACHE_DIR` &ndash; The directory where Nyl stores its cache, such as downloaded Helm charts and cloned
   repositories. Defaults to `cache/` relative to the `NYL_STATE_DIR`. Used by `nyl template`.
+- `NYL_TEMPLATE_JOBS` &ndash; The maximum number of jobs to use for parallel evaluation of Nyl inline resources
+  when running `nyl template`. If not set, and not specified with the `-j, --jobs` option, an adequate number of jobs
+  will be selected automatically.
 
 ## Build-environment variables
 
