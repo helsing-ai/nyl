@@ -139,4 +139,5 @@ def main(args: list[str] | None = None) -> None:
             )
     sys.argv += additional_args
     logger.opt(colors=True).debug("Full Nyl command-line: <yellow>{}</>", shlex.join(sys.argv))
+
     app(args)

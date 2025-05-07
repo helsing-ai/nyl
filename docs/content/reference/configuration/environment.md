@@ -58,3 +58,10 @@ This page summarizes all environment variables that are used by Nyl.
 - `NYL_DAEMON_SOCK` &ndash; This variable is only used by the ArgoCD CMP `plugin.yaml`. If set, it tells the plugin
   to use the `nyl-daemon` in client mode instead of running `nyl template` directly and connect to the Nyl daemon using
   a Unix socket as specified in the variable value.
+
+## Other
+
+- `NYL_PYROSCOPE_URL` &ndash; The Pyroscope server URL to use for profiling, optionally with basic auth credentials
+  in the format `http://username:password@host:port`. The application name may be specified with `?application_name=name`
+  and the tenant ID with `?tenant_id=id`. The application name and tenant ID are optional. The name defaults to `nyl`,
+  while the tenant ID defaults to no value. Any additional parameters are used as tags.

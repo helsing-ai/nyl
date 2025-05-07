@@ -9,3 +9,9 @@ id = "96175744-25b9-45eb-8b36-2bec70ffa2d0"
 type = "deprecation"
 description = "Remove `locals` from scope of template rendering, use `values` instead"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "07b855f7-3d5a-4a7c-9412-aa140e42e2e2"
+type = "feature"
+description = "Add support for `NYL_PYROSCOPE_URL` environment variable"
+author = "@NiklasRosenstein"
