@@ -26,6 +26,9 @@ spec:
   #       nyl version >&2
   #       argocd version --client >&2
 
+  # We expect that the NYL_CMP_TEMPLATE_INPUT environment variable points to the file to be templated
+  # for the current invocation. This is necessary because Argo CD lacks native support for referring to a single file;
+  # it only supports directories via the `.spec.source.path` field in the Application resource.
   generate:
     command:
       - sh
