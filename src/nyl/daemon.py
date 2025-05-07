@@ -9,7 +9,6 @@ from contextlib import ExitStack
 from dataclasses import dataclass
 import errno
 import fcntl
-import hashlib
 import os
 from pathlib import Path
 import pickle
@@ -208,15 +207,9 @@ class NylDaemon:
                 os.environ.update(message.env)  # TODO: Maybe replace instead?
                 os.chdir(message.cwd)
                 app(message.args)
-            # except SystemExit as e:
-            #     # This flush may seem unnecessary, but it is required before we call os._exit().
-            #     w1.flush()
-            #     w2.flush()
-            #     raise
             finally:
                 # Close the global ExitStack that is created by the app, since atexit handlers are
                 # not invoked in a forked process.
-                logger.info("Closing ExitStack")
                 try:
                     PROVIDER.get(ExitStack).close()
                 except BaseException:
