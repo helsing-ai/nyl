@@ -240,14 +240,13 @@ class NylDaemon:
                         if not read_ready:
                             time.sleep(0.01)
                             continue
-                        logger.info("Read ready: %s", read_ready)
                         for fp in read_ready:
                             output = fp.read()
                             if not output:
                                 read_list.remove(fp)
                                 continue
                             if fp == rerr:
-                                print(output, end="", file=sys.stderr if fp == rerr else sys.stdout)
+                                print(output, end="", file=sys.stderr)
                             client.send(NylDaemon.Stdout(output) if fp == rout else NylDaemon.Stderr(output))
                     except BlockingIOError:
                         time.sleep(0.01)
@@ -289,10 +288,10 @@ def main() -> None:
                 sys.stderr.write(message.text)
                 sys.stderr.flush()
             elif isinstance(message, NylDaemon.RunResult):
-                print(message.result)
+                logger.info("Run result: %s", message.result)
                 break
             else:
-                print("Unknown message type:", message)
+                logger.error("Unknown message type:", message)
                 break
 
 
