@@ -66,6 +66,9 @@ class ProfileManager:
 
         logger.opt(colors=True).info("Activating profile <magenta>{}</>...", profile_name)
 
+        # If the requested profile is the default profile and it is not explicitly defined in the configuration,
+        # create an implicit default profile with empty values. This ensures that the system can operate with a
+        # fallback profile even when no specific configuration is provided for the default profile.
         if profile_name == DEFAULT_PROFILE and profile_name not in self.config.profiles:
             profile = Profile(values={}, kubeconfig=LocalKubeconfig(), tunnel=None)
         else:
