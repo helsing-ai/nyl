@@ -136,7 +136,10 @@ class NylDaemon:
     class Run:
         cwd: str
         args: list[str]
-        env: dict[str, str] = field(repr=False)
+        env: dict[str, str]
+
+        def __repr__(self) -> str:
+            return f"Run(cwd={self.cwd}, args={self.args}, env.keys()={self.env.keys()})"
 
     @dataclass
     class Stdout:
@@ -256,17 +259,6 @@ class NylDaemon:
         result = {"status": "success", "output": "Command executed successfully."}
         client.send(self.RunResult(result))
         client.close()
-
-
-# def run_daemon(queue: Queue[RunCommand]) -> None:
-#     from nyl.commands import app
-
-#     # This is a workaround for the fact that we can't pass the socket to the app directly.
-#     # We need to pass it as an environment variable.
-#     import os
-
-#     os.environ["NYL_DAEMON_SOCKET"] = args.socket
-#     app()
 
 
 def main() -> None:
