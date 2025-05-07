@@ -574,6 +574,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#daemon-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Daemon mode
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1059,6 +1068,15 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#daemon-mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      Daemon mode
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1119,6 +1137,13 @@ ensure that only specifically supported variables can be set. The following such
   it receives is <code>.</code> (i.e. the current working directory). The variable should be a comma-separated list of filenames
   that should be treated as if the files were passed as arguments to <code>nyl template</code> instead. This is used for the Nyl
   ArgoCD plugin to allow specifying exactly which files should be templated as part of an ArgoCD application.</li>
+</ul>
+<h2 id="daemon-mode">Daemon mode</h2>
+<ul>
+<li><code>NYL_DAEMON_LOG_STDERR</code> &ndash; If set to <code>true</code>, the daemon in client mode will forward stderr output of the
+  template operation to the CMP plugin's stderr output. This may be useful for debugging purposes, but the same output
+  can also be inspected in the daemon container's logs. This is disabled by default to not show the stderr output
+  in the error message in the ArgoCD Web UI when the plugin fails. Set to <code>1</code> to enable.</li>
 </ul>
 <div class="footnote">
 <hr />
