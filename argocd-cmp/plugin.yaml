@@ -15,9 +15,6 @@ spec:
         - sh
         - -c
         - |
-          >&2 echo "PWD: $(pwd)"
-          >&2 echo "Files in dir: $(ls)"
-          >&2 echo "Repo root: $(git rev-parse --show-toplevel)"
           cd $(git rev-parse --show-toplevel)
           find -name 'nyl-secrets.*' || find -name 'nyl-project.*'
 
