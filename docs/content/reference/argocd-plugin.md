@@ -4,13 +4,15 @@
 
 This page describes Nyl's integration as an [ArgoCD ConfigManagementPlugin][0].
 
-## Installation
+## Installation (Simple)
 
 Config management plugins are installed as additional containers to the `argocd-repo-server` Pod. They launch the
 `argocd-cmp-server` binary and communicates with ArgoCD over gRPC via a socket file shared between the repo-server
 and the plugin container under `/home/argocd/cmp-server/plugins`.
 
-We recommend the following configuration:
+The following configuration allows the `nyl-v1` plugin to be used for ArgoCD applications. It will cause the repo-server
+to invoke the `nyl template --in-cluster .` command in the repository and the selected directory associated with the
+application (see `.spec.source` of the `Application` resource).
 
 ```yaml title="argocd-values.yaml"
 repoServer:
@@ -48,6 +50,75 @@ repoServer:
     various Nyl features to function correctly (such as lookups, see [Cluster connectivity](./cluster-connectivity.md)).
     If you do not wish to grant the plugin access to the Kubernetes API, you must disable this option and ensure that
     your manifests do not rely on features that require API access.
+
+## Installation (Daemon)
+
+The above example will invoke the `nyl template` command again and again for each time an application's manifests are
+refreshed by ArgoCD. This carries a bit of a performance penalty, since a new Nyl process is spawned each time and
+loading its code from disk.
+
+Nyl can also be used in a daemon mode, where a long-lived Nyl process is spawned listening for requests to perform
+the `nyl template` operation. This carries less overhead on each refresh in ArgoCD because it uses the `nyl-daemon`
+binary instead to communicate with the daemon, which is a much lighterweight process.
+
+To enable this mode, you need to deploy two sidecar containers in the `argocd-repo-server` pod instead of one. The first
+one is the `nyl-v1` plugin container, which will be used to communicate with the daemon. You tell it to connect with the
+daemon instead by setting the `NYL_DAEMON_SOCK` environment variable, pointing to the shared Unix socket file between
+the client and the daemon. The second container is the `nyl-daemon` container, which will run the daemon process.
+
+```diff title="argocd-values.yaml"
+--- /tmp/simple
++++ /tmp/daemon
+@@ -6,6 +6,8 @@
+         runAsNonRoot: true
+         runAsUser: 999
+       volumeMounts:
++        - mountPath: /var/run/nyl
++          name: var-run-nyl
+         - mountPath: /var/run/argocd
+           name: var-files
+         - mountPath: /home/argocd/cmp-server/plugins
+@@ -20,8 +22,27 @@
+           value: /tmp/nyl-cache
+         - name: NYL_LOG_LEVEL
+           value: info
++      - name: nyl-daemon
++        image: ghcr.io/helsing-ai/nyl/argocd-cmp:{{ NYL_VERSION }}
++        securityContext:
++          runAsNonRoot: true
++          runAsUser: 999
++        command:
++          - sh
++          - -c
++          - nyl-daemon --foreground --socket=/var/run/nyl/daemon.sock
++        volumeMounts:
++          - mountPath: /var/run/nyl
++            name: var-run-nyl
++          - mountPath: /tmp
++            name: cmp-tmp
+   clusterRoleRules:
+     enabled: true
+   volumes:
+     - name: cmp-tmp
++      emptyDir: {}
++    - name: var-run-nyl
+       emptyDir: {}
+```
+
+> Note how the daemon also needs to share the `/tmp` directory, as that is where ArgoCD clones the Git repository to.
+> We also introduce a new `emptyDir` volume to share the daemon socket file between the two containers.
+
+### Advantages of the daemon mode
+
+- Lower overhead on each refresh leads to faster application refresh times and CPU usage.
+- Allows for direct and live access to logs from `nyl template` in the daemon container.
+- Improved error message in the ArgoCD UI as no longer the _entire_ stderr output from `nyl template` is displayed,
+  but only the error message that caused the operation to fail.
+
+### Known issues in the daemon mode
+
+- [ ] All relevant environment variables, including but not limited to `NYL_LOG_LEVEL` and `NYL_CACHE_DIR`, are
+  inherited from the request made by the client, which seems counter intuitive.
 
 ## Discovery
 
