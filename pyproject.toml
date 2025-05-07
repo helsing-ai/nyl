@@ -30,6 +30,7 @@ license = {text = "MIT"}
 
 [project.scripts]
 nyl = "nyl.commands:main"
+nyl-daemon = "nyl.daemon:main"
 
 [tool.uv]
 dev-dependencies = [

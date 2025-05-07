@@ -9,3 +9,9 @@ id = "6c3b6427-756d-46d6-83a7-c3f565b64983"
 type = "improvement"
 description = "The ArgoCD CMP no longer logs to a file, users should check the pod logs instead"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "864f9e6a-98ec-44f5-bd38-e565709712a5"
+type = "feature"
+description = "Add `nyl-daemon` command which can be used to launch and communicate with a Nyl daemon process to forego Python process launch times"
+author = "@NiklasRosenstein"

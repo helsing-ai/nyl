@@ -33,7 +33,12 @@ spec:
     command:
       - sh
       - -c
-      - 'nyl template --in-cluster .'
+      - |
+        if [ -n "${NYL_DAEMON_SOCK}" ]; then
+          nyl-daemon --socket=${NYL_DAEMON_SOCK} template --in-cluster .
+        else
+          nyl template --in-cluster .
+        fi
 
   parameters: {}
 
