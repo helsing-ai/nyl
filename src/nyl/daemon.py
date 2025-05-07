@@ -149,7 +149,7 @@ class NylDaemon:
                     case None:
                         continue
                     case self.Run():
-                        self._do_run(client, message)
+                        threading.Thread(target=lambda: self._do_run(client, message)).start()
                     case _:
                         logger.warning("Received unknown message type: %s", message)
                         client.send(self.Error("Unknown message type"))
@@ -225,6 +225,7 @@ class NylDaemon:
 
         result = {"status": "success", "output": "Command executed successfully."}
         client.send(self.RunResult(result))
+        client.close()
 
 
 # def run_daemon(queue: Queue[RunCommand]) -> None:
