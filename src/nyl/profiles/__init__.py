@@ -101,9 +101,9 @@ class ProfileManager:
             )
         )
 
-        api_server = f"https://{raw_kubeconfig.api_host}:{raw_kubeconfig.api_port}"
-        logger.opt(colors=True).info("Waiting for API server connectivity (<blue>{}{}</>)", api_server, tun_description)
-        _wait_for_api_server(api_server, timeout)
+        # api_server = f"https://{raw_kubeconfig.api_host}:{raw_kubeconfig.api_port}"
+        # logger.opt(colors=True).info("Waiting for API server connectivity (<blue>{}{}</>)", api_server, tun_description)
+        # _wait_for_api_server(api_server, timeout)
 
         if update_process_env:
             logger.trace("Updating process environment with activated profile: {}", activated_profile.env)

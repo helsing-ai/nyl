@@ -15,3 +15,9 @@ id = "864f9e6a-98ec-44f5-bd38-e565709712a5"
 type = "feature"
 description = "Add `nyl-daemon` command which can be used to launch and communicate with a Nyl daemon process to forego Python process launch times"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "4cb0fa4d-df4d-408c-a1aa-a31db4ce8574"
+type = "improvement"
+description = "Disable waiting for API server connectivity for now when activating a profile as it seems to be more a hinderance than a useful feature"
+author = "@NiklasRosenstein"
