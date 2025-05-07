@@ -15,7 +15,7 @@ Add `nyl-daemon` command which can be used to launch and communicate with a Nyl 
 Support implicit default profile</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
   <tr><td>Improvement</td><td>
 
-Disable waiting for API server connectivity for now when activating a profile as it seems to be more a hinderance than a useful feature</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+Disable waiting for API server connectivity for now when activating a profile as it seems to be more a hindrance than a useful feature</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
 </table>
 
 ## 0.9.4 (2025-04-22)
