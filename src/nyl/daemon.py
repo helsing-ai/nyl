@@ -6,6 +6,7 @@ Pass Nyl commands to an automatically managed Nyl daemon process to improve perf
 
 import argparse
 from dataclasses import dataclass, field
+import errno
 import os
 from pathlib import Path
 import pickle
@@ -102,7 +103,14 @@ class PickleSocketTransport:
         self.socket.sendall(data)
 
     def close(self) -> None:
-        socket_name = self.socket.getsockname()
+        try:
+            socket_name = self.socket.getsockname()
+        except OSError as exc:
+            if exc.errno == errno.EBADF:
+                socket_name = None
+            else:
+                raise
+
         self.socket.close()
         if self.mode == "server" and socket_name:
             Path(socket_name).unlink(missing_ok=True)
