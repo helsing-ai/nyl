@@ -187,9 +187,6 @@ class NylDaemon:
 
     def _do_run(self, client: PickleSocketTransport, message: Run) -> None:
         logger.info("Running command: %s", message)
-        logger.info(
-            "md5(SOPS_AGE_KEY): %s", hashlib.md5(os.environ.get("SOPS_AGE_KEY", "").encode("utf-8")).hexdigest()
-        )
 
         # Import the app here so that the fork can benefit from it being preloaded.
         from nyl.commands import app, PROVIDER
