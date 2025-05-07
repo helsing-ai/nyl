@@ -222,7 +222,7 @@ class NylDaemon:
                     code = 1
                 w3.write(str(code) + "\n")
                 if not isinstance(e, SystemExit):
-                    w3.write(str(e))
+                    w3.write(f"{type(e).__name__}: {e}")
             finally:
                 # Close the global ExitStack that is created by the app, since atexit handlers are
                 # not invoked in a forked process.
