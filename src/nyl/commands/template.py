@@ -384,7 +384,9 @@ def template(
                 "type": "metrics.nyl.io/v1/NylTemplate",
                 "data": {
                     "duration_seconds": time.perf_counter() - start_time,
-                    "inputs": [str(p.absolute().relative_to(project.file.parent) if project.file else p) for p in paths],
+                    "inputs": [
+                        str(p.absolute().relative_to(project.file.parent) if project.file else p) for p in paths
+                    ],
                     # See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
                     "argocd_app_name": os.getenv("ARGOCD_APP_NAME"),
                     "argocd_app_namespace": os.getenv("ARGOCD_APP_NAMESPACE"),
