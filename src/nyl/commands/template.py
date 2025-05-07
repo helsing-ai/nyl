@@ -15,7 +15,7 @@ from kubernetes.config.kube_config import load_kube_config
 from nyl.commands import PROVIDER, ApiClientConfig, app
 from nyl.generator import reconcile_generator
 from nyl.generator.dispatch import DispatchingGenerator
-from nyl.profiles import ProfileManager
+from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
@@ -28,7 +28,6 @@ from nyl.tools.kubernetes import populate_namespace_to_resources
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Manifest, Manifests
 
-DEFAULT_PROFILE = "default"
 DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/is-default-namespace"
 
 

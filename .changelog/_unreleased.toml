@@ -17,6 +17,12 @@ description = "Add `nyl-daemon` command which can be used to launch and communic
 author = "@NiklasRosenstein"
 
 [[entries]]
+id = "74bf9c2b-7e7d-4981-b7a3-11e2f2dd6e97"
+type = "improvement"
+description = "Support implicit default profile"
+author = "@NiklasRosenstein"
+
+[[entries]]
 id = "4cb0fa4d-df4d-408c-a1aa-a31db4ce8574"
 type = "improvement"
 description = "Disable waiting for API server connectivity for now when activating a profile as it seems to be more a hinderance than a useful feature"
