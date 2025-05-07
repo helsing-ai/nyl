@@ -207,6 +207,9 @@ class NylDaemon:
                 os.environ.update(message.env)  # TODO: Maybe replace instead?
                 os.chdir(message.cwd)
                 app(message.args)
+            except BaseException as e:
+                logger.exception("Error running command")
+                client.send(self.Error(str(e)))
             finally:
                 # Close the global ExitStack that is created by the app, since atexit handlers are
                 # not invoked in a forked process.
