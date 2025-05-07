@@ -291,13 +291,13 @@ class NylDaemon:
             read_output_thread.start()
             read_output_thread.join()
 
-            # TODO: Determine the exit code of the child process.
-            os.waitpid(pid, 0)
-            logger.info("Child process %d exited", pid)
+            _, wait_status = os.waitpid(pid, 0)
+            if exit_code is None:
+                exit_code = os.WEXITSTATUS(wait_status)
+            logger.info("Child process %d exited (status code %s)", pid, exit_code)
 
-        assert exit_code is not None
-        client.send(self.RunResult(error_message, exit_code))
-        client.close()
+            client.send(self.RunResult(error_message, exit_code))
+            client.close()
 
 
 def main() -> None:
