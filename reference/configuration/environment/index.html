@@ -1109,6 +1109,9 @@
   Used by: <code>nyl profile</code>, <code>nyl template</code>, <code>nyl tun</code>.</li>
 <li><code>NYL_CACHE_DIR</code> &ndash; The directory where Nyl stores its cache, such as downloaded Helm charts and cloned
   repositories. Defaults to <code>cache/</code> relative to the <code>NYL_STATE_DIR</code>. Used by <code>nyl template</code>.</li>
+<li><code>NYL_TEMPLATE_JOBS</code> &ndash; The maximum number of jobs to use for parallel evaluation of Nyl inline resources
+  when running <code>nyl template</code>. If not set, and not specified with the <code>-j, --jobs</code> option, an adequate number of jobs
+  will be selected automatically.</li>
 </ul>
 <h2 id="build-environment-variables">Build-environment variables</h2>
 <blockquote>
