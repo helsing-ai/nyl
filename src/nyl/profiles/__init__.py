@@ -11,9 +11,11 @@ import urllib3
 from loguru import logger
 from nr.stream import Optional
 
-from .config import ProfileConfig, SshTunnel
+from .config import LocalKubeconfig, Profile, ProfileConfig, SshTunnel
 from .kubeconfig import KubeconfigManager
 from .tunnel import TunnelManager, TunnelSpec
+
+DEFAULT_PROFILE = "default"
 
 
 @dataclass
@@ -64,7 +66,10 @@ class ProfileManager:
 
         logger.opt(colors=True).info("Activating profile <magenta>{}</>...", profile_name)
 
-        profile = self.config.profiles[profile_name]
+        if profile_name == DEFAULT_PROFILE and profile_name not in self.config.profiles:
+            profile = Profile(values={}, kubeconfig=LocalKubeconfig(), tunnel=None)
+        else:
+            profile = self.config.profiles[profile_name]
 
         raw_kubeconfig = self.kubeconfig.get_raw_kubeconfig(profile_name, profile.kubeconfig)
 
