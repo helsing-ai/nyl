@@ -323,9 +323,9 @@ def main() -> None:
                 sys.stderr.flush()
             elif isinstance(message, NylDaemon.RunResult):
                 if message.error:
-                    logger.error("Command failed (status code %s): %s", message.code, message.error)
+                    print(message.error + f" (status code {message.code})", file=sys.stderr)
                 elif message.code != 0:
-                    logger.error("Command failed with status code %s (no error message)", message.code)
+                    print(f"Command failed without error message (status code {message.code})", file=sys.stderr)
                 sys.exit(message.code)
             else:
                 logger.error("Unknown message type:", message)
