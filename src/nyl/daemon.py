@@ -70,10 +70,7 @@ class PickleSocketTransport:
         return self
 
     def __exit__(self, exc_type: type, exc_value: Exception, traceback: Any) -> None:
-        path = Path(self.socket.getsockname())
         self.close()
-        if self.mode == "server":
-            path.unlink(missing_ok=True)
 
     def accept(self) -> "PickleSocketTransport | None":
         """Accept a connection from a client. Only in server mode."""
@@ -105,7 +102,10 @@ class PickleSocketTransport:
         self.socket.sendall(data)
 
     def close(self) -> None:
+        socket_name = self.socket.getsocketname()
         self.socket.close()
+        if self.mode == "server" and socket_name:
+            Path(socket_name).unlink(missing_ok=True)
 
 
 class NylDaemon:
