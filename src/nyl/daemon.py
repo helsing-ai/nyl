@@ -143,16 +143,19 @@ class NylDaemon:
             client = self.transport.accept()
             if not client:
                 continue
-            with client:
-                message = client.recv()
-                match message:
-                    case None:
-                        continue
-                    case self.Run():
-                        threading.Thread(target=lambda: self._do_run(client, message)).start()
-                    case _:
-                        logger.warning("Received unknown message type: %s", message)
-                        client.send(self.Error("Unknown message type"))
+            threading.Thread(target=lambda: self._handle_request(client)).start()
+
+    def _handle_request(self, client: PickleSocketTransport) -> None:
+        with client:
+            message = client.recv()
+            match message:
+                case None:
+                    pass
+                case self.Run():
+                    self._do_run(client, message)
+                case _:
+                    logger.warning("Received unknown message type: %s", message)
+                    client.send(self.Error("Unknown message type"))
 
     def _do_run(self, client: PickleSocketTransport, message: Run) -> None:
         logger.info("Running command: %s", message)
