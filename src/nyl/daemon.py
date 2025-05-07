@@ -102,7 +102,7 @@ class PickleSocketTransport:
         self.socket.sendall(data)
 
     def close(self) -> None:
-        socket_name = self.socket.getsocketname()
+        socket_name = self.socket.getsockname()
         self.socket.close()
         if self.mode == "server" and socket_name:
             Path(socket_name).unlink(missing_ok=True)
@@ -180,11 +180,12 @@ class NylDaemon:
                 os.environ.update(message.env)  # TODO: Maybe replace instead?
                 os.chdir(message.cwd)
                 app(message.args)
-            except SystemExit as e:
+            except SystemExit:
                 # This flush may seem unnecessary, but it is required before we call os._exit().
                 w1.flush()
                 w2.flush()
-                os._exit(e.code if isinstance(e.code, int) else 1 if isinstance(e.code, str) else 0)
+                # os._exit(e.code if isinstance(e.code, int) else 1 if isinstance(e.code, str) else 0)
+                raise  # Actually we do want a regular exit maybe, to ensure atexit is invoked
             finally:
                 w1.flush()
                 w2.flush()
