@@ -319,8 +319,11 @@ def main() -> None:
                 sys.stdout.write(message.text)
                 sys.stdout.flush()
             elif isinstance(message, NylDaemon.Stderr):
-                sys.stderr.write(message.text)
-                sys.stderr.flush()
+                # If enabled, this means stderr output will show in the error message in the ArgoCD UI
+                # when the command fails.
+                if os.getenv("NYL_DAEMON_LOG_STDERR") == "1":
+                    sys.stderr.write(message.text)
+                    sys.stderr.flush()
             elif isinstance(message, NylDaemon.RunResult):
                 if message.error:
                     print(message.error + f" (status code {message.code})", file=sys.stderr)

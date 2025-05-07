@@ -45,3 +45,10 @@ This page summarizes all environment variables that are used by Nyl.
   ArgoCD plugin to allow specifying exactly which files should be templated as part of an ArgoCD application.
 
 [^ArgoBuildEnv]: See [ArgoCD Build Environment](https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/).
+
+## Daemon mode
+
+- `NYL_DAEMON_LOG_STDERR` &ndash; If set to `true`, the daemon in client mode will forward stderr output of the
+  template operation to the CMP plugin's stderr output. This may be useful for debugging purposes, but the same output
+  can also be inspected in the daemon container's logs. This is disabled by default to not show the stderr output
+  in the error message in the ArgoCD Web UI when the plugin fails. Set to `1` to enable.
