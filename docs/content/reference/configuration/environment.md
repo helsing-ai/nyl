@@ -52,3 +52,6 @@ This page summarizes all environment variables that are used by Nyl.
   template operation to the CMP plugin's stderr output. This may be useful for debugging purposes, but the same output
   can also be inspected in the daemon container's logs. This is disabled by default to not show the stderr output
   in the error message in the ArgoCD Web UI when the plugin fails. Set to `1` to enable.
+- `NYL_DAEMON_SOCK` &ndash; This variable is only used by the ArgoCD CMP `plugin.yaml`. If set, it tells the plugin
+  to use the `nyl-daemon` in client mode instead of running `nyl template` directly and connect to the Nyl daemon using
+  a Unix socket as specified in the variable value.
