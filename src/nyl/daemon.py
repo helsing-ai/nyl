@@ -153,7 +153,8 @@ class NylDaemon:
 
     @dataclass
     class RunResult:
-        result: Any
+        error: str
+        code: int
 
     @dataclass
     class Error:
@@ -203,6 +204,7 @@ class NylDaemon:
 
             w1 = os.fdopen(w_out, "w")
             w2 = os.fdopen(w_err, "w")
+            w3 = os.fdopen(w_error, "w")
             sys.stdout = w1
             sys.stderr = w2
 
@@ -210,9 +212,17 @@ class NylDaemon:
                 os.environ.update(message.env)  # TODO: Maybe replace instead?
                 os.chdir(message.cwd)
                 app(message.args)
+                w3.write("0\n")
             except BaseException as e:
-                logger.exception("Error running command")
-                os.write(w_error, str(e).encode())
+                if isinstance(e, SystemExit):
+                    logger.info("Command exited with code %s", e.code)
+                    code = e.code if isinstance(e.code, int) else 1
+                else:
+                    logger.exception("Error running command, using exit code = 1")
+                    code = 1
+                w3.write(str(code) + "\n")
+                if not isinstance(e, SystemExit):
+                    w3.write(str(e))
             finally:
                 # Close the global ExitStack that is created by the app, since atexit handlers are
                 # not invoked in a forked process.
@@ -222,14 +232,20 @@ class NylDaemon:
                     logger.exception("Error closing ExitStack")
                 w1.flush()
                 w2.flush()
+                w3.flush()
                 w1.close()
                 w2.close()
-                os.close(w_error)
+                w3.close()
+
+                # TODO: We could maybe propagate the real exit code, but couldn't figure out how to retrieve it from
+                # the parent process, yet. We send it via the pipe anyway.
+                os._exit(0)
         else:
             logger.info("Forked child process %d", pid)
 
             os.close(w_out)
             os.close(w_err)
+            os.close(w_error)
             rout = os.fdopen(r_out)
             rerr = os.fdopen(r_err)
             rerror = os.fdopen(r_error)
@@ -238,10 +254,11 @@ class NylDaemon:
             set_nonblocking(rerr)
             set_nonblocking(rerror)
 
+            exit_code: int | None = None
             error_message = ""
 
             def read_output() -> None:
-                nonlocal error_message
+                nonlocal exit_code, error_message
                 read_list = [rout, rerr, rerror]
                 while read_list:
                     try:
@@ -256,6 +273,10 @@ class NylDaemon:
                                 read_list.remove(fp)
                                 continue
                             if fp == rerror:
+                                if exit_code is None:
+                                    lines = output.splitlines()
+                                    exit_code = int(lines.pop(0).strip())
+                                    output = "\n".join(lines)
                                 error_message += output
                                 continue
                             if fp == rerr:
@@ -274,11 +295,8 @@ class NylDaemon:
             os.waitpid(pid, 0)
             logger.info("Child process %d exited", pid)
 
-        if error_message:
-            client.send(self.Error(error_message))
-        else:
-            result = {"status": "success", "output": "Command executed successfully."}
-            client.send(self.RunResult(result))
+        assert exit_code is not None
+        client.send(self.RunResult(error_message, exit_code))
         client.close()
 
 
@@ -304,11 +322,14 @@ def main() -> None:
                 sys.stderr.write(message.text)
                 sys.stderr.flush()
             elif isinstance(message, NylDaemon.RunResult):
-                logger.info("Run result: %s", message.result)
-                break
+                if message.error:
+                    logger.error("Command failed (status code %s): %s", message.code, message.error)
+                elif message.code != 0:
+                    logger.error("Command failed with status code %s (no error message)", message.code)
+                sys.exit(message.code)
             else:
                 logger.error("Unknown message type:", message)
-                break
+                sys.exit(1)
 
 
 if __name__ == "__main__":
