@@ -7,6 +7,7 @@ Pass Nyl commands to an automatically managed Nyl daemon process to improve perf
 import argparse
 from dataclasses import dataclass, field
 import errno
+import fcntl
 import os
 from pathlib import Path
 import pickle
@@ -15,7 +16,7 @@ import socket as sock
 import sys
 import threading
 import time
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,20 @@ parser = argparse.ArgumentParser(prog="nyl-daemon", description=__doc__)
 parser.add_argument("--socket", type=Path, help="The socket to connect to.", required=True)
 parser.add_argument("--foreground", action="store_true", help="Run the daemon in the foreground.")
 parser.add_argument("args", nargs=argparse.REMAINDER, help="The arguments to execute in the Nyl daemon.")
+
+
+class HasFileno(Protocol):
+    def fileno(self) -> int:
+        """Return the file descriptor for the socket."""
+        ...
+
+
+def set_nonblocking(fd: HasFileno | int) -> None:
+    if hasattr(fd, "fileno"):
+        fd = fd.fileno()
+
+    fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
 
 
 class PickleSocketTransport:
@@ -207,15 +222,18 @@ class NylDaemon:
             rout = os.fdopen(r_out)
             rerr = os.fdopen(r_err)
 
+            set_nonblocking(rout)
+            set_nonblocking(rerr)
+
             def read_output() -> None:
-                # TODO: Need to set nonblocking mode on the pipes?
                 read_list = [rout, rerr]
                 while read_list:
                     try:
-                        read_ready, _, _ = select.select(read_list, [], [], 0.1)
+                        read_ready, _, _ = select.select(read_list, [], [], 1)
                         if not read_ready:
                             time.sleep(0.01)
                             continue
+                        logger.info("Read ready: %s", read_ready)
                         for fp in read_ready:
                             output = fp.read()
                             if not output:
