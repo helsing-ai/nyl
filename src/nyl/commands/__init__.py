@@ -129,7 +129,7 @@ app.add_typer(tools.app)
 app.add_typer(tun.app)
 
 
-def main() -> None:
+def main(args: list[str] | None = None) -> None:
     additional_args = []
     for env in ("NYL_ARGS", "ARGOCD_ENV_NYL_ARGS"):
         if env in os.environ:
@@ -139,4 +139,4 @@ def main() -> None:
             )
     sys.argv += additional_args
     logger.opt(colors=True).debug("Full Nyl command-line: <yellow>{}</>", shlex.join(sys.argv))
-    app()
+    app(args)

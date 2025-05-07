@@ -189,7 +189,7 @@ class NylDaemon:
         logger.info("Running command: %s", message)
 
         # Import the app here so that the fork can benefit from it being preloaded.
-        from nyl.commands import app
+        from nyl.commands import main
 
         r_out, w_out = os.pipe()
         r_err, w_err = os.pipe()
@@ -210,7 +210,7 @@ class NylDaemon:
             try:
                 os.environ.update(message.env)  # TODO: Maybe replace instead?
                 os.chdir(message.cwd)
-                app(message.args)
+                main(message.args)
                 w3.write("0\n")
             except BaseException as e:
                 if isinstance(e, SystemExit):
