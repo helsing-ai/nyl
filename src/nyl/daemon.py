@@ -9,6 +9,7 @@ from contextlib import ExitStack
 from dataclasses import dataclass
 import errno
 import fcntl
+from io import TextIOWrapper
 import os
 from pathlib import Path
 import pickle
@@ -192,11 +193,13 @@ class NylDaemon:
 
         r_out, w_out = os.pipe()
         r_err, w_err = os.pipe()
+        r_error, w_error = os.pipe()  # To send an actual error message
 
         pid = os.fork()
         if pid == 0:
             os.close(r_out)
             os.close(r_err)
+            os.close(r_error)
 
             w1 = os.fdopen(w_out, "w")
             w2 = os.fdopen(w_err, "w")
@@ -209,7 +212,7 @@ class NylDaemon:
                 app(message.args)
             except BaseException as e:
                 logger.exception("Error running command")
-                client.send(self.Error(str(e)))
+                os.write(w_error, str(e).encode())
             finally:
                 # Close the global ExitStack that is created by the app, since atexit handlers are
                 # not invoked in a forked process.
@@ -221,6 +224,7 @@ class NylDaemon:
                 w2.flush()
                 w1.close()
                 w2.close()
+                os.close(w_error)
         else:
             logger.info("Forked child process %d", pid)
 
@@ -228,22 +232,31 @@ class NylDaemon:
             os.close(w_err)
             rout = os.fdopen(r_out)
             rerr = os.fdopen(r_err)
+            rerror = os.fdopen(r_error)
 
             set_nonblocking(rout)
             set_nonblocking(rerr)
+            set_nonblocking(rerror)
+
+            error_message = ""
 
             def read_output() -> None:
-                read_list = [rout, rerr]
+                nonlocal error_message
+                read_list = [rout, rerr, rerror]
                 while read_list:
                     try:
                         read_ready, _, _ = select.select(read_list, [], [], 1)
                         if not read_ready:
                             time.sleep(0.01)
                             continue
+                        fp: TextIOWrapper
                         for fp in read_ready:
-                            output = fp.read()
+                            output: str = fp.read()
                             if not output:
                                 read_list.remove(fp)
+                                continue
+                            if fp == rerror:
+                                error_message += output
                                 continue
                             if fp == rerr:
                                 print(output, end="", file=sys.stderr)
@@ -261,8 +274,11 @@ class NylDaemon:
             os.waitpid(pid, 0)
             logger.info("Child process %d exited", pid)
 
-        result = {"status": "success", "output": "Command executed successfully."}
-        client.send(self.RunResult(result))
+        if error_message:
+            client.send(self.Error(error_message))
+        else:
+            result = {"status": "success", "output": "Command executed successfully."}
+            client.send(self.RunResult(result))
         client.close()
 
 
