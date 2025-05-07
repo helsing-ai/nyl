@@ -5,6 +5,7 @@ Pass Nyl commands to an automatically managed Nyl daemon process to improve perf
 # Important: This file tries to import as little as possible to keep startup time low.
 
 import argparse
+from contextlib import ExitStack
 from dataclasses import dataclass
 import errno
 import fcntl
@@ -191,7 +192,7 @@ class NylDaemon:
         )
 
         # Import the app here so that the fork can benefit from it being preloaded.
-        from nyl.commands import app
+        from nyl.commands import app, PROVIDER
 
         r_out, w_out = os.pipe()
         r_err, w_err = os.pipe()
@@ -210,13 +211,18 @@ class NylDaemon:
                 os.environ.update(message.env)  # TODO: Maybe replace instead?
                 os.chdir(message.cwd)
                 app(message.args)
-            except SystemExit:
+            except SystemExit as e:
                 # This flush may seem unnecessary, but it is required before we call os._exit().
                 w1.flush()
                 w2.flush()
-                # os._exit(e.code if isinstance(e.code, int) else 1 if isinstance(e.code, str) else 0)
-                raise  # Actually we do want a regular exit maybe, to ensure atexit is invoked
+                os._exit(e.code if isinstance(e.code, int) else 1 if isinstance(e.code, str) else 0)
             finally:
+                # Close the global ExitStack that is created by the app, since atexit handlers are
+                # not invoked in a forked process.
+                try:
+                    PROVIDER.get(ExitStack)().close()
+                except BaseException:
+                    logger.exception("Error closing ExitStack")
                 w1.flush()
                 w2.flush()
                 w1.close()

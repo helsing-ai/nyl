@@ -4,6 +4,7 @@ applications directly or integrate as an ArgoCD ConfigManagementPlugin.
 """
 
 import atexit
+from contextlib import ExitStack
 import json
 import os
 import shlex
@@ -91,14 +92,6 @@ def _callback(
             log_env[key] = value
     logger.debug("Nyl-relevant environment variables: {}", lazy_str(json.dumps, log_env, indent=2))
 
-    atexit.register(
-        # HACK: If we don't wrap it in a lambda, Loguru fails with "ValueError: call stack is not deep enough".
-        # But we also need to wrap it so we capture the right end time.
-        lambda *a: logger.debug(*a, time.perf_counter() - start_time),
-        "Finished (nyl {}) in {:.2f}s",
-        lazy_str(pretty_cmd, sys.argv),
-    )
-
     PROVIDER.set_lazy(ProfileManager, lambda: ProfileManager.load(required=False))
     PROVIDER.set_lazy(SecretsConfig, lambda: SecretsConfig.load(dependencies=PROVIDER))
     PROVIDER.set_lazy(ProjectConfig, lambda: ProjectConfig.load(dependencies=PROVIDER))
@@ -110,6 +103,18 @@ def _callback(
             PROVIDER.get(ProfileManager), PROVIDER.get(ApiClientConfig).profile
         ),
     )
+
+    exit_stack = ExitStack()
+    PROVIDER.set(ExitStack, exit_stack)
+    atexit.register(exit_stack.close)
+
+    # HACK: If we don't wrap it in a lambda, Loguru fails with "ValueError: call stack is not deep enough".
+    # But we also need to wrap it so we capture the right end time.
+    def _finalize() -> None:
+        duration = time.perf_counter() - start_time
+        logger.debug("Finished (nyl {}) in {:.2f}s", lazy_str(pretty_cmd, sys.argv), duration)
+
+    exit_stack.callback(_finalize)
 
 
 @app.command()
