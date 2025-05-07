@@ -5,7 +5,7 @@ Pass Nyl commands to an automatically managed Nyl daemon process to improve perf
 # Important: This file tries to import as little as possible to keep startup time low.
 
 import argparse
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import errno
 import fcntl
 import hashlib
@@ -246,7 +246,8 @@ class NylDaemon:
                             if not output:
                                 read_list.remove(fp)
                                 continue
-                            print("Output:", output, end="")
+                            if fp == rerr:
+                                print(output, end="", file=sys.stderr if fp == rerr else sys.stdout)
                             client.send(NylDaemon.Stdout(output) if fp == rout else NylDaemon.Stderr(output))
                     except BlockingIOError:
                         time.sleep(0.01)
