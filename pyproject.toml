@@ -62,4 +62,4 @@ ruff-fmt = "uv run ruff format --check ."
 fmt = "uv run ruff format . && uv run ruff check --fix ."
 
 [tool.slap.release]
-pre-commit = "uv lock && git add uv.lock"
+pre-commit = "uv lock && git add uv.lock && slap changelog format --all --markdown > docs/content/changelog.md && git add docs/content/changelog.md"
