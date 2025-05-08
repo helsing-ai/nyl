@@ -1,5 +1,10 @@
 import os
+import posixpath
+import threading
+import time
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse, urlunparse
+from urllib.request import urlopen
 from loguru import logger
 from nyl import __version__
 
@@ -15,6 +20,17 @@ def init_pyroscope() -> None:
     logger.opt(colors=True).info("Enabling Pyroscope profiling with destination <yellow>{}</>", server_address)
 
     from pyroscope import configure  # type: ignore
+
+    # Check if pyroscope server is available.
+    def check_pyroscope_server() -> None:
+        while True:
+            try:
+                urlopen(urlunparse(parsed._replace(query=None, path=posixpath.join(parsed.path, "ready"))), timeout=0.5)  # type: ignore # TODO
+            except (URLError, HTTPError) as e:
+                logger.warning("Pyroscope server is not ready: {}", e)
+            time.sleep(30)
+
+    threading.Thread(target=check_pyroscope_server, daemon=True).start()
 
     application_name = params.pop("application_name", ["nyl"])[0]
     application_name = os.getenv("NYL_PYROSCOPE_APPLICATION_NAME", application_name)
