@@ -1175,6 +1175,10 @@ ensure that only specifically supported variables can be set. The following such
   in the format <code>http://username:password@host:port</code>. The application name may be specified with <code>?application_name=name</code>
   and the tenant ID with <code>?tenant_id=id</code>. The application name and tenant ID are optional. The name defaults to <code>nyl</code>,
   while the tenant ID defaults to no value. Any additional parameters are used as tags.</li>
+<li><code>NYL_PYROSCOPE_APPLICATION_NAME</code> &ndash; If set, it takes priority over the <code>?application_name</code> specified in the
+  <code>NYL_PYROSCOPE_URL</code>.</li>
+<li><code>NYL_PYROSCOPE_TENANT_ID</code> &ndash; If set, it takes priority over the <code>?tenant_id</code> specified in the
+  <code>NYL_PYROSCOPE_URL</code>.</li>
 </ul>
 <div class="footnote">
 <hr />
