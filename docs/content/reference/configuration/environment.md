@@ -65,3 +65,7 @@ This page summarizes all environment variables that are used by Nyl.
   in the format `http://username:password@host:port`. The application name may be specified with `?application_name=name`
   and the tenant ID with `?tenant_id=id`. The application name and tenant ID are optional. The name defaults to `nyl`,
   while the tenant ID defaults to no value. Any additional parameters are used as tags.
+- `NYL_PYROSCOPE_APPLICATION_NAME` &ndash; If set, it takes priority over the `?application_name` specified in the
+  `NYL_PYROSCOPE_URL`.
+- `NYL_PYROSCOPE_TENANT_ID` &ndash; If set, it takes priority over the `?tenant_id` specified in the
+  `NYL_PYROSCOPE_URL`.

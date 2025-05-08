@@ -13,7 +13,7 @@ author = "@NiklasRosenstein"
 [[entries]]
 id = "07b855f7-3d5a-4a7c-9412-aa140e42e2e2"
 type = "feature"
-description = "Add support for `NYL_PYROSCOPE_URL` environment variable"
+description = "Add support for `NYL_PYROSCOPE_*` environment variables."
 author = "@NiklasRosenstein"
 
 [[entries]]

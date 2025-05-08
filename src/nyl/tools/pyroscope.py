@@ -16,10 +16,16 @@ def init_pyroscope() -> None:
 
     from pyroscope import configure  # type: ignore
 
+    application_name = params.pop("application_name", ["nyl"])[0]
+    application_name = os.getenv("NYL_PYROSCOPE_APPLICATION_NAME", application_name)
+
+    tenant_id = params.pop("tenant_id", [""])[0]
+    tenant_id = os.getenv("NYL_PYROSCOPE_TENANT_ID", tenant_id)
+
     configure(
         server_address=server_address,
-        application_name=params.pop("application_name", ["nyl"])[0],
-        tenant_id=params.pop("tenant_id", [""])[0],
+        application_name=application_name,
+        tenant_id=tenant_id,
         tags={**params, "version": __version__},
         basic_auth_username=parsed.username or "",
         basic_auth_password=parsed.password or "",
