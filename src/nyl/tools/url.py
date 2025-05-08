@@ -17,9 +17,15 @@ def url_extract_basic_auth(
     username = url.username
     password = url.password
     if mask:
-        url = url._replace(netloc=f"{username}:{'***' if password else ''}@{url.hostname}")
+        netloc = f"{username}:{'***' if password else ''}@{url.hostname}"
+        if url.port:
+            netloc += f":{url.port}"
+        url = url._replace(netloc=netloc)
     else:
-        url = url._replace(netloc=url.hostname or "")
+        netloc = url.hostname or ""
+        if url.port:
+            netloc += f":{url.port}"
+        url = url._replace(netloc=netloc)
 
     if strip_query:
         url = url._replace(query="")
