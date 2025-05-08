@@ -21,3 +21,9 @@ id = "2eb36ed9-9967-4f43-b40f-39e8e177829f"
 type = "improvement"
 description = "Switch to using `python:3.13-slim` as base image instead of `python:3.13-alpine` to allow installing `pyroscope-io`, imag size is only marginally impacted"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "26bd73b3-ea9b-49ad-8af0-9782356d5722"
+type = "improvement"
+description = "Remove some Kubernetes-specific environment variables from log line that exposes Nyl-specific environment variables, and redact NYL_PYROSCOPE_URL"
+author = "@NiklasRosenstein"

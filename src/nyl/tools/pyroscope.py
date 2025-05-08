@@ -2,6 +2,8 @@ import contextlib
 import os
 from typing import TYPE_CHECKING, Iterator
 
+from nyl.tools.url import url_extract_basic_auth
+
 initialized: bool = False
 
 if TYPE_CHECKING:
@@ -22,9 +24,9 @@ def init_pyroscope() -> None:
     import pyroscope
 
     parsed = urlparse(pyroscope_url)
-
     params = parse_qs(parsed.query)
-    server_address = urlunparse(parsed._replace(netloc=parsed.hostname, query=None))  # type: ignore # TODO
+    server_address = url_extract_basic_auth(parsed)[0]
+
     logger.opt(colors=True).info("Enabling Pyroscope profiling with destination <yellow>{}</>", server_address)
 
     # Periodically check if pyroscope server is available.

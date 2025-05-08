@@ -25,6 +25,7 @@ from nyl.tools.logging import lazy_str
 from nyl.tools.pyroscope import init_pyroscope, tag_wrapper
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.typer import new_typer
+from nyl.tools.url import url_extract_basic_auth
 
 app: Typer = new_typer(help=__doc__)
 
@@ -85,8 +86,16 @@ def _callback(
     logger.debug("Current working directory: {}", Path.cwd())
     log_env = {}
     for key, value in os.environ.items():
-        if key.startswith("ARGOCD_") or key.startswith("NYL_") or key.startswith("KUBE_"):
+        if (
+            # Keep ARGOCD_ environment variables but filter out those that are likely set by Kubernetes.
+            (key.startswith("ARGOCD_") and not (key.endswith("_PORT") or key.endswith("_TCP") or key.endswith("_ADDR")))
+            or key.startswith("NYL_")
+            or key.startswith("KUBE_")
+        ):
             log_env[key] = value
+    # Mask sensitive information in the environment variables that are well-known.
+    if "NYL_PYROSCOPE_URL" in log_env:
+        log_env["NYL_PYROSCOPE_URL"] = url_extract_basic_auth(log_env["NYL_PYROSCOPE_URL"], mask=True)[0]
     logger.debug("Nyl-relevant environment variables: {}", lazy_str(json.dumps, log_env, indent=2))
 
     PROVIDER.set_lazy(ProfileManager, lambda: ProfileManager.load(required=False))
