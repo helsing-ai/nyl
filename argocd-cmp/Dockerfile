@@ -1,9 +1,10 @@
+FROM python:3.13-slim AS build_base
+COPY --from=ghcr.io/astral-sh/uv:0.7.2 /uv /bin/uv
 
 #: Build Nyl itself.
 #: -----------------
 
-FROM python:3.13 AS build
-COPY --from=ghcr.io/astral-sh/uv:0.7.2 /uv /bin/uv
+FROM build_base AS build
 
 WORKDIR /opt/nyl
 
@@ -83,9 +84,10 @@ RUN \
 #: Build the ArgoCD CMP server image.
 #: ----------------------------------
 
-FROM python:3.13 AS nyl-cmp
-# RUN apk add git
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && apt-get clean
+FROM python:3.13-slim AS nyl-cmp
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    rm -rf /var/lib/apt/lists/*
 COPY --from=argocd-bin /usr/local/bin/argocd /usr/local/bin/argocd
 RUN ln -s /usr/local/bin/argocd /usr/local/bin/argocd-cmp-server && chown 999:999 /usr/local/bin/argocd-cmp-server
 COPY --from=helm-bin /usr/local/bin/helm /usr/local/bin/helm
@@ -98,9 +100,9 @@ COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.ya
 
 # Validate Nyl can be run, plus various setup steps.
 RUN nyl version \
-    && addgroup -S argocd \
-    && adduser -u 999 argocd -G argocd -D \
-    && mkdir -p /var/log/nyl \
+    && groupadd --system --gid 999 argocd && \
+    useradd --system --uid 999 --gid 999 --home /home/argocd -m --shell /bin/false argocd && \
+    mkdir -p /var/log/nyl \
     && chown -R argocd:argocd /var/log/nyl
 
 USER argocd

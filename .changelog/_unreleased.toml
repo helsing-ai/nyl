@@ -15,3 +15,9 @@ id = "07b855f7-3d5a-4a7c-9412-aa140e42e2e2"
 type = "feature"
 description = "Add support for `NYL_PYROSCOPE_URL` environment variable"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "2eb36ed9-9967-4f43-b40f-39e8e177829f"
+type = "improvement"
+description = "Switch to using `python:3.13-slim` as base image instead of `python:3.13-alpine` to allow installing `pyroscope-io`, imag size is only marginally impacted"
+author = "@NiklasRosenstein"
