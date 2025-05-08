@@ -1,13 +1,10 @@
-import contextlib
 import os
-from typing import TYPE_CHECKING, Iterator
 
 from nyl.tools.url import url_extract_basic_auth
 
-initialized: bool = False
+from pyroscope import configure, tag_wrapper
 
-if TYPE_CHECKING:
-    from pyroscope import tag_wrapper as _tag_wrapper  # type: ignore
+__all__ = ["init_pyroscope", "tag_wrapper"]
 
 
 def init_pyroscope() -> None:
@@ -21,7 +18,6 @@ def init_pyroscope() -> None:
     from urllib.parse import parse_qs, urlparse, urlunparse
     from loguru import logger
     from nyl import __version__
-    import pyroscope
 
     parsed = urlparse(pyroscope_url)
     params = parse_qs(parsed.query)
@@ -35,7 +31,7 @@ def init_pyroscope() -> None:
     def check_pyroscope_server() -> None:
         while True:
             try:
-                ready_url = urlunparse(parsed._replace(query='', path=posixpath.join(parsed.path, "ready")))
+                ready_url = urlunparse(parsed._replace(query="", path=posixpath.join(parsed.path, "ready")))
                 requests.get(ready_url)
             except requests.RequestException as e:
                 logger.warning("Pyroscope server is not ready: {}", e)
@@ -52,7 +48,7 @@ def init_pyroscope() -> None:
     tenant_id = os.getenv("NYL_PYROSCOPE_TENANT_ID", tenant_id)
 
     server_address, username, password = url_extract_basic_auth(parsed)
-    pyroscope.configure(
+    configure(
         server_address=server_address,
         application_name=application_name,
         tenant_id=tenant_id,
@@ -60,16 +56,3 @@ def init_pyroscope() -> None:
         basic_auth_username=username or "",
         basic_auth_password=password or "",
     )
-
-    global initialized, _tag_wrapper
-    initialized = True
-    _tag_wrapper = pyroscope.tag_wrapper
-
-
-@contextlib.contextmanager
-def tag_wrapper(tags: dict[str, str]) -> Iterator[None]:
-    if not initialized:
-        yield
-    else:
-        with _tag_wrapper(tags):
-            yield
