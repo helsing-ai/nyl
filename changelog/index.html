@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#0101-2025-05-07" class="md-skip">
+        <a href="#0102-2025-05-08" class="md-skip">
           Skip to content
         </a>
       
@@ -348,6 +348,15 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0102-2025-05-08" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.10.2 (2025-05-08)
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#0101-2025-05-07" class="md-nav__link">
@@ -1096,6 +1105,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0102-2025-05-08" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.10.2 (2025-05-08)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0101-2025-05-07" class="md-nav__link">
     <span class="md-ellipsis">
       0.10.1 (2025-05-07)
@@ -1219,6 +1237,25 @@
 
 
   <h1>Changelog</h1>
+
+<h2 id="0102-2025-05-08">0.10.2 (2025-05-08)</h2>
+<table><tr><th>Type</th><th>Description</th><th>PR</th><th>Issues</th><th>Author</th></tr>
+  <tr><td>Hygiene</td><td>
+
+Rename `Manifest` and `Manifests` to `Resource` and `ResourceList` in codebase, and variable names/members accordingly</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Deprecation</td><td>
+
+Remove `locals` from scope of template rendering, use `values` instead</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Feature</td><td>
+
+Add support for `NYL_PYROSCOPE_*` environment variables.</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Improvement</td><td>
+
+Switch to using `python:3.13-slim` as base image instead of `python:3.13-alpine` to allow installing `pyroscope-io`, imag size is only marginally impacted</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Improvement</td><td>
+
+Remove some Kubernetes-specific environment variables from log line that exposes Nyl-specific environment variables, and redact NYL_PYROSCOPE_URL</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+</table>
 
 <h2 id="0101-2025-05-07">0.10.1 (2025-05-07)</h2>
 <table><tr><th>Type</th><th>Description</th><th>PR</th><th>Issues</th><th>Author</th></tr>
