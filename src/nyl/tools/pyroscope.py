@@ -1,17 +1,17 @@
 import os
-import posixpath
-import threading
-import time
-from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlparse, urlunparse
-from urllib.request import urlopen
-from loguru import logger
-from nyl import __version__
 
 
 def init_pyroscope() -> None:
     if not (pyroscope_url := os.getenv("NYL_PYROSCOPE_URL")):
         return
+
+    import posixpath
+    import threading
+    import time
+    import requests
+    from urllib.parse import parse_qs, urlparse, urlunparse
+    from loguru import logger
+    from nyl import __version__
 
     parsed = urlparse(pyroscope_url)
 
@@ -21,13 +21,16 @@ def init_pyroscope() -> None:
 
     from pyroscope import configure  # type: ignore
 
-    # Check if pyroscope server is available.
+    # Periodically check if pyroscope server is available.
     def check_pyroscope_server() -> None:
         while True:
             try:
-                urlopen(urlunparse(parsed._replace(query=None, path=posixpath.join(parsed.path, "ready"))), timeout=0.5)  # type: ignore # TODO
-            except (URLError, HTTPError) as e:
+                ready_url = urlunparse(parsed._replace(query=None, path=posixpath.join(parsed.path, "ready")))  # type: ignore # TODO
+                requests.get(ready_url)
+            except requests.RequestException as e:
                 logger.warning("Pyroscope server is not ready: {}", e)
+            except Exception as e:
+                logger.warning("Unexpected exception while checking pyroscope server: {}", e)
             time.sleep(30)
 
     threading.Thread(target=check_pyroscope_server, daemon=True).start()
