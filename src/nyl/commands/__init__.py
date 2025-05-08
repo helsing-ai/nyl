@@ -22,6 +22,7 @@ from nyl.project.config import ProjectConfig
 from nyl.secrets.config import SecretsConfig
 from nyl.tools.di import DependenciesProvider
 from nyl.tools.logging import lazy_str
+from nyl.tools.pyroscope import init_pyroscope, tag_wrapper
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.typer import new_typer
 
@@ -130,14 +131,17 @@ app.add_typer(tun.app)
 
 
 def main(args: list[str] | None = None) -> None:
-    additional_args = []
-    for env in ("NYL_ARGS", "ARGOCD_ENV_NYL_ARGS"):
-        if env in os.environ:
-            additional_args = shlex.split(args_string := os.environ[env])
-            logger.opt(colors=True).debug(
-                "Adding additional arguments from <cyan>{}</>: <yellow>{}</>", env, args_string
-            )
-    sys.argv += additional_args
-    logger.opt(colors=True).debug("Full Nyl command-line: <yellow>{}</>", shlex.join(sys.argv))
+    init_pyroscope()
 
-    app(args)
+    with tag_wrapper({"entrypoint": "nyl"}):
+        additional_args = []
+        for env in ("NYL_ARGS", "ARGOCD_ENV_NYL_ARGS"):
+            if env in os.environ:
+                additional_args = shlex.split(args_string := os.environ[env])
+                logger.opt(colors=True).debug(
+                    "Adding additional arguments from <cyan>{}</>: <yellow>{}</>", env, args_string
+                )
+        sys.argv += additional_args
+        logger.opt(colors=True).debug("Full Nyl command-line: <yellow>{}</>", shlex.join(sys.argv))
+
+        app(args)
