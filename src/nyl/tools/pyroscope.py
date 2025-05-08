@@ -26,7 +26,7 @@ def init_pyroscope() -> None:
         server_address=server_address,
         application_name=application_name,
         tenant_id=tenant_id,
-        tags={**params, "version": __version__},
+        tags={**{k: v[0] for k, v in params.items()}, "version": __version__},
         basic_auth_username=parsed.username or "",
         basic_auth_password=parsed.password or "",
     )
