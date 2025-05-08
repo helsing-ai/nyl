@@ -25,15 +25,17 @@ def init_pyroscope() -> None:
 
     parsed = urlparse(pyroscope_url)
     params = parse_qs(parsed.query)
-    server_address = url_extract_basic_auth(parsed)[0]
 
-    logger.opt(colors=True).info("Enabling Pyroscope profiling with destination <yellow>{}</>", server_address)
+    logger.opt(colors=True).info(
+        "Enabling Pyroscope profiling with destination <yellow>{}</>",
+        url_extract_basic_auth(parsed, mask=True)[0],
+    )
 
     # Periodically check if pyroscope server is available.
     def check_pyroscope_server() -> None:
         while True:
             try:
-                ready_url = urlunparse(parsed._replace(query=None, path=posixpath.join(parsed.path, "ready")))  # type: ignore # TODO
+                ready_url = urlunparse(parsed._replace(query='', path=posixpath.join(parsed.path, "ready")))
                 requests.get(ready_url)
             except requests.RequestException as e:
                 logger.warning("Pyroscope server is not ready: {}", e)
@@ -49,13 +51,14 @@ def init_pyroscope() -> None:
     tenant_id = params.pop("tenant_id", [""])[0]
     tenant_id = os.getenv("NYL_PYROSCOPE_TENANT_ID", tenant_id)
 
+    server_address, username, password = url_extract_basic_auth(parsed)
     pyroscope.configure(
         server_address=server_address,
         application_name=application_name,
         tenant_id=tenant_id,
         tags={"version": __version__, **{k: v[0] for k, v in params.items()}},
-        basic_auth_username=parsed.username or "",
-        basic_auth_password=parsed.password or "",
+        basic_auth_username=username or "",
+        basic_auth_password=password or "",
     )
 
     global initialized, _tag_wrapper
