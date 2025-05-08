@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#0102-2025-05-08" class="md-skip">
+        <a href="#0103-2025-05-08" class="md-skip">
           Skip to content
         </a>
       
@@ -348,6 +348,15 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0103-2025-05-08" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.10.3 (2025-05-08)
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#0102-2025-05-08" class="md-nav__link">
@@ -1105,6 +1114,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#0103-2025-05-08" class="md-nav__link">
+    <span class="md-ellipsis">
+      0.10.3 (2025-05-08)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#0102-2025-05-08" class="md-nav__link">
     <span class="md-ellipsis">
       0.10.2 (2025-05-08)
@@ -1237,6 +1255,16 @@
 
 
   <h1>Changelog</h1>
+
+<h2 id="0103-2025-05-08">0.10.3 (2025-05-08)</h2>
+<table><tr><th>Type</th><th>Description</th><th>PR</th><th>Issues</th><th>Author</th></tr>
+  <tr><td>Improvement</td><td>
+
+Further improve filtering of env vars that start with ARGOCD_ but are Kubernetes-specific</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+  <tr><td>Improvement</td><td>
+
+Automatically drop empty `.metadata.labels` fields from resources generated with `nyl template` to prevent resources with such labels to immediately be `OutOfSync` after apply in ArgoCD</td><td></td><td></td><td>@NiklasRosenstein</td></tr>
+</table>
 
 <h2 id="0102-2025-05-08">0.10.2 (2025-05-08)</h2>
 <table><tr><th>Type</th><th>Description</th><th>PR</th><th>Issues</th><th>Author</th></tr>
