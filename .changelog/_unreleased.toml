@@ -3,3 +3,9 @@ id = "67d4932f-0e84-4299-90ae-333cf7774ee0"
 type = "improvement"
 description = "Further improve filtering of env vars that start with ARGOCD_ but are Kubernetes-specific"
 author = "@NiklasRosenstein"
+
+[[entries]]
+id = "5b794574-bca0-4160-b2ff-3f5d68e296a9"
+type = "improvement"
+description = "Automatically drop empty `.metadata.labels` fields from resources generated with `nyl template` to prevent resources with such labels to immediately be `OutOfSync` after apply in ArgoCD"
+author = "@NiklasRosenstein"

@@ -51,6 +51,20 @@ def populate_namespace_to_resources(resources: list[Resource], namespace: str) -
             resource["metadata"]["namespace"] = namespace
 
 
+def drop_empty_metadata_labels(resources: list[Resource]) -> None:
+    """
+    Drop the `metadata.labels` field from all resources that have it but are empty.
+
+    This gets applied to resources after templating as it can cause the resources to be OutOfSync immediately
+    after apply as the Kubernetes API stores the empty labels as `null` instead of `{}`.
+    """
+
+    for resource in resources:
+        if "metadata" in resource and "labels" in resource["metadata"]:
+            if not resource["metadata"]["labels"]:
+                del resource["metadata"]["labels"]
+
+
 def is_cluster_scoped_resource(manifest: Resource) -> bool:
     """
     Check if a manifest is a cluster scoped resource.

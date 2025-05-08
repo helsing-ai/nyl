@@ -27,7 +27,7 @@ from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
-from nyl.tools.kubernetes import populate_namespace_to_resources
+from nyl.tools.kubernetes import drop_empty_metadata_labels, populate_namespace_to_resources
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Resource, ResourceList
 
@@ -365,6 +365,7 @@ def template(
                     labels[APPLYSET_LABEL_PART_OF] = applyset.id
 
         populate_namespace_to_resources(source.resources, current_default_namespace)
+        drop_empty_metadata_labels(source.resources)
 
         # Now apply the post-processor.
         source.resources = PostProcessor.apply_all(source.resources, post_processors, source.file)
