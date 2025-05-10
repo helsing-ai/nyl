@@ -1221,6 +1221,10 @@ If you do not wish to grant the plugin access to the Kubernetes API, you must di
 your manifests do not rely on features that require API access.</p>
 </div>
 <h2 id="installation-daemon">Installation (Daemon)</h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The daemon mode is currently in an experimental state and not recommended for production use.</p>
+</div>
 <p>The above example will invoke the <code>nyl template</code> command again and again for each time an application's manifests are
 refreshed by ArgoCD. This carries a bit of a performance penalty, since a new Nyl process is spawned each time and
 loading its code from disk.</p>
