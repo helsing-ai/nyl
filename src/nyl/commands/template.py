@@ -1,88 +1,41 @@
 import atexit
-from concurrent.futures import Future, ThreadPoolExecutor
+# Removed Future, ThreadPoolExecutor
 import json
 import os
-from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
-from textwrap import indent
-import time
-from typing import Any, Literal, Optional, cast
+# from textwrap import indent # indent is not used in the final version of this file
+import time # time is used for start_time and metric logging
+from typing import Optional
 
 from loguru import logger
 from typer import Argument, Option
 
 from kubernetes.client.api_client import ApiClient
-from kubernetes.config.incluster_config import load_incluster_config
+# load_incluster_config and load_kube_config are used by ApiClientConfig logic within PROVIDER
+from kubernetes.config.incluster_config import load_incluster_config 
 from kubernetes.config.kube_config import load_kube_config
 from nyl.commands import PROVIDER, ApiClientConfig, app
-from nyl.generator import reconcile_generator
-from nyl.generator.dispatch import DispatchingGenerator
-from nyl.profiles import DEFAULT_PROFILE, ProfileManager
+from nyl.core.templating_processor import (
+    OnLookupFailure, # Used as a type hint for a CLI option
+    process_templates # Core processing function
+)
+# Removed DEFAULT_PROFILE from nyl.profiles import as it's not used here anymore
+from nyl.profiles import ProfileManager 
 from nyl.project.config import ProjectConfig
-from nyl.resources import API_VERSION_INLINE, NylResource
-from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
-from nyl.resources.postprocessor import PostProcessor
+from nyl.resources.applyset import ApplySet # Used for type hint in process_templates results
 from nyl.secrets.config import SecretsConfig
-from nyl.templating import NylTemplateEngine
-from nyl.tools import yaml
+from nyl.tools import yaml # Used for printing output
 from nyl.tools.kubectl import Kubectl
-from nyl.tools.kubernetes import drop_empty_metadata_labels, populate_namespace_to_resources
-from nyl.tools.logging import lazy_str
-from nyl.tools.types import Resource, ResourceList
-
-DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/is-default-namespace"
-
-
-# Need an enum for typer
-class OnLookupFailure(str, Enum):
-    Error = "Error"
-    CreatePlaceholder = "CreatePlaceholder"
-    SkipResource = "SkipResource"
-
-    def to_literal(self) -> Literal["Error", "CreatePlaceholder", "SkipResource"]:
-        return cast(Any, self.name)  # type: ignore[no-any-return]
-
-
-@dataclass
-class ManifestsWithSource:
-    """
-    Represents a list of resources loaded from a particular source file.
-    """
-
-    resources: ResourceList
-    file: Path
-
-
-def get_incluster_kubernetes_client() -> ApiClient:
-    logger.info("Using in-cluster configuration.")
-    load_incluster_config()
-    return ApiClient()
-
-
-def get_profile_kubernetes_client(profiles: ProfileManager, profile: str | None) -> ApiClient:
-    """
-    Create a Kubernetes :class:`ApiClient` from the selected *profile*.
-
-    If no *profile* is specified, but the profile manager contains at least one profile, the *profile* argument will
-    default to the value of :data:`DEFAULT_PROFILE` (which is `"default"`). Otherwise, if no profile is selected and
-    none is configured, the standard Kubernetes config loading is used (i.e. try `KUBECONFIG` and then
-    `~/.kube/config`).
-    """
-
-    with profiles:
-        # If no profile to activate is specified, and there are no profiles defined, we're not activating a
-        # a profile. It should be valid to use Nyl without a `nyl-profiles.yaml` file.
-        if profile is not None or profiles.config.profiles:
-            profile = profile or DEFAULT_PROFILE
-            active = profiles.activate_profile(profile)
-            load_kube_config(str(active.kubeconfig))
-        else:
-            logger.opt(colors=True).info(
-                "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
-            )
-            load_kube_config()
-    return ApiClient()
+from nyl.tools.logging import lazy_str # Used
+from nyl.tools.types import ResourceList # Used for type hint in process_templates results
+# Removed several direct imports that are now handled within process_templates:
+# DEFAULT_NAMESPACE_ANNOTATION, ManifestsWithSource, get_default_namespace_for_manifest,
+# is_namespace_resource, load_manifests from nyl.core.templating_processor
+# reconcile_generator, DispatchingGenerator from nyl.generator
+# API_VERSION_INLINE, NylResource, APPLYSET_LABEL_PART_OF, PostProcessor from nyl.resources
+# NylTemplateEngine from nyl.templating
+# drop_empty_metadata_labels, populate_namespace_to_resources from nyl.tools.kubernetes
+# Resource from nyl.tools.types (ResourceList is kept for the output tuple type hint)
 
 
 @app.command()

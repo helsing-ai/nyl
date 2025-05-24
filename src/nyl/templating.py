@@ -161,11 +161,20 @@ class LookupError(Exception):
 @dataclass
 class NylTemplateEngine:
     """
-    Nyl's structured template engine.
+    Nyl's structured template engine, extending structured_templates.TemplateEngine.
+
+    This engine is responsible for evaluating template expressions within Nyl manifests.
+    It integrates with a secrets provider for accessing sensitive data and can perform
+    live Kubernetes API lookups using the `lookup()` function.
+
+    To use, instantiate it with a secrets provider and a Kubernetes API client,
+    then call the `evaluate()` method on a list of resources.
 
     Args:
-        secrets: The secrets engine to make available to templated expressions.
-        client: The Kubernetes API client to use for lookups.
+        secrets: A `SecretProvider` instance to resolve `secrets.<provider>.<key>`
+                 expressions.
+        client: A Kubernetes `ApiClient` instance used by the `lookup()` function
+                to fetch live resource data from the cluster.
         on_lookup_failure: What should happen on failure to perform lookups of other Kubernetes resources.
     """
 
