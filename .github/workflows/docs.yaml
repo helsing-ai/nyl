@@ -2,19 +2,21 @@ name: Documentation
 
 on:
   push:
-    branches: [ develop ]
-    tags: [ '*' ]
-  pull_request:
-    branches: [ develop ]
+    branches: [develop]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
       - name: Check Nix flake Nixpkgs inputs
         uses: DeterminateSystems/flake-checker-action@main
       - uses: cachix/install-nix-action@v31
@@ -24,15 +26,15 @@ jobs:
         with:
           name: mycache
           # If you chose signing key for write access
-          signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+          signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
           # If you chose API tokens for write access OR if you have a private cache
-          authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build docs
         run: nix run .#docs build
-
-      - name: Publish documentation
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          personal_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/site
+          path: ./docs/site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
