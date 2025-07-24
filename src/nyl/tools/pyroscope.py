@@ -1,7 +1,6 @@
 import os
 
 from nyl.tools.url import url_extract_basic_auth
-
 from pyroscope import configure, tag_wrapper
 
 __all__ = ["init_pyroscope", "tag_wrapper"]
@@ -14,9 +13,11 @@ def init_pyroscope() -> None:
     import posixpath
     import threading
     import time
-    import requests
     from urllib.parse import parse_qs, urlparse, urlunparse
+
+    import requests
     from loguru import logger
+
     from nyl import __version__
 
     parsed = urlparse(pyroscope_url)

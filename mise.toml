@@ -1,0 +1,15 @@
+[tools]
+"cargo:tire" = "0.1.2"
+kyverno = "1.14.4"
+uv = "0.8.0"
+sops = "3.10.2"
+helm = "3.18.3"
+kubectl = "1.33.3"
+
+[tasks.build-docs]
+dir = "docs"
+run = "uv run mkdocs build"
+
+[tasks.serve-docs]
+dir = "docs"
+run = "uv run mkdocs serve"

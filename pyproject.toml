@@ -6,9 +6,7 @@ build-backend = "hatchling.build"
 name = "nyl"
 version = "0.10.4"
 description = "Advanced templating engine for Kubernetes and GitOps."
-authors = [
-    {name = "Niklas Rosenstein", email = "rosensteinniklas@gmail.com"},
-]
+authors = [{ name = "Niklas Rosenstein", email = "rosensteinniklas@gmail.com" }]
 dependencies = [
     "bcrypt>=4.2.0",
     "databind>=4.5.2",
@@ -27,7 +25,7 @@ dependencies = [
 ]
 requires-python = ">=3.11"
 readme = "README.md"
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 [project.scripts]
 nyl = "nyl.commands:main"
@@ -38,29 +36,11 @@ dev-dependencies = [
     "kubernetes-stubs>=22.6.0.post1",
     "mypy>=1.13.0",
     "pytest>=8.2.2",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.7.2",
     "types-pyyaml>=6.0.12.20240311",
     "types-requests>=2.32.0.20240712",
 ]
-
-[tool.mypy]
-explicit_package_bases = true
-namespace_packages = true
-show_column_numbers = true
-strict = true
-mypy_path = ["src"]
-
-[tool.ruff]
-line-length = 120
-
-[tool.slap.test]
-pytest = "uv run pytest ."
-mypy = "uv run mypy ."
-ruff-check = "uv run ruff check ."
-ruff-fmt = "uv run ruff format --check ."
-
-[tool.slap.run]
-fmt = "uv run ruff format . && uv run ruff check --fix ."
 
 [tool.slap.release]
 pre-commit = "uv lock && git add uv.lock && slap changelog format --all --markdown > docs/content/changelog.md && git add docs/content/changelog.md"

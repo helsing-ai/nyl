@@ -1,6 +1,6 @@
-from itertools import chain
 import subprocess
 from dataclasses import dataclass, field
+from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any

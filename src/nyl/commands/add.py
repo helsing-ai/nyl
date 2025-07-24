@@ -2,12 +2,13 @@
 Convenient CLI for making ammends to Kubernetes manifest files.
 """
 
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
-from typer import Argument, Option, Typer
-from loguru import logger
+
 import yaml
+from loguru import logger
+from typer import Argument, Option, Typer
 
 from nyl.commands.template import (
     DEFAULT_NAMESPACE_ANNOTATION,

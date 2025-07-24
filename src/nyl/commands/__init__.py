@@ -124,15 +124,17 @@ def version() -> None:
     sys.exit(0)
 
 
-from . import add  # noqa: E402
-from . import crds  # noqa: F401,E402
-from . import new  # noqa: E402
-from . import profile  # noqa: E402
-from . import run  # noqa: F401, E402
-from . import secrets  # noqa: E402
-from . import template  # noqa: F401,E402
-from . import tools  # noqa: E402
-from . import tun  # noqa: E402
+from . import (  # noqa: F401,E402
+    add,
+    crds,
+    new,
+    profile,
+    run,
+    secrets,
+    template,
+    tools,
+    tun,
+)
 
 app.add_typer(add.app)
 app.add_typer(new.app)

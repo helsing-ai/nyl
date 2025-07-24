@@ -4,9 +4,9 @@ from typing import Iterator
 
 import pytest
 
-from nyl.resources import ObjectMetadata
-from nyl.resources.helmchart import HelmChart, HelmChartSpec, ChartRef
 from nyl.generator.helmchart import HelmChartGenerator
+from nyl.resources import ObjectMetadata
+from nyl.resources.helmchart import ChartRef, HelmChart, HelmChartSpec
 
 
 @pytest.fixture

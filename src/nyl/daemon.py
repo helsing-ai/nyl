@@ -5,20 +5,20 @@ Pass Nyl commands to an automatically managed Nyl daemon process to improve perf
 # Important: This file tries to import as little as possible to keep startup time low.
 
 import argparse
-from dataclasses import dataclass
 import errno
 import fcntl
-from io import TextIOWrapper
+import logging
 import os
-from pathlib import Path
 import pickle
 import select
 import socket as sock
 import sys
 import threading
 import time
+from dataclasses import dataclass
+from io import TextIOWrapper
+from pathlib import Path
 from typing import Any, Literal, Protocol
-import logging
 
 from nyl.tools.pyroscope import init_pyroscope, tag_wrapper
 
