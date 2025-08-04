@@ -1,9 +1,9 @@
 [tools]
 "cargo:tire" = "0.1.2"
 kyverno = "1.14.4"
-uv = "0.8.0"
+uv = "0.8.4"
 sops = "3.10.2"
-helm = "3.18.3"
+helm = "3.18.4"
 kubectl = "1.33.3"
 
 [tasks.build-docs]

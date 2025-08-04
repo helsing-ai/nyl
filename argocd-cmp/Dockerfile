@@ -1,5 +1,5 @@
 FROM python:3.13-slim AS build_base
-COPY --from=ghcr.io/astral-sh/uv:0.7.19 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /bin/uv
 
 #: Build Nyl itself.
 #: -----------------
@@ -69,7 +69,7 @@ RUN curl -fLO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/
 
 FROM fetch-bin-base AS kyverno-bin
 # renovate: datasource=github-releases depName=kyverno packageName=kyverno/kyverno
-ARG KYVERNO_VERSION=1.14.4
+ARG KYVERNO_VERSION=1.15.0
 RUN \
     case "$(uname -m)" in \
         x86_64) KYVERNO_ARCH='x86_64' ;; \
