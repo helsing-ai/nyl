@@ -5,6 +5,7 @@ uv = "0.8.0"
 sops = "3.10.2"
 helm = "3.18.3"
 kubectl = "1.33.3"
+"pipx:slap-cli" = "1.15.0"
 
 [tasks.build-docs]
 dir = "docs"

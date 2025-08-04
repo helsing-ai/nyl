@@ -1,0 +1,5 @@
+[[entries]]
+id = "95aefd14-2e90-4c70-a3cd-5195acac9847"
+type = "fix"
+description = "Allow extra keys on `ObjectMetadata`"
+author = "@NiklasRosenstein"

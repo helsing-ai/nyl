@@ -6,7 +6,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import ClassVar, Collection, cast
 
-from databind.core import SerializeDefaults
+from databind.core import ExtraKeys, SerializeDefaults
 from databind.json import dump as ser
 from databind.json import load as deser
 from typing_extensions import Self
@@ -115,6 +115,7 @@ class NylResource(ABC):
 
 
 @dataclass
+@ExtraKeys(True)
 class ObjectMetadata:
     """
     Kubernetes object metadata.
