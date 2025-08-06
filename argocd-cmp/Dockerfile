@@ -1,5 +1,5 @@
 FROM python:3.13-slim AS build_base
-COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.8.5 /uv /bin/uv
 
 #: Build Nyl itself.
 #: -----------------
