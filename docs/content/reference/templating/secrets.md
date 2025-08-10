@@ -29,8 +29,8 @@ the desired configuration).
 
 !!! todo
 
-    ArgoCD caches generated manifests so there may be a time delay between the secret update and ArgoCD fully
-    re-materilizing the desired manifests with the updated secret being taken into account. What's the cache TTL,
+    ArgoCD caches generated resources so there may be a time delay between the secret update and ArgoCD fully
+    re-materilizing the desired resources with the updated secret being taken into account. What's the cache TTL,
     can it be changed/flushed?
 
     (A "hard refresh" usually works, but for automatic drift reconcilation when secrets update, having a lower TTL

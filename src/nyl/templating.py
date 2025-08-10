@@ -102,7 +102,7 @@ class LookupResourceWrapper(Mapping[str, Any]):
     """
     A wrapper for a Kubernetes resources returned by `lookup()` that permits looking up fields by `__getitem__()`
     and `__getattr__()`. This wraps a `ResourceInstance` or `ResourceField`, which can later be treated by the
-    `NylTemplateEngine` to serialize into a dictionary when embedded into a manifest.
+    `NylTemplateEngine` to serialize into a dictionary when embedded into a resource.
 
     This class is needed because the YAML serializer will not be able to serialize the `ResourceInstance` or
     `ResourceField` objects returned by `lookup()`.

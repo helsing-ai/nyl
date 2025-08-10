@@ -20,7 +20,7 @@ class Profile:
 
     values: dict[str, Any] = field(default_factory=dict)
     """
-    Global values that are accessible during manifest rendering under the `values` object.
+    Global values that are accessible during manifest file rendering under the `values` object.
     """
 
     kubeconfig: LocalKubeconfig | KubeconfigFromSsh = field(default_factory=lambda: LocalKubeconfig())
