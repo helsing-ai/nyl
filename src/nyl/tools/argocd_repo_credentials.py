@@ -189,7 +189,12 @@ def apply_credential_to_git_url(git_url: str, credential: RepoCredential) -> str
     Apply repository credential to a Git URL for authentication.
     
     For HTTPS URLs with username/password, embeds the credentials in the URL.
-    For SSH URLs, returns the original URL (SSH key setup is handled separately).
+    For SSH URLs, returns the original URL (SSH key setup would require additional 
+    configuration outside the scope of URL modification).
+    
+    Note: SSH private key authentication is detected but not fully implemented.
+    The SSH private key would need to be written to a temporary file and configured
+    with Git via GIT_SSH_COMMAND or ssh-agent, which is not currently supported.
     
     Args:
         git_url: Original Git repository URL
@@ -205,6 +210,9 @@ def apply_credential_to_git_url(git_url: str, credential: RepoCredential) -> str
             # Construct URL with embedded credentials
             netloc = f"{credential.username}:{credential.password}@{parsed.netloc}"
             return f"{parsed.scheme}://{netloc}{parsed.path}"
+    elif credential.is_ssh:
+        logger.debug("SSH private key authentication detected but not fully implemented. "
+                    "Using original URL - SSH key setup would require additional Git configuration.")
     
     # For SSH or if no HTTPS credentials, return original URL
     return git_url

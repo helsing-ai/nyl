@@ -121,8 +121,15 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                     credentials = query_argocd_repository_credentials(self.client)
                     matching_credential = find_matching_credential(without_query_params, credentials)
                     if matching_credential:
-                        logger.debug("Found ArgoCD repository credential for {}", without_query_params)
-                        git_url_with_auth = apply_credential_to_git_url(without_query_params, matching_credential)
+                        if matching_credential.is_https:
+                            logger.debug("Using ArgoCD HTTPS repository credential for {}", without_query_params)
+                            git_url_with_auth = apply_credential_to_git_url(without_query_params, matching_credential)
+                        elif matching_credential.is_ssh:
+                            logger.info("ArgoCD SSH repository credential found for {} but SSH key authentication "
+                                      "is not fully implemented. Using original URL.", without_query_params)
+                        else:
+                            logger.debug("ArgoCD repository credential found for {} but no authentication method available", 
+                                       without_query_params)
                     else:
                         logger.debug("No ArgoCD repository credential found for {}", without_query_params)
                 except Exception as e:
