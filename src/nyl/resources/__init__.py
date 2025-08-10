@@ -42,7 +42,7 @@ class NylResource(ABC):
     @classmethod
     def load(cls, resource: Resource) -> "Self":
         """
-        Load a Nyl resource from a resource document. If called directly on `NylResource`, this will deserialize into the
+        Load a Nyl resource from a manifest. If called directly on `NylResource`, this will deserialize into the
         appropriate subclass based on the `kind` field in the resource. If the method is instead called on a subclass
         directly, the subclass will be used to deserialize the resource.
         """
