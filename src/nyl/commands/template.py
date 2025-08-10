@@ -95,13 +95,13 @@ def template(
     ),
     apply: bool = Option(
         False,
-        help="Run `kubectl apply` on the rendered manifests, once for each source file. "
+        help="Run `kubectl apply` on the rendered resources, once for each source file. "
         "Implies `--no-applyset-part-of`. When an ApplySet is defined in the source file, it will be applied "
         "separately. Note that this option implies `kubectl --prune`.",
     ),
     diff: bool = Option(
         False,
-        help="Run `kubectl diff` on the rendered manifests, once for each source file. Cannot be combined with "
+        help="Run `kubectl diff` on the rendered resources, once for each source file. Cannot be combined with "
         "`--apply`. Note that this does not generally ",
     ),
     generate_applysets: Optional[bool] = Option(
@@ -111,7 +111,7 @@ def template(
     applyset_part_of: bool = Option(
         True,
         help="Add the 'applyset.kubernetes.io/part-of' label to all resources belonging to an ApplySet (if declared). "
-        "This option must be disabled when passing the generated manifests to `kubectl apply --applyset=...`, as it "
+        "This option must be disabled when passing the generated resources to `kubectl apply --applyset=...`, as it "
         "would otherwise cause an error due to the label being present on the input data.",
     ),
     default_namespace: Optional[str] = Option(
@@ -175,7 +175,7 @@ def template(
 
     if apply:
         # When running with --apply, we must ensure that the --applyset-part-of option is disabled, as it would cause
-        # an error when passing the generated manifests to `kubectl apply --applyset=...`.
+        # an error when passing the generated resources to `kubectl apply --applyset=...`.
         applyset_part_of = False
 
     if apply and diff:

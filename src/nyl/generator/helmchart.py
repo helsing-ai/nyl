@@ -36,7 +36,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
 
     kube_version: str
     """
-    The Kubernetes API version to generate manifests for. This must be known for Helm cluster feature detection (such
+    The Kubernetes API version to generate resources for. This must be known for Helm cluster feature detection (such
     as, for example, picking the right apiVersion for Ingress resources).
     """
 
@@ -198,7 +198,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             #     command.append(f"{key}={json.dumps(value)}")
 
             logger.opt(colors=True).debug(
-                "Generating manifests with Helm: $ <yellow>{}</>", " ".join(map(shlex.quote, command))
+                "Generating resources with Helm: $ <yellow>{}</>", " ".join(map(shlex.quote, command))
             )
             try:
                 result = subprocess.run(command, capture_output=True, check=True)

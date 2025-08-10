@@ -52,7 +52,7 @@ class DispatchingGenerator(Generator[Resource], resource_type=Resource):
             components_path: Path to search for Nyl components.
             working_dir: The working directory to consider relative paths relative to.
             client: The Kubernetes API client to use for interacting with the Kubernetes API.
-            kube_version: The Kubernetes API version to generate manifests for. If not specified, the version will be
+            kube_version: The Kubernetes API version to generate resources for. If not specified, the version will be
                           determined from the Kubernetes API server.
             kube_api_versions: The Kubernetes API versions supported by the cluster. If not specified, the versions
                                will be determined from the Kubernetes API server.

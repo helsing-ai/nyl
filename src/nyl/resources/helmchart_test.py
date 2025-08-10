@@ -71,11 +71,11 @@ def test__HelmChartGenerator__generate__populates_namespace(
     generator: HelmChartGenerator,
 ) -> None:
     helmchart.metadata.namespace = None
-    manifests = generator.generate(helmchart)
-    assert len(manifests) == 1
-    assert manifests[0]["metadata"].get("namespace") is None
+    resources = generator.generate(helmchart)
+    assert len(resources) == 1
+    assert resources[0]["metadata"].get("namespace") is None
 
     helmchart.metadata.namespace = "foo"
-    manifests = generator.generate(helmchart)
-    assert len(manifests) == 1
-    assert manifests[0]["metadata"].get("namespace") == "foo"
+    resources = generator.generate(helmchart)
+    assert len(resources) == 1
+    assert resources[0]["metadata"].get("namespace") == "foo"

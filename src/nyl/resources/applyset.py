@@ -32,7 +32,7 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
 
     Nyl's ApplySet resource is not namespaces.
 
-    When loading manifests from a file, Nyl looks for an ApplySet resource to determine if the manifests are to be
+    When loading manifests from a file, Nyl looks for an ApplySet resource to determine if the resources are to be
     associated with an ApplySet.
     """
 
