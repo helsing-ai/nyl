@@ -19,7 +19,7 @@ def discover_kubernetes_api_versions(client: ApiClient) -> set[str]:
     return all_versions
 
 
-def resource_locator(manifest: Resource) -> str:
+def resource_locator(resource: Resource) -> str:
     """
     Create a string that contains the apiVersion, kind, namespace and name of a Kubernetes resource formatted as
 
@@ -29,8 +29,8 @@ def resource_locator(manifest: Resource) -> str:
     """
 
     return (
-        f"{manifest['apiVersion']}/{manifest['kind']}/"
-        f"{manifest['metadata'].get('namespace', '')}/{manifest['metadata']['name']}"
+        f"{resource['apiVersion']}/{resource['kind']}/"
+        f"{resource['metadata'].get('namespace', '')}/{resource['metadata']['name']}"
     )
 
 
@@ -65,13 +65,13 @@ def drop_empty_metadata_labels(resources: list[Resource]) -> None:
                 del resource["metadata"]["labels"]
 
 
-def is_cluster_scoped_resource(manifest: Resource) -> bool:
+def is_cluster_scoped_resource(resource: Resource) -> bool:
     """
-    Check if a manifest is a cluster scoped resource.
+    Check if a resource is a cluster scoped resource.
     """
 
     # HACK: We should probably just list the resources via the Kubectl API?
-    fqn = manifest.get("kind", "") + "." + manifest.get("apiVersion", "").split("/")[0]
+    fqn = resource.get("kind", "") + "." + resource.get("apiVersion", "").split("/")[0]
     return fqn in {
         "ClusterRole.rbac.authorization.k8s.io",
         "ClusterRoleBinding.rbac.authorization.k8s.io",

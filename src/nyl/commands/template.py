@@ -373,14 +373,14 @@ def template(
         if apply:
             logger.info("Kubectl-apply {} resource(s) from '{}'", len(source.resources), source.file)
             kubectl.apply(
-                manifests=source.resources,
+                resources=source.resources,
                 applyset=applyset.reference if applyset else None,
                 prune=True if applyset else False,
                 force_conflicts=True,
             )
         elif diff:
             logger.info("Kubectl-diff {} resource(s) from '{}'", len(source.resources), source.file)
-            kubectl.diff(manifests=source.resources, applyset=applyset)
+            kubectl.diff(resources=source.resources, applyset=applyset)
         else:
             # If we're not going to be applying the resources immediately via `kubectl`, we print them to stdout.
             for resource in source.resources:
