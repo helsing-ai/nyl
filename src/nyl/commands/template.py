@@ -210,8 +210,11 @@ def template(
             logger.info("Using destination cluster client for lookups")
             client = destination_client
         else:
-            logger.warning("Failed to create destination cluster client, falling back to ArgoCD cluster client")
-            client = argocd_client
+            raise RuntimeError(
+                f"Failed to create destination cluster client for ArgoCD application "
+                f"{argocd_context.app_namespace}/{argocd_context.app_name}. "
+                f"Please ensure the destination cluster is properly configured in ArgoCD."
+            )
     else:
         # Not in ArgoCD context, use normal client
         client = PROVIDER.get(ApiClient)
