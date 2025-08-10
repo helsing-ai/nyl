@@ -237,22 +237,22 @@ def create_destination_client(argocd_client: ApiClient, context: ArgoCDContext) 
     Returns:
         ApiClient for the destination cluster, or None if unable to create
     """
-    # Get destination cluster info from Application
-    cluster_info = get_application_destination(argocd_client, context)
-    if not cluster_info:
-        return None
-        
-    # Special case: if destination is the same as ArgoCD cluster, return the ArgoCD client
-    if cluster_info.server in ['https://kubernetes.default.svc', 'https://kubernetes.default.svc.cluster.local']:
-        logger.debug("Destination cluster is the same as ArgoCD cluster, using ArgoCD client")
-        return argocd_client
-    
-    # Get credentials for destination cluster
-    kube_config = get_cluster_credentials(argocd_client, cluster_info)
-    if not kube_config:
-        return None
-        
     try:
+        # Get destination cluster info from Application
+        cluster_info = get_application_destination(argocd_client, context)
+        if not cluster_info:
+            return None
+            
+        # Special case: if destination is the same as ArgoCD cluster, return the ArgoCD client
+        if cluster_info.server in ['https://kubernetes.default.svc', 'https://kubernetes.default.svc.cluster.local']:
+            logger.debug("Destination cluster is the same as ArgoCD cluster, using ArgoCD client")
+            return argocd_client
+        
+        # Get credentials for destination cluster
+        kube_config = get_cluster_credentials(argocd_client, cluster_info)
+        if not kube_config:
+            return None
+            
         # Create API client from config
         client = new_client_from_config_dict(kube_config)
         logger.info("Successfully created destination cluster client for: {}", cluster_info.server)
