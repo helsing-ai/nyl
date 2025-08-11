@@ -11,7 +11,7 @@ jobs:
   fmt-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
       - name: Check formatting
         run: tire fmt --check
@@ -19,7 +19,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
       - name: Linting
         run: tire lint
@@ -27,7 +27,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
       - name: Type checking
         run: tire check
@@ -35,7 +35,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
       - name: Tests
         run: tire test
@@ -51,7 +51,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/') && github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Get tags
         run: git fetch --tags origin
