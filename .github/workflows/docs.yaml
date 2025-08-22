@@ -21,7 +21,7 @@ jobs:
       - name: Build docs
         run: mise run build-docs
       - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./docs/site
       - name: Deploy to GitHub Pages
