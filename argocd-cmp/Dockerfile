@@ -1,5 +1,5 @@
 FROM python:3.13-slim AS build_base
-COPY --from=ghcr.io/astral-sh/uv:0.8.5 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.8.13 /uv /bin/uv
 
 #: Build Nyl itself.
 #: -----------------
@@ -41,7 +41,7 @@ RUN \
 FROM fetch-bin-base AS argocd-bin
 # Find ArgoCD releases at https://github.com/argoproj/argo-cd/releases
 # renovate: datasource=github-releases depName=argocd packageName=argoproj/argo-cd
-ARG ARGOCD_VERSION=v3.0.12
+ARG ARGOCD_VERSION=v3.1.1
 RUN curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-$(cat /BINARY_ARCH) \
     && chmod +x /usr/local/bin/argocd \
     && upx /usr/local/bin/argocd \
@@ -50,7 +50,7 @@ RUN curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releas
 FROM fetch-bin-base AS helm-bin
 # Find Helm releases at https://github.com/helm/helm/releases
 # renovate: datasource=github-releases depName=helm packageName=helm/helm
-ARG HELM_VERSION=v3.18.4
+ARG HELM_VERSION=v3.18.6
 RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
     && chmod 700 get_helm.sh \
     && ./get_helm.sh --version $HELM_VERSION \
@@ -69,7 +69,7 @@ RUN curl -fLO https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/
 
 FROM fetch-bin-base AS kyverno-bin
 # renovate: datasource=github-releases depName=kyverno packageName=kyverno/kyverno
-ARG KYVERNO_VERSION=1.15.0
+ARG KYVERNO_VERSION=1.15.1
 RUN \
     case "$(uname -m)" in \
         x86_64) KYVERNO_ARCH='x86_64' ;; \
