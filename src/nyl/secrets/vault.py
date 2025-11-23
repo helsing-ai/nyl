@@ -299,16 +299,14 @@ class VaultSecretProvider(SecretProvider):
             client.secrets.kv.v2.create_or_update_secret(
                 path=full_path, secret=data, mount_point=self.mount_point
             )
-            logger.info("Set secret in Vault at path '{}'", full_path)
+            logger.debug("Set secret in Vault for key '{}'", key)
 
             # Update cache
             if self._cache is None:
                 self._cache = {}
             self._cache[key] = value
         except Exception as exc:
-            logger.error(
-                "Failed to set secret in Vault at path '{}': {}", full_path, exc
-            )
+            logger.error("Failed to set secret in Vault for key '{}': {}", key, exc)
             raise RuntimeError(f"Failed to set secret: {exc}") from exc
 
     def unset(self, key: str, /) -> None:
@@ -331,14 +329,14 @@ class VaultSecretProvider(SecretProvider):
                 client.secrets.kv.v2.delete_metadata_and_all_versions(
                     path=full_path, mount_point=self.mount_point
                 )
-                logger.info("Deleted secret from Vault at path '{}'", full_path)
+                logger.debug("Deleted secret from Vault for key '{}'", key)
             else:
                 # Remove a specific field
                 try:
                     existing_data = self._get_secret_data(secret_path)
                 except KeyError:
                     logger.warning(
-                        "Secret '{}' not found in Vault, nothing to unset", secret_path
+                        "Secret '{}' not found in Vault, nothing to unset", key
                     )
                     return
 
@@ -350,7 +348,7 @@ class VaultSecretProvider(SecretProvider):
                         logger.warning(
                             "Field '{}' not found in secret '{}'",
                             field_path,
-                            secret_path,
+                            key,
                         )
                         return
                     current = current[part]
@@ -363,14 +361,14 @@ class VaultSecretProvider(SecretProvider):
                         secret=existing_data,
                         mount_point=self.mount_point,
                     )
-                    logger.info(
-                        "Removed field '{}' from secret at path '{}'",
+                    logger.debug(
+                        "Removed field '{}' from secret for key '{}'",
                         field_path,
-                        full_path,
+                        key,
                     )
                 else:
                     logger.warning(
-                        "Field '{}' not found in secret '{}'", field_path, secret_path
+                        "Field '{}' not found in secret '{}'", field_path, key
                     )
 
             # Update cache

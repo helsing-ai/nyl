@@ -316,28 +316,25 @@ def test_VaultSecretProvider_authenticate_with_env_token() -> None:
 
 def test_VaultSecretProvider_authenticate_with_jwt() -> None:
     """Test authentication with JWT token (ArgoCD context)."""
-    with TemporaryDirectory() as tmpdir:
-        jwt_path = Path(tmpdir) / "token"
-        jwt_path.write_text("test-jwt-token\n")
+    with unittest.mock.patch("hvac.Client") as mock_client_class:
+        mock_client = unittest.mock.MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.is_authenticated.return_value = True
 
-        with unittest.mock.patch("hvac.Client") as mock_client_class:
-            mock_client = unittest.mock.MagicMock()
-            mock_client_class.return_value = mock_client
-            mock_client.is_authenticated.return_value = True
+        provider = VaultSecretProvider(
+            url="https://vault.example.com:8200", jwt_role="my-role"
+        )
+        provider._client = mock_client
 
-            provider = VaultSecretProvider(
-                url="https://vault.example.com:8200", jwt_role="my-role"
-            )
-            provider._client = mock_client
+        # Mock the JWT token path directly in the module
+        with unittest.mock.patch("nyl.secrets.vault.Path") as mock_path_class:
+            mock_jwt_path = unittest.mock.MagicMock()
+            mock_jwt_path.exists.return_value = True
+            mock_jwt_path.read_text.return_value = "test-jwt-token\n"
+            mock_path_class.return_value = mock_jwt_path
 
-            with (
-                unittest.mock.patch("pathlib.Path.exists", return_value=True),
-                unittest.mock.patch(
-                    "pathlib.Path.read_text", return_value="test-jwt-token\n"
-                ),
-            ):
-                provider._authenticate_with_jwt()
+            provider._authenticate_with_jwt()
 
-            mock_client.auth.kubernetes.login.assert_called_once_with(
-                role="my-role", jwt="test-jwt-token"
-            )
+        mock_client.auth.kubernetes.login.assert_called_once_with(
+            role="my-role", jwt="test-jwt-token"
+        )
