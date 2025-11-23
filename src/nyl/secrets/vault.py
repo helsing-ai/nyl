@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable
 
-import hvac
+import hvac  # type: ignore[import-untyped]
 from databind.core import Union
 from loguru import logger
 
@@ -81,15 +81,19 @@ class VaultSecretProvider(SecretProvider):
         jwt_path = Path("/var/run/secrets/kubernetes.io/serviceaccount/token")
         if not jwt_path.exists():
             logger.warning(
-                "JWT authentication requested but token file not found at {}. Falling back to token auth.", jwt_path
+                "JWT authentication requested but token file not found at {}. Falling back to token auth.",
+                jwt_path,
             )
             self._authenticate_with_token()
             return
 
         jwt_token = jwt_path.read_text().strip()
-        logger.info("Authenticating with Vault using Kubernetes JWT (role: {})", self.jwt_role)
+        logger.info(
+            "Authenticating with Vault using Kubernetes JWT (role: {})", self.jwt_role
+        )
 
         try:
+            assert self._client is not None
             self._client.auth.kubernetes.login(role=self.jwt_role, jwt=jwt_token)
             logger.debug("Successfully authenticated with Vault using JWT")
         except Exception as exc:
@@ -105,6 +109,7 @@ class VaultSecretProvider(SecretProvider):
             )
 
         token = token_path.read_text().strip()
+        assert self._client is not None
         self._client.token = token
         logger.debug("Authenticated with Vault using token from {}", token_path)
 
@@ -138,13 +143,17 @@ class VaultSecretProvider(SecretProvider):
         try:
             # For KV v2, we need to read from the /data/ path
             response = client.secrets.kv.v2.read_secret_version(
-                path=full_path, mount_point=self.mount_point, raise_on_deleted_version=True
+                path=full_path,
+                mount_point=self.mount_point,
+                raise_on_deleted_version=True,
             )
             return response["data"]["data"]
         except hvac.exceptions.InvalidPath:
             raise KeyError(f"Secret not found at path: {full_path}")
         except Exception as exc:
-            logger.error("Failed to read secret from Vault at path '{}': {}", full_path, exc)
+            logger.error(
+                "Failed to read secret from Vault at path '{}': {}", full_path, exc
+            )
             raise
 
     def _get_nested_value(self, data: dict[str, Any], field_path: str) -> SecretValue:
@@ -211,6 +220,7 @@ class VaultSecretProvider(SecretProvider):
         # Get the secret data from Vault
         data = self._get_secret_data(secret_path)
 
+        result: SecretValue
         if field_path is None:
             # Return the entire secret
             result = data
@@ -266,14 +276,18 @@ class VaultSecretProvider(SecretProvider):
                 if part not in current:
                     current[part] = {}
                 elif not isinstance(current[part], dict):
-                    raise ValueError(f"Cannot set nested field '{field_path}' - parent is not a dict")
+                    raise ValueError(
+                        f"Cannot set nested field '{field_path}' - parent is not a dict"
+                    )
                 current = current[part]
 
             current[parts[-1]] = value
             data = existing_data
 
         try:
-            client.secrets.kv.v2.create_or_update_secret(path=full_path, secret=data, mount_point=self.mount_point)
+            client.secrets.kv.v2.create_or_update_secret(
+                path=full_path, secret=data, mount_point=self.mount_point
+            )
             logger.info("Set secret in Vault at path '{}'", full_path)
 
             # Update cache
@@ -281,7 +295,9 @@ class VaultSecretProvider(SecretProvider):
                 self._cache = {}
             self._cache[key] = value
         except Exception as exc:
-            logger.error("Failed to set secret in Vault at path '{}': {}", full_path, exc)
+            logger.error(
+                "Failed to set secret in Vault at path '{}': {}", full_path, exc
+            )
             raise RuntimeError(f"Failed to set secret: {exc}") from exc
 
     def unset(self, key: str, /) -> None:
@@ -301,14 +317,18 @@ class VaultSecretProvider(SecretProvider):
         try:
             if field_path is None:
                 # Delete the entire secret
-                client.secrets.kv.v2.delete_metadata_and_all_versions(path=full_path, mount_point=self.mount_point)
+                client.secrets.kv.v2.delete_metadata_and_all_versions(
+                    path=full_path, mount_point=self.mount_point
+                )
                 logger.info("Deleted secret from Vault at path '{}'", full_path)
             else:
                 # Remove a specific field
                 try:
                     existing_data = self._get_secret_data(secret_path)
                 except KeyError:
-                    logger.warning("Secret '{}' not found in Vault, nothing to unset", secret_path)
+                    logger.warning(
+                        "Secret '{}' not found in Vault, nothing to unset", secret_path
+                    )
                     return
 
                 # Navigate to the nested location and delete the value
@@ -316,7 +336,11 @@ class VaultSecretProvider(SecretProvider):
                 current = existing_data
                 for part in parts[:-1]:
                     if part not in current or not isinstance(current[part], dict):
-                        logger.warning("Field '{}' not found in secret '{}'", field_path, secret_path)
+                        logger.warning(
+                            "Field '{}' not found in secret '{}'",
+                            field_path,
+                            secret_path,
+                        )
                         return
                     current = current[part]
 
@@ -324,16 +348,26 @@ class VaultSecretProvider(SecretProvider):
                     del current[parts[-1]]
                     # Write back the modified secret
                     client.secrets.kv.v2.create_or_update_secret(
-                        path=full_path, secret=existing_data, mount_point=self.mount_point
+                        path=full_path,
+                        secret=existing_data,
+                        mount_point=self.mount_point,
                     )
-                    logger.info("Removed field '{}' from secret at path '{}'", field_path, full_path)
+                    logger.info(
+                        "Removed field '{}' from secret at path '{}'",
+                        field_path,
+                        full_path,
+                    )
                 else:
-                    logger.warning("Field '{}' not found in secret '{}'", field_path, secret_path)
+                    logger.warning(
+                        "Field '{}' not found in secret '{}'", field_path, secret_path
+                    )
 
             # Update cache
             if self._cache and key in self._cache:
                 del self._cache[key]
 
         except Exception as exc:
-            logger.error("Failed to unset secret in Vault at path '{}': {}", full_path, exc)
+            logger.error(
+                "Failed to unset secret in Vault at path '{}': {}", full_path, exc
+            )
             raise RuntimeError(f"Failed to unset secret: {exc}") from exc

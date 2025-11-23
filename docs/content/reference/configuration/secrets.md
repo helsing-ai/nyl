@@ -111,6 +111,92 @@ files apply. The `path` field is relative to the location of the `nyl-secrets.ya
 
 ---
 
+## Provider: [Vault](https://www.vaultproject.io/)
+
+Allows you to retrieve secrets from a HashiCorp Vault server using the KV secrets engine v2. This provider is designed
+to work securely in multi-tenant environments and integrates with both local development and ArgoCD deployments.
+
+### Authentication
+
+The provider supports two authentication methods:
+
+- **JWT Authentication (ArgoCD context)**: When running in ArgoCD, the provider authenticates using the Kubernetes
+  service account JWT token mounted at `/var/run/secrets/kubernetes.io/serviceaccount/token`. This enables secure
+  multi-tenant deployments where each application's workload identity is used to access only its authorized secrets.
+
+- **Token Authentication (Local development)**: When running locally, the provider uses the token stored in
+  `~/.vault-token` (obtained via `vault login`).
+
+The provider automatically detects the execution context by checking for ArgoCD environment variables.
+
+### Nested Keys and Dot Notation
+
+The Vault provider supports nested structures through dot notation, similar to the SOPS provider:
+
+- `"database"` retrieves the entire secret stored at the `database` path
+- `"database.password"` retrieves the `password` field from the `database` secret
+- `"database.credentials.username"` retrieves deeply nested fields
+
+### Configuration Options
+
+- `url` (required): The URL of the Vault server (e.g., `https://vault.example.com:8200`)
+- `mount_point` (optional): The mount point of the KV secrets engine. Default: `secret`
+- `path` (optional): Path prefix within the KV secrets engine. For example, if `path` is `myapp/`, secrets will be
+  retrieved from `secret/data/myapp/...`
+- `jwt_role` (optional): The Vault role to use for JWT authentication when running in ArgoCD. Required for JWT
+  authentication.
+- `namespace` (optional): The Vault namespace to use (Vault Enterprise feature only)
+
+__Example__
+
+=== "TOML"
+
+    ```toml title="nyl-secrets.toml"
+    [default]
+    type = "vault"
+    url = "https://vault.example.com:8200"
+    mount_point = "secret"
+    path = "myapp/"
+    jwt_role = "nyl-argocd-role"
+    ```
+
+=== "YAML"
+
+    ```yaml title="nyl-secrets.yaml"
+    default:
+      type: vault
+      url: https://vault.example.com:8200
+      mount_point: secret
+      path: myapp/
+      jwt_role: nyl-argocd-role
+    ```
+
+=== "JSON"
+
+    ```json title="nyl-secrets.json"
+    {
+      "default": {
+        "type": "vault",
+        "url": "https://vault.example.com:8200",
+        "mount_point": "secret",
+        "path": "myapp/",
+        "jwt_role": "nyl-argocd-role"
+      }
+    }
+    ```
+
+### Security Considerations
+
+When using Vault in a multi-tenant ArgoCD environment:
+
+1. Configure Vault to trust the Kubernetes cluster's JWT issuer
+2. Create a Vault role for each application or team with appropriate policies
+3. Bind the Vault role to the ArgoCD application's service account
+4. Ensure the `jwt_role` in the Nyl configuration matches the Vault role
+5. Use Vault policies to restrict access to only the necessary secrets
+
+---
+
 ## Provider: [KubernetesSecret](https://kubernetes.io/docs/concepts/configuration/secret/)
 
 Allows you to point to a Kubernetes Secret as a source for secrets. Since Kubernetes secret values must be strings,

@@ -23,7 +23,9 @@ def mock_vault_client():
 @pytest.fixture
 def provider_with_mock(mock_vault_client):
     """Create a VaultSecretProvider with mocked client."""
-    provider = VaultSecretProvider(url="https://vault.example.com:8200", mount_point="secret", path="myapp/")
+    provider = VaultSecretProvider(
+        url="https://vault.example.com:8200", mount_point="secret", path="myapp/"
+    )
     provider._client = mock_vault_client
     return provider
 
@@ -31,9 +33,15 @@ def provider_with_mock(mock_vault_client):
 def test_VaultSecretProvider_init() -> None:
     """Test basic initialization of VaultSecretProvider."""
     provider = VaultSecretProvider(
-        url="https://vault.example.com:8200", mount_point="secret", path="myapp/", jwt_role="my-role"
+        url="https://vault.example.com:8200",
+        mount_point="secret",
+        path="myapp/",
+        jwt_role="my-role",
     )
-    provider.init(config_file=Path("/tmp/nyl-secrets.yaml"), dependencies=DependenciesProvider.default())
+    provider.init(
+        config_file=Path("/tmp/nyl-secrets.yaml"),
+        dependencies=DependenciesProvider.default(),
+    )
 
     assert provider.url == "https://vault.example.com:8200"
     assert provider.mount_point == "secret"
@@ -58,7 +66,9 @@ def test_VaultSecretProvider_normalize_path() -> None:
     provider = VaultSecretProvider(url="https://vault.example.com:8200", path="myapp/")
     assert provider._normalize_path("database") == "myapp/database"
 
-    provider_no_prefix = VaultSecretProvider(url="https://vault.example.com:8200", path="")
+    provider_no_prefix = VaultSecretProvider(
+        url="https://vault.example.com:8200", path=""
+    )
     assert provider_no_prefix._normalize_path("database") == "database"
 
 
@@ -68,7 +78,10 @@ def test_VaultSecretProvider_split_key_path() -> None:
 
     assert provider._split_key_path("database") == ("database", None)
     assert provider._split_key_path("database.password") == ("database", "password")
-    assert provider._split_key_path("database.credentials.username") == ("database", "credentials.username")
+    assert provider._split_key_path("database.credentials.username") == (
+        "database",
+        "credentials.username",
+    )
 
 
 def test_VaultSecretProvider_get_simple(provider_with_mock, mock_vault_client) -> None:
@@ -98,20 +111,32 @@ def test_VaultSecretProvider_get_nested(provider_with_mock, mock_vault_client) -
     assert result == "secret123"
 
 
-def test_VaultSecretProvider_get_deeply_nested(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_get_deeply_nested(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test getting a deeply nested secret value."""
     # Mock the Vault response with nested structure
     mock_vault_client.secrets.kv.v2.read_secret_version.return_value = {
-        "data": {"data": {"credentials": {"primary": {"username": "admin", "password": "secret123"}}}}
+        "data": {
+            "data": {
+                "credentials": {
+                    "primary": {"username": "admin", "password": "secret123"}
+                }
+            }
+        }
     }
 
     result = provider_with_mock.get("database.credentials.primary.username")
     assert result == "admin"
 
 
-def test_VaultSecretProvider_get_not_found(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_get_not_found(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test handling of non-existent secrets."""
-    mock_vault_client.secrets.kv.v2.read_secret_version.side_effect = hvac.exceptions.InvalidPath()
+    mock_vault_client.secrets.kv.v2.read_secret_version.side_effect = (
+        hvac.exceptions.InvalidPath()
+    )
 
     with pytest.raises(KeyError, match="Secret not found at path"):
         provider_with_mock.get("nonexistent")
@@ -135,16 +160,22 @@ def test_VaultSecretProvider_get_cache(provider_with_mock, mock_vault_client) ->
     assert mock_vault_client.secrets.kv.v2.read_secret_version.call_count == 1
 
 
-def test_VaultSecretProvider_set_entire_secret(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_set_entire_secret(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test setting an entire secret."""
     provider_with_mock.set("database", {"username": "admin", "password": "secret123"})
 
     mock_vault_client.secrets.kv.v2.create_or_update_secret.assert_called_once_with(
-        path="myapp/database", secret={"username": "admin", "password": "secret123"}, mount_point="secret"
+        path="myapp/database",
+        secret={"username": "admin", "password": "secret123"},
+        mount_point="secret",
     )
 
 
-def test_VaultSecretProvider_set_nested_field(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_set_nested_field(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test setting a nested field in an existing secret."""
     # Mock existing secret
     mock_vault_client.secrets.kv.v2.read_secret_version.return_value = {
@@ -158,14 +189,20 @@ def test_VaultSecretProvider_set_nested_field(provider_with_mock, mock_vault_cli
 
     # Should have written back with updated value
     mock_vault_client.secrets.kv.v2.create_or_update_secret.assert_called_once_with(
-        path="myapp/database", secret={"username": "admin", "password": "new_password"}, mount_point="secret"
+        path="myapp/database",
+        secret={"username": "admin", "password": "new_password"},
+        mount_point="secret",
     )
 
 
-def test_VaultSecretProvider_set_nested_field_new_secret(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_set_nested_field_new_secret(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test setting a nested field when the secret doesn't exist yet."""
     # Mock that secret doesn't exist
-    mock_vault_client.secrets.kv.v2.read_secret_version.side_effect = hvac.exceptions.InvalidPath()
+    mock_vault_client.secrets.kv.v2.read_secret_version.side_effect = (
+        hvac.exceptions.InvalidPath()
+    )
 
     provider_with_mock.set("database.password", "secret123")
 
@@ -175,7 +212,9 @@ def test_VaultSecretProvider_set_nested_field_new_secret(provider_with_mock, moc
     )
 
 
-def test_VaultSecretProvider_unset_entire_secret(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_unset_entire_secret(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test deleting an entire secret."""
     provider_with_mock.unset("database")
 
@@ -184,11 +223,15 @@ def test_VaultSecretProvider_unset_entire_secret(provider_with_mock, mock_vault_
     )
 
 
-def test_VaultSecretProvider_unset_nested_field(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_unset_nested_field(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test removing a nested field from a secret."""
     # Mock existing secret
     mock_vault_client.secrets.kv.v2.read_secret_version.return_value = {
-        "data": {"data": {"username": "admin", "password": "secret123", "api_key": "key123"}}
+        "data": {
+            "data": {"username": "admin", "password": "secret123", "api_key": "key123"}
+        }
     }
 
     provider_with_mock.unset("database.password")
@@ -198,7 +241,9 @@ def test_VaultSecretProvider_unset_nested_field(provider_with_mock, mock_vault_c
 
     # Should have written back without the password field
     mock_vault_client.secrets.kv.v2.create_or_update_secret.assert_called_once_with(
-        path="myapp/database", secret={"username": "admin", "api_key": "key123"}, mount_point="secret"
+        path="myapp/database",
+        secret={"username": "admin", "api_key": "key123"},
+        mount_point="secret",
     )
 
 
@@ -208,10 +253,15 @@ def test_VaultSecretProvider_keys_empty() -> None:
     assert list(provider.keys()) == []
 
 
-def test_VaultSecretProvider_keys_with_cache(provider_with_mock, mock_vault_client) -> None:
+def test_VaultSecretProvider_keys_with_cache(
+    provider_with_mock, mock_vault_client
+) -> None:
     """Test keys method returns cached keys."""
     # Add some items to cache
-    provider_with_mock._cache = {"database": {"user": "admin"}, "database.password": "secret"}
+    provider_with_mock._cache = {
+        "database": {"user": "admin"},
+        "database.password": "secret",
+    }
 
     keys = list(provider_with_mock.keys())
     assert set(keys) == {"database", "database.password"}
@@ -248,12 +298,19 @@ def test_VaultSecretProvider_authenticate_with_jwt() -> None:
             mock_client_class.return_value = mock_client
             mock_client.is_authenticated.return_value = True
 
-            provider = VaultSecretProvider(url="https://vault.example.com:8200", jwt_role="my-role")
+            provider = VaultSecretProvider(
+                url="https://vault.example.com:8200", jwt_role="my-role"
+            )
             provider._client = mock_client
 
-            with unittest.mock.patch("pathlib.Path.exists", return_value=True), unittest.mock.patch(
-                "pathlib.Path.read_text", return_value="test-jwt-token\n"
+            with (
+                unittest.mock.patch("pathlib.Path.exists", return_value=True),
+                unittest.mock.patch(
+                    "pathlib.Path.read_text", return_value="test-jwt-token\n"
+                ),
             ):
                 provider._authenticate_with_jwt()
 
-            mock_client.auth.kubernetes.login.assert_called_once_with(role="my-role", jwt="test-jwt-token")
+            mock_client.auth.kubernetes.login.assert_called_once_with(
+                role="my-role", jwt="test-jwt-token"
+            )
