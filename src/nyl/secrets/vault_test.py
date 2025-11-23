@@ -173,6 +173,17 @@ def test_VaultSecretProvider_set_entire_secret(
     )
 
 
+def test_VaultSecretProvider_set_entire_secret_non_dict_raises(
+    provider_with_mock, mock_vault_client
+) -> None:
+    """Test that setting a top-level secret with a non-dict value raises an error."""
+    with pytest.raises(
+        ValueError,
+        match="Top-level secrets in Vault must be dictionaries",
+    ):
+        provider_with_mock.set("api-key", "secret123")
+
+
 def test_VaultSecretProvider_set_nested_field(
     provider_with_mock, mock_vault_client
 ) -> None:
@@ -285,6 +296,22 @@ def test_VaultSecretProvider_authenticate_with_token() -> None:
                 provider._authenticate_with_token()
 
             assert mock_client.token == "test-token-123"
+
+
+def test_VaultSecretProvider_authenticate_with_env_token() -> None:
+    """Test authentication with VAULT_TOKEN environment variable."""
+    with unittest.mock.patch("hvac.Client") as mock_client_class:
+        mock_client = unittest.mock.MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.is_authenticated.return_value = True
+
+        provider = VaultSecretProvider(url="https://vault.example.com:8200")
+        provider._client = mock_client
+
+        with unittest.mock.patch.dict(os.environ, {"VAULT_TOKEN": "env-token-456"}):
+            provider._authenticate_with_token()
+
+        assert mock_client.token == "env-token-456"
 
 
 def test_VaultSecretProvider_authenticate_with_jwt() -> None:

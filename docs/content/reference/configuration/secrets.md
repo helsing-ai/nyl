@@ -133,9 +133,12 @@ The provider automatically detects the execution context by checking for ArgoCD 
 
 The Vault provider supports nested structures through dot notation, similar to the SOPS provider:
 
-- `"database"` retrieves the entire secret stored at the `database` path
+- `"database"` retrieves the entire secret stored at the `database` path (returns a dict)
 - `"database.password"` retrieves the `password` field from the `database` secret
 - `"database.credentials.username"` retrieves deeply nested fields
+
+**Note**: Top-level secrets in Vault KV v2 must be dictionaries. To store simple values like strings or numbers, 
+use dot notation. For example, to store an API key, use `"api-key.value"` instead of `"api-key"`.
 
 ### Configuration Options
 
@@ -146,6 +149,9 @@ The Vault provider supports nested structures through dot notation, similar to t
 - `jwt_role` (optional): The Vault role to use for JWT authentication when running in ArgoCD. Required for JWT
   authentication.
 - `namespace` (optional): The Vault namespace to use (Vault Enterprise feature only)
+
+The provider supports token authentication via the `VAULT_TOKEN` environment variable or `~/.vault-token` file
+(obtained via `vault login`).
 
 __Example__
 

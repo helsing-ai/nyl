@@ -101,17 +101,23 @@ class VaultSecretProvider(SecretProvider):
             raise
 
     def _authenticate_with_token(self) -> None:
-        """Authenticate with Vault using token from ~/.vault-token (for local context)."""
-        token_path = Path.home() / ".vault-token"
-        if not token_path.exists():
-            raise RuntimeError(
-                f"Vault token file not found at {token_path}. Please run 'vault login' first or set VAULT_TOKEN."
-            )
+        """Authenticate with Vault using token from ~/.vault-token or VAULT_TOKEN env var (for local context)."""
+        # First check VAULT_TOKEN environment variable
+        token = os.environ.get("VAULT_TOKEN")
+        if token:
+            logger.debug("Using Vault token from VAULT_TOKEN environment variable")
+        else:
+            # Fall back to token file
+            token_path = Path.home() / ".vault-token"
+            if not token_path.exists():
+                raise RuntimeError(
+                    f"Vault token file not found at {token_path}. Please run 'vault login' first or set VAULT_TOKEN environment variable."
+                )
+            token = token_path.read_text().strip()
+            logger.debug("Authenticated with Vault using token from {}", token_path)
 
-        token = token_path.read_text().strip()
         assert self._client is not None
         self._client.token = token
-        logger.debug("Authenticated with Vault using token from {}", token_path)
 
     def _normalize_path(self, key: str) -> str:
         """Normalize a secret key to a full Vault path."""
@@ -242,12 +248,15 @@ class VaultSecretProvider(SecretProvider):
         For dot-notation keys, this will update the specific field within the secret,
         preserving other fields. For top-level keys, this creates or replaces the entire secret.
 
+        Note: Top-level secrets in Vault KV v2 must be dictionaries. If you need to store a simple
+        value like a string or number, use dot notation (e.g., "api-key.value" instead of "api-key").
+
         Args:
             key: The key of the secret to set.
-            value: The value to set.
+            value: The value to set. For top-level keys, this must be a dict.
         Raises:
             KeyError: If the key is invalid.
-            ValueError: If the value is invalid.
+            ValueError: If the value is invalid (e.g., non-dict for top-level secret).
             RuntimeError: If the key cannot be set for systematic reasons.
         """
         client = self._get_client()
@@ -255,12 +264,14 @@ class VaultSecretProvider(SecretProvider):
         full_path = self._normalize_path(secret_path)
 
         if field_path is None:
-            # Setting the entire secret
+            # Setting the entire secret - must be a dict
             if not isinstance(value, dict):
-                # Wrap non-dict values in a dict for KV v2
-                data = {"value": value}
-            else:
-                data = value
+                raise ValueError(
+                    f"Top-level secrets in Vault must be dictionaries. "
+                    f"To store a simple value, use dot notation (e.g., '{key}.value'). "
+                    f"Got {type(value).__name__}: {value!r}"
+                )
+            data = value
         else:
             # Setting a specific field - need to read existing data first
             try:
