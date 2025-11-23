@@ -129,16 +129,17 @@ The provider supports two authentication methods:
 
 The provider automatically detects the execution context by checking for ArgoCD environment variables.
 
-### Nested Keys and Dot Notation
+### Key Format with Hash Separator
 
-The Vault provider supports nested structures through dot notation, similar to the SOPS provider:
+The Vault provider uses a hash (`#`) separator to distinguish between the secret path and field access:
 
 - `"database"` retrieves the entire secret stored at the `database` path (returns a dict)
-- `"database.password"` retrieves the `password` field from the `database` secret
-- `"database.credentials.username"` retrieves deeply nested fields
+- `"database#password"` retrieves the `password` field from the `database` secret
+- `"database#credentials.username"` retrieves nested fields using dot notation
+- `"db.prod#password"` retrieves the `password` field from a secret at path `db.prod`
 
-**Note**: Top-level secrets in Vault KV v2 must be dictionaries. To store simple values like strings or numbers, 
-use dot notation. For example, to store an API key, use `"api-key.value"` instead of `"api-key"`.
+**Why use hash separator?** This allows you to access secrets with dots in their path names, which was not possible 
+with pure dot notation. For example, a secret at path `my-app.v2` can be accessed with `"my-app.v2#fieldname"`.
 
 ### Configuration Options
 
@@ -148,10 +149,16 @@ use dot notation. For example, to store an API key, use `"api-key.value"` instea
   retrieved from `secret/data/myapp/...`
 - `jwt_role` (optional): The Vault role to use for JWT authentication when running in ArgoCD. Required for JWT
   authentication.
+- `jwt_auth_method` (optional): JWT authentication method to use. Options:
+  - `"kubernetes"` (default): Use Kubernetes service account token (simple, single-tenant)
+  - `"nyl"`: Use Nyl-issued ArgoCD application-specific token (multi-tenant, requires NYL_VAULT_JWT env var)
 - `namespace` (optional): The Vault namespace to use (Vault Enterprise feature only)
 
 The provider supports token authentication via the `VAULT_TOKEN` environment variable or `~/.vault-token` file
 (obtained via `vault login`).
+
+**Note**: The Vault provider is read-only. Setting or unsetting secrets is not supported - manage Vault secrets 
+through Vault's own interface or CLI tools.
 
 __Example__
 
@@ -164,6 +171,7 @@ __Example__
     mount_point = "secret"
     path = "myapp/"
     jwt_role = "nyl-argocd-role"
+    jwt_auth_method = "kubernetes"  # or "nyl" for multi-tenant
     ```
 
 === "YAML"
@@ -175,6 +183,7 @@ __Example__
       mount_point: secret
       path: myapp/
       jwt_role: nyl-argocd-role
+      jwt_auth_method: kubernetes  # or "nyl" for multi-tenant
     ```
 
 === "JSON"
@@ -186,20 +195,51 @@ __Example__
         "url": "https://vault.example.com:8200",
         "mount_point": "secret",
         "path": "myapp/",
-        "jwt_role": "nyl-argocd-role"
+        "jwt_role": "nyl-argocd-role",
+        "jwt_auth_method": "kubernetes"
       }
     }
     ```
+
+### Usage Examples
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+stringData:
+  # Access entire secret
+  config: ${{ secrets.get("database") | to_json }}
+  # Access specific field
+  password: ${{ secrets.get("database#password") }}
+  # Access nested field
+  username: ${{ secrets.get("database#credentials.username") }}
+  # Access secret with dots in path
+  api-key: ${{ secrets.get("my-app.v2#api_key") }}
+```
 
 ### Security Considerations
 
 When using Vault in a multi-tenant ArgoCD environment:
 
+#### For Kubernetes JWT Authentication (simple, single-tenant)
 1. Configure Vault to trust the Kubernetes cluster's JWT issuer
 2. Create a Vault role for each application or team with appropriate policies
 3. Bind the Vault role to the ArgoCD application's service account
 4. Ensure the `jwt_role` in the Nyl configuration matches the Vault role
 5. Use Vault policies to restrict access to only the necessary secrets
+
+#### For Nyl JWT Authentication (multi-tenant)
+1. Configure Vault to trust Nyl as a JWT issuer
+2. Create Vault roles that map to ArgoCD project and application identities
+3. Nyl will issue JWTs with claims including:
+   - `argocd_project`: The ArgoCD project name
+   - `argocd_app`: The ArgoCD application name
+   - `repository`: The Git repository URL
+4. Use Vault policies to restrict access based on these claims
+5. Set `jwt_auth_method: "nyl"` in the provider configuration
+6. The NYL_VAULT_JWT environment variable will be populated by Nyl with the appropriate token
 
 ---
 

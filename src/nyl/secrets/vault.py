@@ -17,10 +17,17 @@ class VaultSecretProvider(SecretProvider):
     """
     This secrets provider retrieves secrets from HashiCorp Vault using the KV secrets engine.
 
-    When running in ArgoCD, it authenticates using the Kubernetes service account JWT token.
-    When running locally, it uses the token from `~/.vault-token` (obtained via `vault login`).
+    Authentication methods:
+    - JWT (ArgoCD): Supports both Kubernetes service account tokens and Nyl-issued
+      ArgoCD-application-specific workload identity tokens
+    - Token (local): Uses token from VAULT_TOKEN env var or ~/.vault-token file
 
-    The provider supports nested structures through dot notation, similar to the SOPS provider.
+    Key format: Use # to separate secret path from field access with dot notation:
+    - "database" -> entire secret at path "database"
+    - "database#password" -> "password" field from "database" secret
+    - "db/prod#credentials.username" -> nested field from "db/prod" secret
+
+    This allows secrets with dots in their path names to be accessed correctly.
     """
 
     url: str
@@ -43,6 +50,14 @@ class VaultSecretProvider(SecretProvider):
     """
     The Vault role to use for JWT authentication when running in ArgoCD.
     If not specified, JWT authentication will not be attempted.
+    """
+
+    jwt_auth_method: str = "kubernetes"
+    """
+    The JWT authentication method to use. Options:
+    - "kubernetes": Use Kubernetes service account token (simple, single-tenant)
+    - "nyl": Use Nyl-issued ArgoCD application-specific token (multi-tenant)
+    Defaults to "kubernetes".
     """
 
     namespace: str | None = None
@@ -77,7 +92,20 @@ class VaultSecretProvider(SecretProvider):
         return "ARGOCD_APP_NAME" in os.environ
 
     def _authenticate_with_jwt(self) -> None:
-        """Authenticate with Vault using Kubernetes JWT token (for ArgoCD context)."""
+        """
+        Authenticate with Vault using JWT token (for ArgoCD context).
+
+        Supports two authentication methods:
+        1. Kubernetes service account token (simple, single-tenant)
+        2. Nyl-issued ArgoCD application-specific token (multi-tenant)
+        """
+        if self.jwt_auth_method == "nyl":
+            self._authenticate_with_nyl_jwt()
+        else:
+            self._authenticate_with_kubernetes_jwt()
+
+    def _authenticate_with_kubernetes_jwt(self) -> None:
+        """Authenticate with Vault using Kubernetes service account JWT token."""
         jwt_path = Path("/var/run/secrets/kubernetes.io/serviceaccount/token")
         if not jwt_path.exists():
             logger.warning(
@@ -89,15 +117,59 @@ class VaultSecretProvider(SecretProvider):
 
         jwt_token = jwt_path.read_text().strip()
         logger.info(
-            "Authenticating with Vault using Kubernetes JWT (role: {})", self.jwt_role
+            "Authenticating with Vault using Kubernetes JWT (role: {})",
+            self.jwt_role,
         )
 
         try:
             assert self._client is not None
             self._client.auth.kubernetes.login(role=self.jwt_role, jwt=jwt_token)
-            logger.debug("Successfully authenticated with Vault using JWT")
+            logger.debug("Successfully authenticated with Vault using Kubernetes JWT")
         except Exception as exc:
-            logger.error("Failed to authenticate with Vault using JWT: {}", exc)
+            logger.error(
+                "Failed to authenticate with Vault using Kubernetes JWT: {}", exc
+            )
+            raise
+
+    def _authenticate_with_nyl_jwt(self) -> None:
+        """
+        Authenticate with Vault using Nyl-issued ArgoCD application-specific JWT token.
+
+        This token is issued by Nyl and contains claims about the ArgoCD application
+        being deployed, enabling multi-tenant secure access to Vault secrets.
+
+        The token payload includes:
+        - iss: Issuer (e.g., "https://my-argocd.example.com/#nyl-v1")
+        - aud: Audience (Vault URL)
+        - sub: Subject (e.g., "project:default:application:my-argo-app")
+        - argocd_project: ArgoCD project name
+        - argocd_app: ArgoCD application name
+        - repository: Git repository URL
+        """
+        # Check for Nyl-issued JWT token in environment variable
+        jwt_token = os.environ.get("NYL_VAULT_JWT")
+        if not jwt_token:
+            logger.error(
+                "Nyl JWT authentication requested but NYL_VAULT_JWT environment variable not set. "
+                "This token should be issued by Nyl based on the ArgoCD application context."
+            )
+            raise RuntimeError(
+                "NYL_VAULT_JWT environment variable not set for Nyl JWT authentication"
+            )
+
+        logger.info(
+            "Authenticating with Vault using Nyl-issued JWT (role: {})", self.jwt_role
+        )
+
+        try:
+            assert self._client is not None
+            # Use JWT auth method (not kubernetes auth)
+            self._client.auth.jwt.login(role=self.jwt_role, jwt=jwt_token)
+            logger.debug("Successfully authenticated with Vault using Nyl-issued JWT")
+        except Exception as exc:
+            logger.error(
+                "Failed to authenticate with Vault using Nyl-issued JWT: {}", exc
+            )
             raise
 
     def _authenticate_with_token(self) -> None:
@@ -131,15 +203,21 @@ class VaultSecretProvider(SecretProvider):
 
     def _split_key_path(self, key: str) -> tuple[str, str | None]:
         """
-        Split a dotted key into the Vault secret path and the field within that secret.
+        Split a key into the Vault secret path and the field within that secret.
 
-        For example, "database.password" splits into ("database", "password").
-        A key without dots like "api-key" returns ("api-key", None).
+        The key format is: "path/to/secret#field.nested.path"
+        - Everything before the hash (#) is the secret path in Vault
+        - Everything after the hash is the field path using dot notation for nested access
+
+        For example:
+        - "database#password" -> ("database", "password")
+        - "path/to/secret#credentials.username" -> ("path/to/secret", "credentials.username")
+        - "api-key" -> ("api-key", None) - returns entire secret
         """
-        parts = key.split(".", 1)
-        if len(parts) == 1:
-            return parts[0], None
-        return parts[0], parts[1]
+        if "#" in key:
+            parts = key.split("#", 1)
+            return parts[0], parts[1]
+        return key, None
 
     def _get_secret_data(self, secret_path: str) -> dict[str, Any]:
         """Retrieve the data from a Vault secret at the given path."""
@@ -204,13 +282,17 @@ class VaultSecretProvider(SecretProvider):
         """
         Retrieve a secret by key from Vault.
 
-        The key can use dot notation for nested access:
+        The key format is "path/to/secret#field.path" where:
+        - Everything before # is the Vault secret path
+        - Everything after # is the field path using dot notation for nested access
+
+        Examples:
         - "database" retrieves the entire secret at path "database"
-        - "database.password" retrieves the "password" field from the "database" secret
-        - "database.credentials.username" retrieves nested fields
+        - "database#password" retrieves the "password" field from the "database" secret
+        - "db/prod#credentials.username" retrieves nested field from "db/prod" secret
 
         Args:
-            key: The key of the secret to retrieve, with optional dot notation for nested access.
+            key: The key of the secret to retrieve. Use # to separate path from field access.
         Returns:
             The secret value.
         Raises:
@@ -245,138 +327,28 @@ class VaultSecretProvider(SecretProvider):
         """
         Set the value of a key in Vault.
 
-        For dot-notation keys, this will update the specific field within the secret,
-        preserving other fields. For top-level keys, this creates or replaces the entire secret.
+        This operation is not supported for the Vault provider. Vault secrets should be
+        managed through Vault's own interface or CLI tools.
 
-        Note: Top-level secrets in Vault KV v2 must be dictionaries. If you need to store a simple
-        value like a string or number, use dot notation (e.g., "api-key.value" instead of "api-key").
-
-        Args:
-            key: The key of the secret to set.
-            value: The value to set. For top-level keys, this must be a dict.
         Raises:
-            KeyError: If the key is invalid.
-            ValueError: If the value is invalid (e.g., non-dict for top-level secret).
-            RuntimeError: If the key cannot be set for systematic reasons.
+            NotImplementedError: Always raised as this operation is not supported.
         """
-        client = self._get_client()
-        secret_path, field_path = self._split_key_path(key)
-        full_path = self._normalize_path(secret_path)
-
-        if field_path is None:
-            # Setting the entire secret - must be a dict
-            if not isinstance(value, dict):
-                raise ValueError(
-                    f"Top-level secrets in Vault must be dictionaries. "
-                    f"To store a simple value, use dot notation (e.g., '{key}.value'). "
-                    f"Got {type(value).__name__}: {value!r}"
-                )
-            data = value
-        else:
-            # Setting a specific field - need to read existing data first
-            try:
-                existing_data = self._get_secret_data(secret_path)
-            except KeyError:
-                # Secret doesn't exist yet
-                existing_data = {}
-
-            # Navigate to the nested location and set the value
-            parts = field_path.split(".")
-            current = existing_data
-            for part in parts[:-1]:
-                if part not in current:
-                    current[part] = {}
-                elif not isinstance(current[part], dict):
-                    raise ValueError(
-                        f"Cannot set nested field '{field_path}' - parent is not a dict"
-                    )
-                current = current[part]
-
-            current[parts[-1]] = value
-            data = existing_data
-
-        try:
-            client.secrets.kv.v2.create_or_update_secret(
-                path=full_path, secret=data, mount_point=self.mount_point
-            )
-            logger.debug("Set secret in Vault for key '{}'", key)
-
-            # Update cache
-            if self._cache is None:
-                self._cache = {}
-            self._cache[key] = value
-        except Exception as exc:
-            logger.error("Failed to set secret in Vault for key '{}': {}", key, exc)
-            raise RuntimeError(f"Failed to set secret: {exc}") from exc
+        raise NotImplementedError(
+            "Setting secrets is not supported for the Vault provider. "
+            "Please manage Vault secrets through Vault's interface or CLI."
+        )
 
     def unset(self, key: str, /) -> None:
         """
         Unset a secret by its key in Vault.
 
-        For dot-notation keys, this removes the specific field from the secret.
-        For top-level keys, this deletes the entire secret.
+        This operation is not supported for the Vault provider. Vault secrets should be
+        managed through Vault's own interface or CLI tools.
 
-        Args:
-            key: The key of the secret to unset.
+        Raises:
+            NotImplementedError: Always raised as this operation is not supported.
         """
-        client = self._get_client()
-        secret_path, field_path = self._split_key_path(key)
-        full_path = self._normalize_path(secret_path)
-
-        try:
-            if field_path is None:
-                # Delete the entire secret
-                client.secrets.kv.v2.delete_metadata_and_all_versions(
-                    path=full_path, mount_point=self.mount_point
-                )
-                logger.debug("Deleted secret from Vault for key '{}'", key)
-            else:
-                # Remove a specific field
-                try:
-                    existing_data = self._get_secret_data(secret_path)
-                except KeyError:
-                    logger.warning(
-                        "Secret '{}' not found in Vault, nothing to unset", key
-                    )
-                    return
-
-                # Navigate to the nested location and delete the value
-                parts = field_path.split(".")
-                current = existing_data
-                for part in parts[:-1]:
-                    if part not in current or not isinstance(current[part], dict):
-                        logger.warning(
-                            "Field '{}' not found in secret '{}'",
-                            field_path,
-                            key,
-                        )
-                        return
-                    current = current[part]
-
-                if parts[-1] in current:
-                    del current[parts[-1]]
-                    # Write back the modified secret
-                    client.secrets.kv.v2.create_or_update_secret(
-                        path=full_path,
-                        secret=existing_data,
-                        mount_point=self.mount_point,
-                    )
-                    logger.debug(
-                        "Removed field '{}' from secret for key '{}'",
-                        field_path,
-                        key,
-                    )
-                else:
-                    logger.warning(
-                        "Field '{}' not found in secret '{}'", field_path, key
-                    )
-
-            # Update cache
-            if self._cache and key in self._cache:
-                del self._cache[key]
-
-        except Exception as exc:
-            logger.error(
-                "Failed to unset secret in Vault at path '{}': {}", full_path, exc
-            )
-            raise RuntimeError(f"Failed to unset secret: {exc}") from exc
+        raise NotImplementedError(
+            "Unsetting secrets is not supported for the Vault provider. "
+            "Please manage Vault secrets through Vault's interface or CLI."
+        )
