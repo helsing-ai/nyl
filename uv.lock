@@ -324,6 +324,18 @@ wheels = [
 ]
 
 [[package]]
+name = "hvac"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/e2/57/b46c397fb3842cfb02a44609aa834c887f38dd75f290c2fc5a34da4b2fee/hvac-2.4.0.tar.gz", hash = "sha256:e0056ad9064e7923e874e6769015b032580b639e29246f5ab1044f7959c1c7e0", size = 332543, upload-time = "2025-10-30T12:57:47.512Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/33/71e45a6bd6875f44a26f99da31c63b6840123e88bedf2c0b1ce429b8be12/hvac-2.4.0-py3-none-any.whl", hash = "sha256:008db5efd8c2f77bd37d2368ea5f713edceae1c65f11fd608393179478649e0f", size = 155921, upload-time = "2025-10-30T12:57:46.253Z" },
+]
+
+[[package]]
 name = "idna"
 version = "3.11"
 source = { registry = "https://pypi.org/simple" }
@@ -564,6 +576,7 @@ dependencies = [
     { name = "bcrypt" },
     { name = "databind" },
     { name = "filelock" },
+    { name = "hvac" },
     { name = "jinja2" },
     { name = "kubernetes" },
     { name = "loguru" },
@@ -593,6 +606,7 @@ requires-dist = [
     { name = "bcrypt", specifier = ">=4.2.0" },
     { name = "databind", specifier = ">=4.5.2" },
     { name = "filelock", specifier = ">=3.15.4" },
+    { name = "hvac", specifier = ">=2.3.0" },
     { name = "jinja2", specifier = ">=3.1.4" },
     { name = "kubernetes", specifier = ">=30.1.0" },
     { name = "loguru", specifier = ">=0.7.2" },
