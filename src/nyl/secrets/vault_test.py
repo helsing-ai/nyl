@@ -294,10 +294,10 @@ def test_VaultSecretProvider_authenticate_with_nyl_jwt() -> None:
         )
         provider._client = mock_client
 
-        with unittest.mock.patch.dict(
-            os.environ, {"NYL_VAULT_JWT": "nyl-issued-jwt-token"}
-        ):
-            provider._authenticate_with_nyl_jwt()
+        # Set the Nyl JWT token (as would be done by the template command)
+        provider.set_nyl_jwt_token("nyl-issued-jwt-token")
+
+        provider._authenticate_with_nyl_jwt()
 
         mock_client.auth.jwt.login.assert_called_once_with(
             role="my-role", jwt="nyl-issued-jwt-token"
@@ -318,7 +318,6 @@ def test_VaultSecretProvider_authenticate_with_nyl_jwt_missing_token() -> None:
         )
         provider._client = mock_client
 
-        with pytest.raises(
-            RuntimeError, match="NYL_VAULT_JWT environment variable not set"
-        ):
+        with pytest.raises(RuntimeError, match="token not set"):
+            provider._authenticate_with_nyl_jwt()
             provider._authenticate_with_nyl_jwt()

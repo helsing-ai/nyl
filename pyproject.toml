@@ -16,6 +16,7 @@ dependencies = [
     "kubernetes>=30.1.0",
     "loguru>=0.7.2",
     "nr-stream>=1.1.5",
+    "pyjwt>=2.8.0",
     "pyroscope-io>=0.8.11",
     "pyyaml>=6.0.1",
     "requests>=2.32.3",
