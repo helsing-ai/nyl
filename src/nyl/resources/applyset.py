@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import json
+import os
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -46,6 +47,15 @@ class ApplySetContext:
     app_name: str | None = None
     """ArgoCD application name (when running via ArgoCD)."""
 
+    source_path: str | None = None
+    """ArgoCD source path (when running via ArgoCD)."""
+
+    source_repo_url: str | None = None
+    """ArgoCD source repository URL (when running via ArgoCD)."""
+
+    target_revision: str | None = None
+    """ArgoCD target revision (when running via ArgoCD)."""
+
     def to_json(self) -> str:
         """Serialize the context to a JSON string."""
         data: dict[str, Any] = {"source": self.source}
@@ -55,7 +65,47 @@ class ApplySetContext:
             data["revision"] = self.revision
         if self.app_name:
             data["app_name"] = self.app_name
+        if self.source_path:
+            data["source_path"] = self.source_path
+        if self.source_repo_url:
+            data["source_repo_url"] = self.source_repo_url
+        if self.target_revision:
+            data["target_revision"] = self.target_revision
         return json.dumps(data, separators=(",", ":"))
+
+    @staticmethod
+    def from_environment(files: list[str] | None = None) -> "ApplySetContext":
+        """
+        Create an ApplySetContext from the current environment.
+
+        Detects whether running via ArgoCD (by checking ARGOCD_APP_NAME env var)
+        and populates the context accordingly.
+
+        Args:
+            files: List of manifest file names used to generate the resources.
+
+        Returns:
+            An ApplySetContext populated from environment variables.
+        """
+        argocd_app_name = os.getenv("ARGOCD_APP_NAME")
+
+        if argocd_app_name:
+            # Running via ArgoCD
+            return ApplySetContext(
+                source="argocd",
+                files=files or [],
+                revision=os.getenv("ARGOCD_APP_REVISION"),
+                app_name=argocd_app_name,
+                source_path=os.getenv("ARGOCD_APP_SOURCE_PATH"),
+                source_repo_url=os.getenv("ARGOCD_APP_SOURCE_REPO_URL"),
+                target_revision=os.getenv("ARGOCD_APP_SOURCE_TARGET_REVISION"),
+            )
+        else:
+            # Running via CLI
+            return ApplySetContext(
+                source="cli",
+                files=files or [],
+            )
 
 
 @dataclass
@@ -191,3 +241,69 @@ def get_canonical_resource_kind_name(api_version: str, kind: str) -> str:
 
     group = api_version.split("/")[0] if "/" in api_version else ""
     return (f"{kind}.{group}").rstrip(".")
+
+
+class ApplySetManager:
+    """
+    Helper class to manage applying and diffing resources associated with an ApplySet.
+
+    This class handles:
+    - Creating and configuring ApplySet resources
+    - Including the ApplySet ConfigMap with other resources during apply/diff
+    - Tagging resources with the applyset.kubernetes.io/part-of label
+    """
+
+    def __init__(self, applyset: ApplySet | None = None, add_part_of_labels: bool = True) -> None:
+        """
+        Initialize the ApplySetManager.
+
+        Args:
+            applyset: The ApplySet to manage, or None to skip ApplySet-related logic.
+            add_part_of_labels: Whether to add the applyset.kubernetes.io/part-of label to resources.
+        """
+        self.applyset = applyset
+        self.add_part_of_labels = add_part_of_labels
+
+    @property
+    def enabled(self) -> bool:
+        """Returns True if ApplySet management is enabled (i.e., an ApplySet is configured)."""
+        return self.applyset is not None
+
+    def prepare_resources(self, resources: ResourceList) -> ResourceList:
+        """
+        Prepare resources for apply/diff by adding ApplySet labels and including the ApplySet ConfigMap.
+
+        Args:
+            resources: The list of resources to prepare.
+
+        Returns:
+            A new ResourceList with the ApplySet ConfigMap included (if enabled) and part-of labels added.
+        """
+        if not self.enabled or self.applyset is None:
+            return resources
+
+        result = ResourceList(list(resources))
+
+        # Tag resources as part of the current apply set
+        if self.add_part_of_labels:
+            for resource in result:
+                if "metadata" in resource:
+                    labels = resource["metadata"].setdefault("labels", {})
+                    if APPLYSET_LABEL_PART_OF not in labels:
+                        labels[APPLYSET_LABEL_PART_OF] = self.applyset.id
+
+        # Include the ApplySet ConfigMap with the resources
+        result.insert(0, self.applyset.dump())
+
+        return result
+
+    def get_applyset_resource(self) -> Resource | None:
+        """
+        Get the ApplySet ConfigMap resource.
+
+        Returns:
+            The ApplySet ConfigMap resource, or None if ApplySet is not enabled.
+        """
+        if not self.enabled or self.applyset is None:
+            return None
+        return self.applyset.dump()

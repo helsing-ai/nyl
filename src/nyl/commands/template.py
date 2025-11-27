@@ -21,7 +21,7 @@ from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
-from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet, ApplySetContext
+from nyl.resources.applyset import ApplySet, ApplySetContext, ApplySetManager
 from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
@@ -309,24 +309,8 @@ def template(
             applyset_name = current_default_namespace
             applyset = ApplySet.new(applyset_name, current_default_namespace)
 
-            # Build context information for the ApplySet
-            argocd_app_name = os.getenv("ARGOCD_APP_NAME")
-            argocd_revision = os.getenv("ARGOCD_APP_REVISION")
-
-            if argocd_app_name:
-                # Running via ArgoCD
-                applyset.context = ApplySetContext(
-                    source="argocd",
-                    files=[str(source.file)],
-                    revision=argocd_revision,
-                    app_name=argocd_app_name,
-                )
-            else:
-                # Running via CLI
-                applyset.context = ApplySetContext(
-                    source="cli",
-                    files=[str(source.file)],
-                )
+            # Build context information for the ApplySet from environment
+            applyset.context = ApplySetContext.from_environment(files=[str(source.file)])
 
             logger.opt(colors=True).info(
                 "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>, namespace: <cyan>{}</>).",
@@ -335,25 +319,13 @@ def template(
                 current_default_namespace,
             )
 
+        # Create the ApplySetManager to handle apply/diff operations
+        applyset_manager = ApplySetManager(applyset=applyset, add_part_of_labels=applyset_part_of)
+
         if applyset is not None:
             applyset.set_group_kinds(source.resources)
             applyset.tooling = f"kubectl/v{generator.kube_version}"
             applyset.validate()
-
-            if apply:
-                # Apply the ConfigMap that serves as the ApplySet parent
-                logger.opt(colors=True).info(
-                    "Kubectl-apply ApplySet ConfigMap <yellow>{}/{}</> from <cyan>{}</>.",
-                    applyset.namespace,
-                    applyset.name,
-                    source.file,
-                )
-                kubectl.apply(ResourceList([applyset.dump()]), force_conflicts=True)
-            elif diff:
-                kubectl.diff(ResourceList([applyset.dump()]))
-            else:
-                print("---")
-                print(yaml.dumps(applyset.dump()))
 
         # Validate resources.
         for resource in source.resources:
@@ -371,32 +343,30 @@ def template(
                 )
                 exit(1)
 
-        # Tag resources as part of the current apply set, if any.
-        if applyset is not None and applyset_part_of:
-            for resource in source.resources:
-                if APPLYSET_LABEL_PART_OF not in (labels := resource["metadata"].setdefault("labels", {})):
-                    labels[APPLYSET_LABEL_PART_OF] = applyset.id
-
         populate_namespace_to_resources(source.resources, current_default_namespace)
         drop_empty_metadata_labels(source.resources)
 
         # Now apply the post-processor.
         source.resources = PostProcessor.apply_all(source.resources, post_processors, source.file)
 
+        # Prepare resources with ApplySet (adds part-of labels and includes ConfigMap)
+        resources_to_apply = applyset_manager.prepare_resources(source.resources)
+
         if apply:
-            logger.info("Kubectl-apply {} resource(s) from '{}'", len(source.resources), source.file)
+            logger.info("Kubectl-apply {} resource(s) from '{}'", len(resources_to_apply), source.file)
             # Note: We don't use kubectl's --applyset flag because it has limitations with multi-namespace deployments.
-            # Instead, we manually set the applyset.kubernetes.io/part-of label on all resources.
+            # Instead, we manually set the applyset.kubernetes.io/part-of label on all resources and include the
+            # ApplySet ConfigMap with the rest of the resources.
             kubectl.apply(
-                manifests=source.resources,
+                manifests=resources_to_apply,
                 force_conflicts=True,
             )
         elif diff:
-            logger.info("Kubectl-diff {} resource(s) from '{}'", len(source.resources), source.file)
-            kubectl.diff(manifests=source.resources, applyset=applyset)
+            logger.info("Kubectl-diff {} resource(s) from '{}'", len(resources_to_apply), source.file)
+            kubectl.diff(manifests=resources_to_apply, applyset=applyset)
         else:
             # If we're not going to be applying the resources immediately via `kubectl`, we print them to stdout.
-            for resource in source.resources:
+            for resource in resources_to_apply:
                 print("---")
                 print(yaml.dumps(resource))
 
