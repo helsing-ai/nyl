@@ -271,6 +271,8 @@ class ApplySetManager:
     - Creating and configuring ApplySet resources
     - Including the ApplySet ConfigMap with other resources during apply/diff
     - Tagging resources with the applyset.kubernetes.io/part-of label
+    - Looking up existing ApplySet ConfigMaps in the cluster
+    - Listing all resources that are members of an ApplySet
     """
 
     def __init__(self, applyset: ApplySet | None = None, add_part_of_labels: bool = True) -> None:
@@ -327,3 +329,103 @@ class ApplySetManager:
         if not self.enabled or self.applyset is None:
             return None
         return self.applyset.dump()
+
+
+def get_existing_applyset(name: str, namespace: str) -> Resource | None:
+    """
+    Look up an existing ApplySet ConfigMap in the cluster.
+
+    Args:
+        name: The name of the ApplySet ConfigMap.
+        namespace: The namespace of the ApplySet ConfigMap.
+
+    Returns:
+        The ApplySet ConfigMap resource if it exists, or None if not found.
+    """
+    import subprocess
+
+    command = ["kubectl", "get", "configmap", name, "-n", namespace, "-o", "json"]
+    result = subprocess.run(command, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        # ConfigMap doesn't exist or other error
+        return None
+
+    try:
+        data = json.loads(result.stdout)
+        # Verify it's an ApplySet ConfigMap by checking for the id label
+        labels = data.get("metadata", {}).get("labels", {})
+        if APPLYSET_LABEL_ID in labels:
+            return Resource(data)
+        return None
+    except json.JSONDecodeError:
+        return None
+
+
+def list_applyset_members(applyset_id: str) -> ResourceList:
+    """
+    List all resources in the cluster that are members of an ApplySet.
+
+    Args:
+        applyset_id: The ID of the ApplySet (value of applyset.kubernetes.io/id label).
+
+    Returns:
+        A ResourceList of all resources that have the applyset.kubernetes.io/part-of label
+        matching the given ApplySet ID.
+    """
+    import subprocess
+
+    # Use kubectl to find all resources with the part-of label
+    # We need to search across all resource types, so we use "all" plus some common types
+    # that are not included in "all"
+    resource_types = [
+        "all",  # Includes pods, services, deployments, replicasets, etc.
+        "configmaps",
+        "secrets",
+        "persistentvolumeclaims",
+        "ingresses",
+        "networkpolicies",
+        "serviceaccounts",
+        "roles",
+        "rolebindings",
+        "clusterroles",
+        "clusterrolebindings",
+        "customresourcedefinitions",
+        "namespaces",
+    ]
+
+    all_resources: list[Resource] = []
+
+    for resource_type in resource_types:
+        command = [
+            "kubectl",
+            "get",
+            resource_type,
+            "--all-namespaces",
+            "-l",
+            f"{APPLYSET_LABEL_PART_OF}={applyset_id}",
+            "-o",
+            "json",
+        ]
+
+        result = subprocess.run(command, capture_output=True, text=True)
+
+        if result.returncode == 0:
+            try:
+                data = json.loads(result.stdout)
+                items = data.get("items", [])
+                for item in items:
+                    all_resources.append(Resource(item))
+            except json.JSONDecodeError:
+                continue
+
+    # Deduplicate resources by their UID
+    seen_uids: set[str] = set()
+    unique_resources: list[Resource] = []
+    for resource in all_resources:
+        uid = resource.get("metadata", {}).get("uid", "")
+        if uid and uid not in seen_uids:
+            seen_uids.add(uid)
+            unique_resources.append(resource)
+
+    return ResourceList(unique_resources)
