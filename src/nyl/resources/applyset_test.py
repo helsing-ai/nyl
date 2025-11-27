@@ -62,14 +62,17 @@ def test__ApplySet__dump_with_argocd_context() -> None:
         files=["test.yaml"],
         revision="abc123",
         app_name="my-app",
+        app_namespace="argocd",
+        project_name="default",
         source_path="/apps/myapp",
         source_repo_url="https://github.com/example/repo",
         target_revision="main",
+        kube_version="1.31",
     )
     applyset.validate()
 
     result = applyset.dump()
-    expected = '{"source":"argocd","files":["test.yaml"],"revision":"abc123","app_name":"my-app","source_path":"/apps/myapp","source_repo_url":"https://github.com/example/repo","target_revision":"main"}'
+    expected = '{"source":"argocd","files":["test.yaml"],"revision":"abc123","app_name":"my-app","app_namespace":"argocd","project_name":"default","source_path":"/apps/myapp","source_repo_url":"https://github.com/example/repo","target_revision":"main","kube_version":"1.31"}'
     assert result["metadata"]["annotations"][NYL_ANNOTATION_LAST_APPLIED_CONTEXT] == expected
 
 
@@ -84,11 +87,14 @@ def test__ApplySetContext__to_json() -> None:
         files=["test.yaml"],
         revision="abc123def",
         app_name="my-app",
+        app_namespace="argocd",
+        project_name="default",
         source_path="/apps/myapp",
         source_repo_url="https://github.com/example/repo",
         target_revision="main",
+        kube_version="1.31",
     )
-    expected = '{"source":"argocd","files":["test.yaml"],"revision":"abc123def","app_name":"my-app","source_path":"/apps/myapp","source_repo_url":"https://github.com/example/repo","target_revision":"main"}'
+    expected = '{"source":"argocd","files":["test.yaml"],"revision":"abc123def","app_name":"my-app","app_namespace":"argocd","project_name":"default","source_path":"/apps/myapp","source_repo_url":"https://github.com/example/repo","target_revision":"main","kube_version":"1.31"}'
     assert context.to_json() == expected
 
     # Test minimal context
@@ -104,6 +110,13 @@ def test__ApplySetContext__from_environment_cli() -> None:
         assert context.files == ["test.yaml"]
         assert context.app_name is None
         assert context.revision is None
+        assert context.kube_version is None
+
+    # Test CLI context with KUBE_VERSION
+    with patch.dict(os.environ, {"KUBE_VERSION": "1.31"}, clear=True):
+        context = ApplySetContext.from_environment(files=["test.yaml"])
+        assert context.source == "cli"
+        assert context.kube_version == "1.31"
 
 
 def test__ApplySetContext__from_environment_argocd() -> None:
@@ -111,9 +124,12 @@ def test__ApplySetContext__from_environment_argocd() -> None:
     argocd_env = {
         "ARGOCD_APP_NAME": "my-app",
         "ARGOCD_APP_REVISION": "abc123",
+        "ARGOCD_APP_NAMESPACE": "argocd",
+        "ARGOCD_APP_PROJECT_NAME": "default",
         "ARGOCD_APP_SOURCE_PATH": "/apps/myapp",
         "ARGOCD_APP_SOURCE_REPO_URL": "https://github.com/example/repo",
         "ARGOCD_APP_SOURCE_TARGET_REVISION": "main",
+        "KUBE_VERSION": "1.31",
     }
     with patch.dict(os.environ, argocd_env, clear=True):
         context = ApplySetContext.from_environment(files=["test.yaml"])
@@ -121,9 +137,12 @@ def test__ApplySetContext__from_environment_argocd() -> None:
         assert context.files == ["test.yaml"]
         assert context.app_name == "my-app"
         assert context.revision == "abc123"
+        assert context.app_namespace == "argocd"
+        assert context.project_name == "default"
         assert context.source_path == "/apps/myapp"
         assert context.source_repo_url == "https://github.com/example/repo"
         assert context.target_revision == "main"
+        assert context.kube_version == "1.31"
 
 
 def test__ApplySetManager__disabled() -> None:

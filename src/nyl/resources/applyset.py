@@ -47,6 +47,12 @@ class ApplySetContext:
     app_name: str | None = None
     """ArgoCD application name (when running via ArgoCD)."""
 
+    app_namespace: str | None = None
+    """ArgoCD application namespace (when running via ArgoCD)."""
+
+    project_name: str | None = None
+    """ArgoCD project name (when running via ArgoCD)."""
+
     source_path: str | None = None
     """ArgoCD source path (when running via ArgoCD)."""
 
@@ -55,6 +61,9 @@ class ApplySetContext:
 
     target_revision: str | None = None
     """ArgoCD target revision (when running via ArgoCD)."""
+
+    kube_version: str | None = None
+    """Kubernetes version (from KUBE_VERSION env var)."""
 
     def to_json(self) -> str:
         """Serialize the context to a JSON string."""
@@ -65,12 +74,18 @@ class ApplySetContext:
             data["revision"] = self.revision
         if self.app_name:
             data["app_name"] = self.app_name
+        if self.app_namespace:
+            data["app_namespace"] = self.app_namespace
+        if self.project_name:
+            data["project_name"] = self.project_name
         if self.source_path:
             data["source_path"] = self.source_path
         if self.source_repo_url:
             data["source_repo_url"] = self.source_repo_url
         if self.target_revision:
             data["target_revision"] = self.target_revision
+        if self.kube_version:
+            data["kube_version"] = self.kube_version
         return json.dumps(data, separators=(",", ":"))
 
     @staticmethod
@@ -88,6 +103,7 @@ class ApplySetContext:
             An ApplySetContext populated from environment variables.
         """
         argocd_app_name = os.getenv("ARGOCD_APP_NAME")
+        kube_version = os.getenv("KUBE_VERSION")
 
         if argocd_app_name:
             # Running via ArgoCD
@@ -96,15 +112,19 @@ class ApplySetContext:
                 files=files or [],
                 revision=os.getenv("ARGOCD_APP_REVISION"),
                 app_name=argocd_app_name,
+                app_namespace=os.getenv("ARGOCD_APP_NAMESPACE"),
+                project_name=os.getenv("ARGOCD_APP_PROJECT_NAME"),
                 source_path=os.getenv("ARGOCD_APP_SOURCE_PATH"),
                 source_repo_url=os.getenv("ARGOCD_APP_SOURCE_REPO_URL"),
                 target_revision=os.getenv("ARGOCD_APP_SOURCE_TARGET_REVISION"),
+                kube_version=kube_version,
             )
         else:
             # Running via CLI
             return ApplySetContext(
                 source="cli",
                 files=files or [],
+                kube_version=kube_version,
             )
 
 
