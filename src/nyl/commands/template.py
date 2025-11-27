@@ -288,51 +288,44 @@ def template(
         source.resources, post_processors = PostProcessor.extract_from_list(source.resources)
 
         # Find the namespaces that are defined in the file. If we find any resources without a namespace, we will
-        # inject that namespace name into them. Also find the applyset defined in the file.
+        # inject that namespace name into them.
         namespaces: set[str] = set()
-        applyset: ApplySet | None = None
 
         for resource in list(source.resources):
             if is_namespace_resource(resource):
                 namespaces.add(resource["metadata"]["name"])
-            elif ApplySet.matches(resource):
-                if applyset is not None:
-                    logger.opt(colors=True).error(
-                        "Multiple ApplySet resources defined in <yellow>{}</>, there can only be one per source.",
-                        source.file,
-                    )
-                    exit(1)
-                applyset = ApplySet.load(resource)
-                source.resources.remove(resource)
 
-        if not applyset and project.config.settings.generate_applysets:
+        # Create an ApplySet if configured to do so
+        applyset: ApplySet | None = None
+        if project.config.settings.generate_applysets:
             if not current_default_namespace:
                 logger.opt(colors=True).error(
                     "No default namespace defined for <yellow>{}</>, but it is required for the automatically "
-                    "generated nyl.io/v1/ApplySet resource (the ApplySet is named after the default namespace).",
+                    "generated ApplySet ConfigMap (the ApplySet is named after the default namespace).",
                     source.file,
                 )
                 exit(1)
 
             applyset_name = current_default_namespace
-            applyset = ApplySet.new(applyset_name)
+            applyset = ApplySet.new(applyset_name, current_default_namespace)
             logger.opt(colors=True).info(
-                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).", source.file, applyset_name
+                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>, namespace: <cyan>{}</>).",
+                source.file,
+                applyset_name,
+                current_default_namespace,
             )
 
         if applyset is not None:
             applyset.set_group_kinds(source.resources)
-            # HACK: Kubectl 1.30 can't create the custom resource, so we need to create it. But it will also reject
-            #       using the custom resource unless it has the tooling label set appropriately. For more details, see
-            #       https://github.com/helsing-ai/nyl/issues/5.
             applyset.tooling = f"kubectl/v{generator.kube_version}"
             applyset.validate()
 
             if apply:
-                # We need to ensure that ApplySet parent object exists before invoking `kubectl apply --applyset=...`.
+                # Apply the ConfigMap that serves as the ApplySet parent
                 logger.opt(colors=True).info(
-                    "Kubectl-apply ApplySet resource <yellow>{}</> from <cyan>{}</>.",
-                    applyset.reference,
+                    "Kubectl-apply ApplySet ConfigMap <yellow>{}/{}</> from <cyan>{}</>.",
+                    applyset.namespace,
+                    applyset.name,
                     source.file,
                 )
                 kubectl.apply(ResourceList([applyset.dump()]), force_conflicts=True)
@@ -372,10 +365,10 @@ def template(
 
         if apply:
             logger.info("Kubectl-apply {} resource(s) from '{}'", len(source.resources), source.file)
+            # Note: We don't use kubectl's --applyset flag because it has limitations with multi-namespace deployments.
+            # Instead, we manually set the applyset.kubernetes.io/part-of label on all resources.
             kubectl.apply(
                 manifests=source.resources,
-                applyset=applyset.reference if applyset else None,
-                prune=True if applyset else False,
                 force_conflicts=True,
             )
         elif diff:

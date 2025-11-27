@@ -5,15 +5,18 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 import yaml
 from loguru import logger
 
-from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.resources.applyset import APPLYSET_LABEL_PART_OF
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.types import ResourceList
+
+if TYPE_CHECKING:
+    from nyl.resources.applyset import ApplySet
 
 
 @dataclass
@@ -90,35 +93,26 @@ class Kubectl:
         manifests: ResourceList,
         force_conflicts: bool = False,
         server_side: bool = True,
-        applyset: str | None = None,
-        prune: bool = False,
     ) -> None:
         """
         Apply the given manifests to the cluster.
         """
 
-        env = self.env
         command = ["kubectl", "apply", "-f", "-"]
         if server_side:
             command.append("--server-side")
-        if applyset:
-            env = env.copy()
-            env["KUBECTL_APPLYSET"] = "true"
-            command.extend(["--applyset", applyset])
-        if prune:
-            command.append("--prune")
         if force_conflicts:
             command.append("--force-conflicts")
 
         logger.debug("Applying manifests with command: $ {command}", command=lazy_str(pretty_cmd, command))
-        status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **env})
+        status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **self.env})
         if status.returncode:
             raise KubectlError(status.returncode)
 
     def diff(
         self,
         manifests: ResourceList,
-        applyset: ApplySet | None = None,
+        applyset: "ApplySet | None" = None,
         on_error: Literal["raise", "return"] = "raise",
     ) -> Literal["no-diff", "diff", "error"]:
         """

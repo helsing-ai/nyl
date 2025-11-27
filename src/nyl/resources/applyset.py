@@ -1,12 +1,8 @@
 import base64
 import hashlib
-from dataclasses import dataclass
-from typing import Annotated, ClassVar
+from dataclasses import dataclass, field
 
-from databind.core import SerializeDefaults
-
-from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
-from nyl.tools.types import ResourceList
+from nyl.tools.types import Resource, ResourceList
 
 APPLYSET_LABEL_PART_OF = "applyset.kubernetes.io/part-of"
 """ Label key to use to associate objects with an ApplySet resource. """
@@ -21,136 +17,33 @@ APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS = "applyset.kubernetes.io/contains-grou
 """ Annotation key to use on ApplySet resources to specify the kinds of resources that are part of the ApplySet. """
 
 
-@dataclass(kw_only=True)
-class ApplySet(NylResource, api_version=API_VERSION_K8S):
+@dataclass
+class ApplySet:
     """
-    An ApplySet functions as a grouping mechanism for a set of objects that are applied together. This is a standard
-    Kubernetes mechanism that needs to be implemented as a custom resource. To read more about ApplySets, check out the
-    following article:
+    An ApplySet functions as a grouping mechanism for a set of objects that are applied together. This uses a
+    ConfigMap as the parent resource, which is the recommended approach for ApplySets.
 
+    To read more about ApplySets, check out the following article:
         https://kubernetes.io/blog/2023/05/09/introducing-kubectl-applyset-pruning/
 
-    Nyl's ApplySet resource is not namespaces.
+    The ApplySet is namespace-scoped (using a ConfigMap) and should be placed in the "default" namespace
+    determined by Nyl's namespace resolution logic.
 
-    When loading manifests from a file, Nyl looks for an ApplySet resource to determine if the manifests are to be
+    When loading manifests from a file, Nyl looks for an ApplySet definition to determine if the manifests are to be
     associated with an ApplySet.
     """
 
-    # HACK: Can't set it on the class level, see https://github.com/NiklasRosenstein/python-databind/issues/73.
-    metadata: Annotated[ObjectMetadata, SerializeDefaults(False)]
-
-    # note: the only purpose of this CRD is to create resources that act as a parent for ApplySets.
-    #       check out this GitHub issue, and specifically this comment for more information:
-    #       https://github.com/kubernetes/enhancements/issues/3659#issuecomment-1753091733
-    CRD: ClassVar = {
-        "apiVersion": "apiextensions.k8s.io/v1",
-        "kind": "CustomResourceDefinition",
-        "metadata": {
-            "name": f"applysets.{API_VERSION_K8S.split('/')[0]}",
-            "labels": {
-                "applyset.kubernetes.io/is-parent-type": "true",
-            },
-        },
-        "spec": {
-            "group": API_VERSION_K8S.split("/")[0],
-            "names": {
-                "kind": "ApplySet",
-                "plural": "applysets",
-            },
-            "scope": "Cluster",
-            "versions": [
-                {
-                    "name": "v1",
-                    "served": True,
-                    "storage": True,
-                    "schema": {
-                        "openAPIV3Schema": {
-                            "type": "object",
-                        }
-                    },
-                }
-            ],
-        },
-    }
+    name: str
+    namespace: str
+    tooling: str = ""
+    contains_group_kinds: list[str] = field(default_factory=list)
 
     @property
-    def reference(self) -> str:
+    def id(self) -> str:
         """
-        Return the refernce to this ApplySet resource that can be given to the `--applyset` flag of `kubectl apply`.
+        Returns the ID of the ApplySet.
         """
-
-        return f"applysets.{self.API_VERSION.split('/')[0]}/{self.metadata.name}"
-
-    @property
-    def id(self) -> str | None:
-        """
-        Returns the ID of the ApplySet as it is configured in the `applyset.kubernetes.io/id` label.
-        """
-
-        if self.metadata.labels is not None:
-            return self.metadata.labels.get(APPLYSET_LABEL_ID)
-        return None
-
-    @id.setter
-    def id(self, value: str) -> None:
-        """
-        Set the ID of the ApplySet.
-        """
-
-        if self.metadata.labels is None:
-            self.metadata.labels = {}
-        self.metadata.labels[APPLYSET_LABEL_ID] = value
-
-    def calculate_id(self) -> str:
-        """
-        Calculate the ID of the ApplySet based on the name and namespace of the ApplySet.
-        """
-
-        return calculate_applyset_id(
-            name=self.metadata.name, namespace=self.metadata.namespace or "", group=self.API_VERSION.split("/")[0]
-        )
-
-    @property
-    def tooling(self) -> str | None:
-        """
-        Returns the tooling that was used to apply the ApplySet.
-        """
-
-        if self.metadata.annotations is not None:
-            return self.metadata.annotations.get(APPLYSET_ANNOTATION_TOOLING)
-        return None
-
-    @tooling.setter
-    def tooling(self, value: str) -> None:
-        """
-        Set the tooling that was used to apply the ApplySet.
-        """
-
-        if self.metadata.annotations is None:
-            self.metadata.annotations = {}
-        self.metadata.annotations[APPLYSET_ANNOTATION_TOOLING] = value
-
-    @property
-    def contains_group_kinds(self) -> list[str] | None:
-        """
-        Returns the kinds of resources that are part of the ApplySet.
-        """
-
-        if self.metadata.annotations is not None:
-            value = self.metadata.annotations.get(APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS)
-            if value is not None:
-                return value.split(",")
-        return None
-
-    @contains_group_kinds.setter
-    def contains_group_kinds(self, value: list[str]) -> None:
-        """
-        Set the kinds of resources that are part of the ApplySet.
-        """
-
-        if self.metadata.annotations is None:
-            self.metadata.annotations = {}
-        self.metadata.annotations[APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS] = ",".join(sorted(value))
+        return calculate_applyset_id(name=self.name, namespace=self.namespace)
 
     def set_group_kinds(self, manifests: ResourceList) -> None:
         """
@@ -161,62 +54,73 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
         for manifest in manifests:
             if "kind" in manifest:
                 kinds.add(get_canonical_resource_kind_name(manifest["apiVersion"], manifest["kind"]))
-        self.contains_group_kinds = list(kinds)
+        self.contains_group_kinds = sorted(kinds)
 
     def validate(self) -> None:
         """
         Validate the ApplySet configuration.
 
-        Mutations:
-            - Sets the `applyset.kubernetes.io/id` label on the metadata of the ApplySet resource if it is not set.
-
         Raises:
             ValueError:
-                - If the resource is namespaced.
-                - If the annotations has no `applyset.kubernetes.io/tooling` key.
-                - If the annotations has no `applyset.kubernetes.io/contains-group-kinds` key.
-                - If the `applyset.kubernetes.io/id` label has an invalid value.
+                - If the name is empty.
+                - If the namespace is empty.
+                - If the tooling is not set.
+                - If the contains_group_kinds is empty.
         """
 
-        if self.metadata.namespace:
-            raise ValueError("ApplySet resources cannot be namespaced")
+        if not self.name:
+            raise ValueError("ApplySet name cannot be empty")
 
-        if self.metadata.labels is None:
-            self.metadata.labels = {}
+        if not self.namespace:
+            raise ValueError("ApplySet namespace cannot be empty")
 
-        if self.id is None:
-            self.id = self.calculate_id()
-        elif self.id != self.calculate_id():
-            raise ValueError(f"Invalid {APPLYSET_LABEL_ID!r} label value: {self.id!r}")
+        if not self.tooling:
+            raise ValueError(f"ApplySet must have a {APPLYSET_ANNOTATION_TOOLING!r} annotation")
 
-        if self.tooling is None:
-            raise ValueError(f"ApplySet resource must have a {APPLYSET_ANNOTATION_TOOLING!r} annotation")
+        if not self.contains_group_kinds:
+            raise ValueError(f"ApplySet must have a {APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS!r} annotation")
 
-        if self.contains_group_kinds is None:
-            raise ValueError(f"ApplySet resource must have a {APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS!r} annotation")
+    def dump(self) -> Resource:
+        """
+        Dump the ApplySet as a ConfigMap resource with the appropriate annotations and labels.
+        """
+
+        return Resource({
+            "apiVersion": "v1",
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": self.name,
+                "namespace": self.namespace,
+                "annotations": {
+                    APPLYSET_ANNOTATION_TOOLING: self.tooling,
+                    APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS: ",".join(self.contains_group_kinds),
+                },
+                "labels": {
+                    APPLYSET_LABEL_ID: self.id,
+                },
+            },
+        })
 
     @staticmethod
-    def new(name: str) -> "ApplySet":
+    def new(name: str, namespace: str) -> "ApplySet":
         """
-        Create a new ApplySet resource with the specified name.
+        Create a new ApplySet with the specified name and namespace.
         """
 
-        return ApplySet(
-            metadata=ObjectMetadata(
-                name=name,
-                namespace=None,
-            )
-        )
+        return ApplySet(name=name, namespace=namespace)
 
 
-def calculate_applyset_id(*, name: str, namespace: str = "", group: str) -> str:
+def calculate_applyset_id(*, name: str, namespace: str) -> str:
     """
-    Calculate the ID of a Kubernetes ApplySet with the specified name.
+    Calculate the ID of a Kubernetes ApplySet with the specified name and namespace.
+    The ID is based on a ConfigMap parent resource.
     """
 
     # reference: https://kubernetes.io/docs/reference/labels-annotations-taints/#applyset-kubernetes-io-id
-    hash = hashlib.sha256(f"{name}.{namespace}.ApplySet.{group}".encode()).digest()
-    uid = base64.b64encode(hash).decode().rstrip("=").replace("/", "_").replace("+", "-")
+    # Format: applyset-<base64(sha256(<name>.<namespace>.ConfigMap.))>-v1
+    hash_input = f"{name}.{namespace}.ConfigMap."
+    hash_bytes = hashlib.sha256(hash_input.encode()).digest()
+    uid = base64.b64encode(hash_bytes).decode().rstrip("=").replace("/", "_").replace("+", "-")
     return f"applyset-{uid}-v1"
 
 

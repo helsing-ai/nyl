@@ -1,36 +1,37 @@
-from nyl.resources import ObjectMetadata
 from nyl.resources.applyset import ApplySet, calculate_applyset_id, get_canonical_resource_kind_name
 
 
 def test__ApplySet__dump() -> None:
-    resource = ApplySet(
-        metadata=ObjectMetadata(
-            name="test-applyset",
-            namespace=None,
-        )
-    )
-    resource.tooling = "kubectl/1.30"
-    resource.contains_group_kinds = ["Service", "Deployment.apps"]
-    resource.validate()
+    applyset = ApplySet.new("test-applyset", "default")
+    applyset.tooling = "kubectl/1.30"
+    applyset.contains_group_kinds = ["Deployment.apps", "Service"]
+    applyset.validate()
 
-    assert resource.dump() == {
-        "apiVersion": "nyl.io/v1",
-        "kind": "ApplySet",
+    assert applyset.dump() == {
+        "apiVersion": "v1",
+        "kind": "ConfigMap",
         "metadata": {
             "name": "test-applyset",
+            "namespace": "default",
             "annotations": {
                 "applyset.kubernetes.io/tooling": "kubectl/1.30",
-                "applyset.kubernetes.io/contains-group-kinds": "Deployment.apps,Service",  # sorted
+                "applyset.kubernetes.io/contains-group-kinds": "Deployment.apps,Service",
             },
             "labels": {
                 "applyset.kubernetes.io/id": calculate_applyset_id(
                     name="test-applyset",
-                    namespace="",
-                    group="nyl.io",
+                    namespace="default",
                 ),
             },
         },
     }
+
+
+def test__calculate_applyset_id() -> None:
+    # Verify the ID format is correct for ConfigMap-based ApplySets
+    applyset_id = calculate_applyset_id(name="test", namespace="default")
+    assert applyset_id.startswith("applyset-")
+    assert applyset_id.endswith("-v1")
 
 
 def test__get_canonical_resource_kind_name() -> None:
