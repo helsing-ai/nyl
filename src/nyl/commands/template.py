@@ -21,7 +21,7 @@ from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
-from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet, ApplySetContext
 from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
@@ -308,6 +308,26 @@ def template(
 
             applyset_name = current_default_namespace
             applyset = ApplySet.new(applyset_name, current_default_namespace)
+
+            # Build context information for the ApplySet
+            argocd_app_name = os.getenv("ARGOCD_APP_NAME")
+            argocd_revision = os.getenv("ARGOCD_APP_REVISION")
+
+            if argocd_app_name:
+                # Running via ArgoCD
+                applyset.context = ApplySetContext(
+                    source="argocd",
+                    files=[str(source.file)],
+                    revision=argocd_revision,
+                    app_name=argocd_app_name,
+                )
+            else:
+                # Running via CLI
+                applyset.context = ApplySetContext(
+                    source="cli",
+                    files=[str(source.file)],
+                )
+
             logger.opt(colors=True).info(
                 "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>, namespace: <cyan>{}</>).",
                 source.file,

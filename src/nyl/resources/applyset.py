@@ -1,6 +1,8 @@
 import base64
 import hashlib
+import json
 from dataclasses import dataclass, field
+from typing import Any
 
 from nyl.tools.types import Resource, ResourceList
 
@@ -15,6 +17,45 @@ APPLYSET_ANNOTATION_TOOLING = "applyset.kubernetes.io/tooling"
 
 APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS = "applyset.kubernetes.io/contains-group-kinds"
 """ Annotation key to use on ApplySet resources to specify the kinds of resources that are part of the ApplySet. """
+
+NYL_ANNOTATION_LAST_APPLIED_CONTEXT = "nyl.io/last-applied-context"
+"""
+Annotation key to store contextual information about the last applied configuration.
+Contains a JSON object with fields like:
+- source: "cli" or "argocd"
+- revision: Git commit hash (when available via ArgoCD)
+- files: List of manifest file names used
+"""
+
+
+@dataclass
+class ApplySetContext:
+    """
+    Contextual information about when/how the ApplySet was last applied.
+    """
+
+    source: str
+    """The source of the apply operation: "cli" or "argocd"."""
+
+    files: list[str] = field(default_factory=list)
+    """List of manifest file names used to generate the resources."""
+
+    revision: str | None = None
+    """Git commit hash (when available, e.g., via ArgoCD)."""
+
+    app_name: str | None = None
+    """ArgoCD application name (when running via ArgoCD)."""
+
+    def to_json(self) -> str:
+        """Serialize the context to a JSON string."""
+        data: dict[str, Any] = {"source": self.source}
+        if self.files:
+            data["files"] = self.files
+        if self.revision:
+            data["revision"] = self.revision
+        if self.app_name:
+            data["app_name"] = self.app_name
+        return json.dumps(data, separators=(",", ":"))
 
 
 @dataclass
@@ -37,6 +78,7 @@ class ApplySet:
     namespace: str
     tooling: str = ""
     contains_group_kinds: list[str] = field(default_factory=list)
+    context: ApplySetContext | None = None
 
     @property
     def id(self) -> str:
@@ -85,16 +127,22 @@ class ApplySet:
         Dump the ApplySet as a ConfigMap resource with the appropriate annotations and labels.
         """
 
+        annotations: dict[str, str] = {
+            APPLYSET_ANNOTATION_TOOLING: self.tooling,
+            APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS: ",".join(self.contains_group_kinds),
+        }
+
+        # Add the context annotation if available
+        if self.context is not None:
+            annotations[NYL_ANNOTATION_LAST_APPLIED_CONTEXT] = self.context.to_json()
+
         return Resource({
             "apiVersion": "v1",
             "kind": "ConfigMap",
             "metadata": {
                 "name": self.name,
                 "namespace": self.namespace,
-                "annotations": {
-                    APPLYSET_ANNOTATION_TOOLING: self.tooling,
-                    APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS: ",".join(self.contains_group_kinds),
-                },
+                "annotations": annotations,
                 "labels": {
                     APPLYSET_LABEL_ID: self.id,
                 },
