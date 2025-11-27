@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Annotated, ClassVar
 
 from databind.core import SerializeDefaults
+from kubernetes.client.exceptions import ApiException
+from kubernetes.dynamic.exceptions import ResourceNotFoundError
 from loguru import logger
 
 from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
@@ -257,7 +259,7 @@ def get_canonical_resource_kind_name(
         try:
             resource = client.resources.get(api_version=api_version, kind=kind)
             plural_name = resource.name
-        except Exception as e:
+        except (ResourceNotFoundError, ApiException) as e:
             logger.debug(
                 "Could not find plural name for {}/{} from Kubernetes API: {}. Using heuristic.",
                 api_version,
