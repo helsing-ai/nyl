@@ -30,6 +30,7 @@ from nyl.tools.kubectl import Kubectl
 from nyl.tools.kubernetes import drop_empty_metadata_labels, populate_namespace_to_resources
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Resource, ResourceList
+from kubernetes.dynamic.client import DynamicClient
 
 DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/is-default-namespace"
 
@@ -321,7 +322,8 @@ def template(
             )
 
         if applyset is not None:
-            applyset.set_group_kinds(source.resources)
+            dynamic_client = DynamicClient(client)
+            applyset.set_group_kinds(source.resources, dynamic_client)
             # HACK: Kubectl 1.30 can't create the custom resource, so we need to create it. But it will also reject
             #       using the custom resource unless it has the tooling label set appropriately. For more details, see
             #       https://github.com/helsing-ai/nyl/issues/5.

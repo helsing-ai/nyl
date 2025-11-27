@@ -1,12 +1,16 @@
 import base64
 import hashlib
 from dataclasses import dataclass
-from typing import Annotated, ClassVar
+from typing import TYPE_CHECKING, Annotated, ClassVar
 
 from databind.core import SerializeDefaults
+from loguru import logger
 
 from nyl.resources import API_VERSION_K8S, NylResource, ObjectMetadata
 from nyl.tools.types import ResourceList
+
+if TYPE_CHECKING:
+    from kubernetes.dynamic.client import DynamicClient
 
 APPLYSET_LABEL_PART_OF = "applyset.kubernetes.io/part-of"
 """ Label key to use to associate objects with an ApplySet resource. """
@@ -152,15 +156,20 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
             self.metadata.annotations = {}
         self.metadata.annotations[APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS] = ",".join(sorted(value))
 
-    def set_group_kinds(self, manifests: ResourceList) -> None:
+    def set_group_kinds(self, manifests: ResourceList, client: "DynamicClient | None" = None) -> None:
         """
         Set the kinds of resources that are part of the ApplySet based on the specified manifests.
+
+        Args:
+            manifests: The list of manifests to extract the resource kinds from.
+            client: An optional Kubernetes DynamicClient to use for discovering the plural resource names.
+                   If not provided, the function will fall back to heuristic-based pluralization.
         """
 
         kinds = set()
         for manifest in manifests:
             if "kind" in manifest:
-                kinds.add(get_canonical_resource_kind_name(manifest["apiVersion"], manifest["kind"]))
+                kinds.add(get_canonical_resource_kind_name(manifest["apiVersion"], manifest["kind"], client))
         self.contains_group_kinds = list(kinds)
 
     def validate(self) -> None:
@@ -220,20 +229,81 @@ def calculate_applyset_id(*, name: str, namespace: str = "", group: str) -> str:
     return f"applyset-{uid}-v1"
 
 
-def get_canonical_resource_kind_name(api_version: str, kind: str) -> str:
+def get_canonical_resource_kind_name(
+    api_version: str, kind: str, client: "DynamicClient | None" = None
+) -> str:
     """
     Given the apiVersion and kind of a Kubernetes resource, return the canonical name of the resource. This name can
     be used to identify the resource in an ApplySet's `applyset.kubernetes.io/contains-group-kinds` annotation.
 
-    Note that according to the [reference][1], the resource name should use the plural form, but it appears that the
-    resource kind name is also accepted. Deriving the plural form will be difficult without querying the Kubernetes
-    API.
-
-    [1]: https://kubernetes.io/docs/reference/labels-annotations-taints/#applyset-kubernetes-io-contains-group-kinds
+    The annotation requires the plural resource name (e.g., 'deployments.apps' not 'Deployment.apps').
+    See: https://kubernetes.io/docs/reference/labels-annotations-taints/#applyset-kubernetes-io-contains-group-kinds
 
     Args:
-        api_version: The apiVersion of the resource.
-        kind: The kind of the resource.
+        api_version: The apiVersion of the resource (e.g., 'v1', 'apps/v1', 'argoproj.io/v1alpha1').
+        kind: The kind of the resource (e.g., 'Pod', 'Deployment', 'CronWorkflow').
+        client: An optional Kubernetes DynamicClient to use for discovering the plural resource name.
+               If not provided or if the resource is not found, falls back to heuristic-based pluralization.
+
+    Returns:
+        The canonical resource name in the format '<plural-name>.<group>' (e.g., 'deployments.apps', 'pods').
     """
 
-    return (f"{kind}." + (api_version.split("/")[0] if "/" in api_version else "")).rstrip(".")
+    group = api_version.split("/")[0] if "/" in api_version else ""
+
+    # Try to get the plural name from the Kubernetes API
+    plural_name = None
+    if client is not None:
+        try:
+            resource = client.resources.get(api_version=api_version, kind=kind)
+            plural_name = resource.name
+        except Exception as e:
+            logger.debug(
+                "Could not find plural name for {}/{} from Kubernetes API: {}. Using heuristic.",
+                api_version,
+                kind,
+                e,
+            )
+
+    # Fall back to heuristic-based pluralization if we couldn't get it from the API
+    if plural_name is None:
+        plural_name = _pluralize_kind(kind)
+
+    return (f"{plural_name}.{group}").rstrip(".")
+
+
+def _pluralize_kind(kind: str) -> str:
+    """
+    Convert a Kubernetes kind name to its plural form using common English pluralization rules.
+
+    This is a heuristic fallback when the Kubernetes API is not available.
+    The result is lowercased to match the format expected by kubectl.
+
+    Args:
+        kind: The singular kind name (e.g., 'Pod', 'Deployment', 'CronWorkflow').
+
+    Returns:
+        The plural form of the kind, lowercased (e.g., 'pods', 'deployments', 'cronworkflows').
+    """
+
+    kind_lower = kind.lower()
+
+    # Handle special cases
+    if kind_lower.endswith("s"):
+        # Words ending in 's' typically add 'es' (e.g., 'address' -> 'addresses')
+        # But some already look plural (e.g., 'ingress' -> 'ingresses')
+        return f"{kind_lower}es"
+    elif kind_lower.endswith("y"):
+        # Words ending in consonant + 'y' change 'y' to 'ies'
+        # Check if the character before 'y' is a consonant
+        if len(kind_lower) > 1 and kind_lower[-2] not in "aeiou":
+            return f"{kind_lower[:-1]}ies"
+        else:
+            # Words ending in vowel + 'y' just add 's'
+            return f"{kind_lower}s"
+    elif kind_lower.endswith("x") or kind_lower.endswith("ch") or kind_lower.endswith("sh"):
+        # Words ending in 'x', 'ch', 'sh' add 'es'
+        return f"{kind_lower}es"
+    else:
+        # Default: just add 's'
+        return f"{kind_lower}s"
