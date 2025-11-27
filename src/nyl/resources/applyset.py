@@ -273,6 +273,7 @@ class ApplySetManager:
     - Tagging resources with the applyset.kubernetes.io/part-of label
     - Looking up existing ApplySet ConfigMaps in the cluster
     - Listing all resources that are members of an ApplySet
+    - Computing which resources have been removed from the manifest
     """
 
     def __init__(self, applyset: ApplySet | None = None, add_part_of_labels: bool = True) -> None:
@@ -329,6 +330,74 @@ class ApplySetManager:
         if not self.enabled or self.applyset is None:
             return None
         return self.applyset.dump()
+
+    def get_deleted_resources(self, new_resources: ResourceList) -> ResourceList:
+        """
+        Compute which resources have been removed from the manifest.
+
+        This compares the new resources against the existing resources in the cluster
+        that are part of this ApplySet, and returns the resources that exist in the
+        cluster but are not in the new manifest.
+
+        Args:
+            new_resources: The new list of resources from the manifest.
+
+        Returns:
+            A ResourceList of resources that should be deleted (exist in cluster but not in manifest).
+        """
+        if not self.enabled or self.applyset is None:
+            return ResourceList([])
+
+        # Get existing resources from the cluster that belong to this ApplySet
+        existing_resources = list_applyset_members(self.applyset.id)
+
+        if not existing_resources:
+            return ResourceList([])
+
+        # Build a set of resource identifiers from the new manifest
+        new_resource_ids = set()
+        for resource in new_resources:
+            resource_id = _get_resource_identifier(resource)
+            if resource_id:
+                new_resource_ids.add(resource_id)
+
+        # Also add the ApplySet ConfigMap itself to avoid deleting it
+        applyset_cm = self.applyset.dump()
+        applyset_id = _get_resource_identifier(applyset_cm)
+        if applyset_id:
+            new_resource_ids.add(applyset_id)
+
+        # Find resources that exist in the cluster but not in the new manifest
+        deleted_resources: list[Resource] = []
+        for resource in existing_resources:
+            resource_id = _get_resource_identifier(resource)
+            if resource_id and resource_id not in new_resource_ids:
+                deleted_resources.append(resource)
+
+        return ResourceList(deleted_resources)
+
+
+def _get_resource_identifier(resource: Resource) -> str | None:
+    """
+    Get a unique identifier for a resource based on apiVersion, kind, namespace, and name.
+
+    Args:
+        resource: The resource to identify.
+
+    Returns:
+        A string identifier in the format "apiVersion/kind/namespace/name" or None if the resource
+        is missing required fields.
+    """
+    api_version = resource.get("apiVersion")
+    kind = resource.get("kind")
+    metadata = resource.get("metadata", {})
+    name = metadata.get("name")
+    namespace = metadata.get("namespace", "")
+
+    if not api_version or not kind or not name:
+        return None
+
+    return f"{api_version}/{kind}/{namespace}/{name}"
 
 
 def get_existing_applyset(name: str, namespace: str) -> Resource | None:

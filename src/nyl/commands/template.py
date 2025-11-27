@@ -352,6 +352,9 @@ def template(
         # Prepare resources with ApplySet (adds part-of labels and includes ConfigMap)
         resources_to_apply = applyset_manager.prepare_resources(source.resources)
 
+        # Find deleted resources (resources that exist in cluster but not in manifest)
+        deleted_resources = applyset_manager.get_deleted_resources(source.resources)
+
         if apply:
             logger.info("Kubectl-apply {} resource(s) from '{}'", len(resources_to_apply), source.file)
             # Note: We don't use kubectl's --applyset flag because it has limitations with multi-namespace deployments.
@@ -361,9 +364,35 @@ def template(
                 manifests=resources_to_apply,
                 force_conflicts=True,
             )
+
+            # Delete resources that are no longer in the manifest
+            if deleted_resources:
+                logger.info("Deleting {} resource(s) that are no longer in the manifest", len(deleted_resources))
+                for resource in deleted_resources:
+                    metadata = resource.get("metadata", {})
+                    resource_name = f"{resource.get('kind', 'unknown')}/{metadata.get('name', 'unknown')}"
+                    if metadata.get("namespace"):
+                        resource_name = f"{metadata['namespace']}/{resource_name}"
+                    logger.opt(colors=True).info("Deleting <red>{}</>", resource_name)
+                    try:
+                        kubectl.delete(resource)
+                    except Exception as e:
+                        logger.warning("Failed to delete {}: {}", resource_name, e)
+
         elif diff:
             logger.info("Kubectl-diff {} resource(s) from '{}'", len(resources_to_apply), source.file)
             kubectl.diff(manifests=resources_to_apply, applyset=applyset)
+
+            # Show deleted resources in diff output
+            if deleted_resources:
+                print("\n# Resources to be DELETED (no longer in manifest):")
+                for resource in deleted_resources:
+                    metadata = resource.get("metadata", {})
+                    resource_name = f"{resource.get('kind', 'unknown')}/{metadata.get('name', 'unknown')}"
+                    if metadata.get("namespace"):
+                        resource_name = f"{metadata['namespace']}/{resource_name}"
+                    print(f"# - {resource_name}")
+
         else:
             # If we're not going to be applying the resources immediately via `kubectl`, we print them to stdout.
             for resource in resources_to_apply:

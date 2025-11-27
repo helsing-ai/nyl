@@ -13,7 +13,7 @@ from loguru import logger
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
-from nyl.tools.types import ResourceList
+from nyl.tools.types import Resource, ResourceList
 
 if TYPE_CHECKING:
     from nyl.resources.applyset import ApplySet
@@ -108,6 +108,45 @@ class Kubectl:
         status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **self.env})
         if status.returncode:
             raise KubectlError(status.returncode)
+
+    def delete(self, resource: Resource) -> bool:
+        """
+        Delete a single resource from the cluster.
+
+        Args:
+            resource: The resource to delete.
+
+        Returns:
+            True if the resource was deleted, False if it didn't exist.
+        """
+        api_version = resource.get("apiVersion", "")
+        kind = resource.get("kind", "")
+        metadata = resource.get("metadata", {})
+        name = metadata.get("name", "")
+        namespace = metadata.get("namespace")
+
+        # Build the resource identifier
+        if "/" in api_version:
+            # For resources like apps/v1 Deployment, the type is "deployment.apps"
+            group = api_version.split("/")[0]
+            resource_type = f"{kind.lower()}.{group}"
+        else:
+            # For core v1 resources like Pod, the type is just the kind
+            resource_type = kind.lower()
+
+        command = ["kubectl", "delete", resource_type, name]
+        if namespace:
+            command.extend(["-n", namespace])
+
+        logger.debug("Deleting resource with command: $ {command}", command=lazy_str(pretty_cmd, command))
+        status = subprocess.run(command, capture_output=True, text=True, env={**os.environ, **self.env})
+
+        if status.returncode == 0:
+            return True
+        elif "NotFound" in status.stderr:
+            return False
+        else:
+            raise KubectlError(status.returncode, status.stderr)
 
     def diff(
         self,
