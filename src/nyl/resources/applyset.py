@@ -4,6 +4,11 @@ import json
 import os
 from dataclasses import dataclass, field
 from typing import Any
+from loguru import logger
+
+from kubernetes.client.api_client import ApiClient
+from kubernetes.dynamic import DynamicClient
+from kubernetes.dynamic.exceptions import NotFoundError
 
 from nyl.tools.types import Resource, ResourceList
 
@@ -276,14 +281,21 @@ class ApplySetManager:
     - Computing which resources have been removed from the manifest
     """
 
-    def __init__(self, applyset: ApplySet | None = None, add_part_of_labels: bool = True) -> None:
+    def __init__(
+        self,
+        client: ApiClient,
+        applyset: ApplySet | None = None,
+        add_part_of_labels: bool = True,
+    ) -> None:
         """
         Initialize the ApplySetManager.
 
         Args:
+            client: The Kubernetes API client to use.
             applyset: The ApplySet to manage, or None to skip ApplySet-related logic.
             add_part_of_labels: Whether to add the applyset.kubernetes.io/part-of label to resources.
         """
+        self.client = client
         self.applyset = applyset
         self.add_part_of_labels = add_part_of_labels
 
@@ -349,7 +361,19 @@ class ApplySetManager:
             return ResourceList([])
 
         # Get existing resources from the cluster that belong to this ApplySet
-        existing_resources = list_applyset_members(self.applyset.id)
+        # Try to find the existing ApplySet ConfigMap to know which kinds to look for
+        existing_applyset_cm = get_existing_applyset(
+            self.applyset.name, self.applyset.namespace, self.client
+        )
+        kinds: list[str] = []
+
+        if existing_applyset_cm:
+            annotations = existing_applyset_cm.get("metadata", {}).get("annotations", {})
+            kinds_str = annotations.get(APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS)
+            if kinds_str:
+                kinds = kinds_str.split(",")
+
+        existing_resources = list_applyset_members(self.applyset.id, self.client, kinds)
 
         if not existing_resources:
             return ResourceList([])
@@ -400,93 +424,76 @@ def _get_resource_identifier(resource: Resource) -> str | None:
     return f"{api_version}/{kind}/{namespace}/{name}"
 
 
-def get_existing_applyset(name: str, namespace: str) -> Resource | None:
+def get_existing_applyset(name: str, namespace: str, client: ApiClient) -> Resource | None:
     """
     Look up an existing ApplySet ConfigMap in the cluster.
 
     Args:
         name: The name of the ApplySet ConfigMap.
         namespace: The namespace of the ApplySet ConfigMap.
+        client: The Kubernetes API client to use.
 
     Returns:
         The ApplySet ConfigMap resource if it exists, or None if not found.
     """
-    import subprocess
-
-    command = ["kubectl", "get", "configmap", name, "-n", namespace, "-o", "json"]
-    result = subprocess.run(command, capture_output=True, text=True)
-
-    if result.returncode != 0:
-        # ConfigMap doesn't exist or other error
-        return None
-
     try:
-        data = json.loads(result.stdout)
+        dynamic = DynamicClient(client)
+        # ConfigMap is v1
+        resource_client = dynamic.resources.get(api_version="v1", kind="ConfigMap")
+        resource = resource_client.get(name=name, namespace=namespace)
+
         # Verify it's an ApplySet ConfigMap by checking for the id label
-        labels = data.get("metadata", {}).get("labels", {})
+        labels = resource.metadata.get("labels", {}).to_dict()
         if APPLYSET_LABEL_ID in labels:
-            return Resource(data)
+            return Resource(resource.to_dict())
         return None
-    except json.JSONDecodeError:
+    except NotFoundError:
         return None
 
 
-def list_applyset_members(applyset_id: str) -> ResourceList:
+def list_applyset_members(
+    applyset_id: str, client: ApiClient, kinds: list[str]
+) -> ResourceList:
     """
     List all resources in the cluster that are members of an ApplySet.
 
     Args:
         applyset_id: The ID of the ApplySet (value of applyset.kubernetes.io/id label).
+        client: The Kubernetes API client to use.
+        kinds: List of resource kinds to search for.
 
     Returns:
         A ResourceList of all resources that have the applyset.kubernetes.io/part-of label
         matching the given ApplySet ID.
     """
-    import subprocess
-
-    # Use kubectl to find all resources with the part-of label
-    # We need to search across all resource types, so we use "all" plus some common types
-    # that are not included in "all"
-    resource_types = [
-        "all",  # Includes pods, services, deployments, replicasets, etc.
-        "configmaps",
-        "secrets",
-        "persistentvolumeclaims",
-        "ingresses",
-        "networkpolicies",
-        "serviceaccounts",
-        "roles",
-        "rolebindings",
-        "clusterroles",
-        "clusterrolebindings",
-        "customresourcedefinitions",
-        "namespaces",
-    ]
-
+    dynamic = DynamicClient(client)
     all_resources: list[Resource] = []
 
-    for resource_type in resource_types:
-        command = [
-            "kubectl",
-            "get",
-            resource_type,
-            "--all-namespaces",
-            "-l",
-            f"{APPLYSET_LABEL_PART_OF}={applyset_id}",
-            "-o",
-            "json",
-        ]
+    resources_to_check: list[tuple[str, str]] = []
 
-        result = subprocess.run(command, capture_output=True, text=True)
+    for k in kinds:
+        parts = k.split(".", 1)
+        if len(parts) == 2:
+            resources_to_check.append((parts[0], parts[1]))
+        else:
+            resources_to_check.append((parts[0], ""))
 
-        if result.returncode == 0:
-            try:
-                data = json.loads(result.stdout)
-                items = data.get("items", [])
-                for item in items:
-                    all_resources.append(Resource(item))
-            except json.JSONDecodeError:
+    for kind, group in resources_to_check:
+        try:
+            api_resources = dynamic.resources.search(kind=kind, group=group)
+            if not api_resources:
                 continue
+
+            res_client = api_resources[0]
+
+            items = res_client.get(label_selector=f"{APPLYSET_LABEL_PART_OF}={applyset_id}")
+            for item in items.items:
+                all_resources.append(Resource(item.to_dict()))
+
+        except NotFoundError:
+            # It's possible the resource kind doesn't exist in the cluster (e.g. CRD was removed).
+            # In this case, we can just skip it.
+            continue
 
     # Deduplicate resources by their UID
     seen_uids: set[str] = set()

@@ -105,6 +105,7 @@ class Kubectl:
             command.append("--force-conflicts")
 
         logger.debug("Applying manifests with command: $ {command}", command=lazy_str(pretty_cmd, command))
+
         status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **self.env})
         if status.returncode:
             raise KubectlError(status.returncode)

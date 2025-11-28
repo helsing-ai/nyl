@@ -173,11 +173,6 @@ def template(
         )
         exit(1)
 
-    if apply:
-        # When running with --apply, we must ensure that the --applyset-part-of option is disabled, as it would cause
-        # an error when passing the generated manifests to `kubectl apply --applyset=...`.
-        applyset_part_of = False
-
     if apply and diff:
         logger.error("The --apply and --diff options cannot be combined.")
         exit(1)
@@ -306,7 +301,7 @@ def template(
                 )
                 exit(1)
 
-            applyset_name = current_default_namespace
+            applyset_name = f"nyl.applyset.{current_default_namespace}"
             applyset = ApplySet.new(applyset_name, current_default_namespace)
 
             # Build context information for the ApplySet from environment
@@ -320,7 +315,9 @@ def template(
             )
 
         # Create the ApplySetManager to handle apply/diff operations
-        applyset_manager = ApplySetManager(applyset=applyset, add_part_of_labels=applyset_part_of)
+        applyset_manager = ApplySetManager(
+            client=client, applyset=applyset, add_part_of_labels=applyset_part_of
+        )
 
         if applyset is not None:
             applyset.set_group_kinds(source.resources)
