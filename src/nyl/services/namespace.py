@@ -1,5 +1,7 @@
 """Service for resolving and managing Kubernetes namespaces in manifests."""
 
+from typing import cast
+
 from loguru import logger
 
 from nyl.models.errors import NamespaceAmbiguityError
@@ -54,7 +56,7 @@ class NamespaceResolverService:
 
         # Case 2: Exactly one namespace resource
         if len(namespace_resources) == 1:
-            namespace_name = namespace_resources[0]["metadata"]["name"]
+            namespace_name = cast(str, namespace_resources[0]["metadata"]["name"])
             logger.debug(
                 "Manifest '{}' defines exactly one Namespace resource. Using '{}' as the default namespace.",
                 source.file,
@@ -64,14 +66,14 @@ class NamespaceResolverService:
 
         # Case 3: Multiple namespace resources - need to find the default
         default_namespaces = {
-            ns["metadata"]["name"]
+            cast(str, ns["metadata"]["name"])
             for ns in namespace_resources
             if ns["metadata"].get("annotations", {}).get(DEFAULT_NAMESPACE_ANNOTATION, "false") == "true"
         }
 
         # No namespace marked as default - use alphabetically first with warning
         if len(default_namespaces) == 0:
-            namespace_names = sorted(ns["metadata"]["name"] for ns in namespace_resources)
+            namespace_names = sorted(cast(str, ns["metadata"]["name"]) for ns in namespace_resources)
             use_namespace = namespace_names[0]
 
             logger.warning(
@@ -95,7 +97,7 @@ class NamespaceResolverService:
             )
 
         # Exactly one default namespace found
-        return default_namespaces.pop()
+        return cast(str, default_namespaces.pop())
 
     def populate_namespaces(self, resources: ResourceList, namespace: str) -> None:
         """Populate the default namespace to resources that don't have one.
