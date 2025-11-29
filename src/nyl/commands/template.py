@@ -2,7 +2,6 @@ import atexit
 import json
 import os
 import time
-from concurrent.futures import Future, ThreadPoolExecutor
 from enum import Enum
 from pathlib import Path
 from textwrap import indent
@@ -15,7 +14,6 @@ from loguru import logger
 from typer import Argument, Option
 
 from nyl.commands import PROVIDER, ApiClientConfig, app
-from nyl.generator import reconcile_generator
 from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
@@ -25,12 +23,13 @@ from nyl.secrets.config import SecretsConfig
 from nyl.services.kubernetes_apply import KubernetesApplyService
 from nyl.services.manifest import ManifestLoaderService
 from nyl.services.namespace import NamespaceResolverService
+from nyl.services.templating import TemplatingService
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
 from nyl.tools.kubernetes import drop_empty_metadata_labels
 from nyl.tools.logging import lazy_str
-from nyl.tools.types import Resource, ResourceList
+from nyl.tools.types import Resource
 
 DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/is-default-namespace"
 
@@ -245,26 +244,11 @@ def template(
         current_default_namespace = namespace_resolver.resolve_default_namespace(source, default_namespace)
         namespace_resolver.populate_namespaces(source.resources, current_default_namespace)
 
-        source.resources = template_engine.evaluate(source.resources)
-        if inline:
-            with ThreadPoolExecutor(max_workers=jobs) as executor:
-
-                def new_generation(resource: Resource) -> Future[ResourceList]:
-                    def worker() -> ResourceList:
-                        resources_ = template_engine.evaluate(ResourceList([resource]))
-                        namespace_resolver.populate_namespaces(resources_, current_default_namespace)
-                        return resources_
-
-                    return executor.submit(worker)
-
-                source.resources = reconcile_generator(
-                    generator,
-                    source.resources,
-                    new_generation_callback=new_generation,
-                    skip_resources=[PostProcessor],
-                )
-
-        source.resources, post_processors = PostProcessor.extract_from_list(source.resources)
+        # Use TemplatingService to evaluate templates and handle inline resource generation
+        templating_service = TemplatingService(template_engine, generator, namespace_resolver)
+        source.resources, post_processors = templating_service.evaluate_template(
+            source, current_default_namespace, inline=inline, jobs=jobs
+        )
 
         # Find the namespaces that are defined in the file
         k8s_apply.find_namespace_resources(source.resources)
