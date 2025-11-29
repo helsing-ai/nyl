@@ -12,10 +12,9 @@ from typer import Argument, Option, Typer
 
 from nyl.commands.template import (
     DEFAULT_NAMESPACE_ANNOTATION,
-    ManifestsWithSource,
     is_namespace_resource,
-    load_manifests,
 )
+from nyl.services.manifest import ManifestLoaderService, ManifestsWithSource
 from nyl.resources import ObjectMetadata
 from nyl.resources.helmchart import ChartRef, HelmChart, HelmChartSpec
 from nyl.tools.typer import new_typer
@@ -39,7 +38,8 @@ def namespace(
 
     if manifest_file.exists():
         content = manifest_file.read_text()
-        manifest = load_manifests([manifest_file])[0]
+        manifest_loader = ManifestLoaderService()
+        manifest = manifest_loader.load_manifests([manifest_file])[0]
     else:
         content = ""
         manifest = ManifestsWithSource(ResourceList([]), manifest_file)

@@ -24,6 +24,7 @@ from nyl.resources import API_VERSION_INLINE, NylResource
 from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
 from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
+from nyl.services.manifest import ManifestLoaderService, ManifestsWithSource
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
@@ -42,16 +43,6 @@ class OnLookupFailure(str, Enum):
 
     def to_literal(self) -> Literal["Error", "CreatePlaceholder", "SkipResource"]:
         return cast(Any, self.name)  # type: ignore[no-any-return]
-
-
-@dataclass
-class ManifestsWithSource:
-    """
-    Represents a list of resources loaded from a particular source file.
-    """
-
-    resources: ResourceList
-    file: Path
 
 
 def get_incluster_kubernetes_client() -> ApiClient:
@@ -217,7 +208,9 @@ def template(
         kube_api_versions=os.getenv("KUBE_API_VERSIONS"),
     )
 
-    for source in load_manifests(paths):
+    # Use ManifestLoaderService to load manifests
+    manifest_loader = ManifestLoaderService()
+    for source in manifest_loader.load_manifests(paths):
         logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
         template_engine = NylTemplateEngine(
@@ -241,26 +234,10 @@ def template(
             raise KeyError(f"Profile '{profile}' not found in nyl-profiles.yaml")
         # else: No profile was requested, and the default profile doesn't exist. Do nothing.
 
-        # Look for objects that contain local variables and feed them into the template engine.
-        for resource in source.resources[:]:
-            if "apiVersion" in resource or "kind" in resource:
-                continue
-            if not any(k.startswith("$") for k in resource.keys()):
-                # Neither a Kubernetes object, nor one defining local variables. Hmm..
-                continue
-            if any(not k.startswith("$") for k in resource.keys()):
-                # Can't have keys that don't start with `$` in a local variable object.
-                logger.opt(colors=True).error(
-                    "An object that looks like a local value definition in <yellow>'{}'</> has "
-                    "keys that don't start with `$`, which is not allowed in this context.\n\n{}",
-                    source.file,
-                    yaml.dumps(resource),
-                )
-                exit(1)
-            for key, value in resource.items():
-                assert key.startswith("$"), key
-                setattr(template_engine.values, key[1:], value)
-            source.resources.remove(resource)
+        # Extract local variables from manifest and feed them into the template engine
+        local_vars = manifest_loader.extract_local_variables(source)
+        for key, value in local_vars.items():
+            setattr(template_engine.values, key, value)
 
         # Begin populating the default namespace to resources.
         current_default_namespace = get_default_namespace_for_manifest(source, default_namespace)
@@ -409,88 +386,6 @@ def template(
             }
         ),
     )
-
-
-def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
-    """
-    Load all resources from a directory.
-    """
-
-    logger.trace("Loading manifests from paths: {}", paths)
-
-    files = []
-    for path in paths:
-        if path.is_dir():
-            for item in path.iterdir():
-                if (
-                    item.name.startswith("nyl-")
-                    or item.name.startswith(".")
-                    or item.name.startswith("_")
-                    or item.suffix != ".yaml"
-                    or not item.is_file()
-                ):
-                    continue
-                files.append(item)
-        else:
-            files.append(path)
-
-    logger.trace("Files to load: {}", files)
-    if len(files) == 0:
-        logger.warning(
-            "No valid manifests found in the paths. Nyl does not recursively enumerate directory contents, make sure "
-            "you are specifying at least one path with valid YAML manifests to render.",
-            paths,
-        )
-
-    result = []
-    for file in files:
-        resources = ResourceList(list(map(Resource, filter(None, yaml.loads_all(file.read_text())))))
-        result.append(ManifestsWithSource(resources, file))
-
-    return result
-
-    #     # Check if the resource has any references and try to resolve them. If a reference cannot be resolved, the
-    #     # manifest must be skipped. We emit a warning and continue with the next manifest.
-    #     refs = list(Reference.collect(manifest))
-    #     if refs:
-    #         skip_resource = False
-    #         resolves = {}
-    #         for ref in refs:
-    #             # TODO: Determine the namespace to fall back to.
-    #             try:
-    #                 result = k8s.get(
-    #                     resource=k8s.resources.get(api_version="v1", kind=ref.kind, group=""),
-    #                     name=ref.name,
-    #                     namespace=ref.namespace,  # TODO: Determine the namespace to backfill to.
-    #                 )
-
-    #                 value = result["data"][ref.key]
-    #                 if value is None:
-    #                     raise KeyError
-    #                 assert isinstance(value, str)
-    #                 resolves[str(ref)] = base64.b64decode(value.encode("ascii")).decode("utf-8")
-    #             except NotFoundError:
-    #                 logger.warning(
-    #                     "Skipping resource {}/{} because its reference to {} could not be resolved.",
-    #                     manifest["apiVersion"],
-    #                     manifest["kind"],
-    #                     ref,
-    #                 )
-    #                 skip_resource = True
-    #                 break
-    #             except KeyError:
-    #                 logger.warning(
-    #                     "Skipping resource {}/{} because its reference to {} could not be resolved (does not contain key {}).",
-    #                     manifest["apiVersion"],
-    #                     manifest["kind"],
-    #                     ref,
-    #                     ref.key,
-    #                 )
-    #                 skip_resource = True
-    #                 break
-    #         if skip_resource:
-    #             continue
-    #         manifest = Reference.sub(manifest, lambda ref: resolves[str(ref)])
 
 
 def is_namespace_resource(resource: Resource) -> bool:
