@@ -95,7 +95,6 @@ COPY --from=sops-bin /usr/local/bin/sops /usr/local/bin/sops
 COPY --from=kyverno-bin /usr/local/bin/kyverno /usr/local/bin/kyverno
 COPY --from=build /opt/nyl /opt/nyl
 RUN ln -s /opt/nyl/.venv/bin/nyl /usr/local/bin/nyl
-RUN ln -s /opt/nyl/.venv/bin/nyl-daemon /usr/local/bin/nyl-daemon
 COPY --chown=999 argocd-cmp/plugin.yaml /home/argocd/cmp-server/config/plugin.yaml
 
 # Validate Nyl can be run, plus various setup steps.

@@ -13,12 +13,6 @@ description = "The ArgoCD CMP no longer logs to a file, users should check the p
 author = "@NiklasRosenstein"
 
 [[entries]]
-id = "864f9e6a-98ec-44f5-bd38-e565709712a5"
-type = "feature"
-description = "Add `nyl-daemon` command which can be used to launch and communicate with a Nyl daemon process to forego Python process launch times"
-author = "@NiklasRosenstein"
-
-[[entries]]
 id = "74bf9c2b-7e7d-4981-b7a3-11e2f2dd6e97"
 type = "improvement"
 description = "Support implicit default profile"
