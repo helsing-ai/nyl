@@ -25,6 +25,7 @@ from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
 from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
 from nyl.services.manifest import ManifestLoaderService, ManifestsWithSource
+from nyl.services.namespace import NamespaceResolverService
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
@@ -210,6 +211,7 @@ def template(
 
     # Use ManifestLoaderService to load manifests
     manifest_loader = ManifestLoaderService()
+    namespace_resolver = NamespaceResolverService()
     for source in manifest_loader.load_manifests(paths):
         logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
@@ -240,8 +242,8 @@ def template(
             setattr(template_engine.values, key, value)
 
         # Begin populating the default namespace to resources.
-        current_default_namespace = get_default_namespace_for_manifest(source, default_namespace)
-        populate_namespace_to_resources(source.resources, current_default_namespace)
+        current_default_namespace = namespace_resolver.resolve_default_namespace(source, default_namespace)
+        namespace_resolver.populate_namespaces(source.resources, current_default_namespace)
 
         source.resources = template_engine.evaluate(source.resources)
         if inline:
@@ -250,7 +252,7 @@ def template(
                 def new_generation(resource: Resource) -> Future[ResourceList]:
                     def worker() -> ResourceList:
                         resources_ = template_engine.evaluate(ResourceList([resource]))
-                        populate_namespace_to_resources(resources_, current_default_namespace)
+                        namespace_resolver.populate_namespaces(resources_, current_default_namespace)
                         return resources_
 
                     return executor.submit(worker)
@@ -396,76 +398,3 @@ def is_namespace_resource(resource: Resource) -> bool:
     return resource.get("apiVersion") == "v1" and resource.get("kind") == "Namespace"
 
 
-def get_default_namespace_for_manifest(source: ManifestsWithSource, fallback: str | None = None) -> str:
-    """
-    Given the contents of a manifest file, determine the fallback namespace to apply to resources that have been
-    recorded without a namespace.
-
-    Usually, in Kubernetes, when a namespaced resource has no `metadata.namespace` field, it is assumed that its
-    namespace is `"default"`. However, in Nyl we take various hints to fill in a more appropriate namespace for the
-    resource given the context in which it was recorded:
-
-    - If there is no `v1/Namespace` resource declared in the manifest, the *fallback* namespace is used, and if not
-    set, the name of the manifest file (without the extension, which may be `.yml`, `.yaml` or `.nyl.yaml`).
-
-    - If there is exactly one `v1/Namespace` resource declared in the manifest, that namespace's name is used as the
-    fallback.
-
-    - If there are multiple `v1/Namespace` resources declared in the manifest, we pick the one with the
-    `nyl.io/is-default-namespace` label. If there is no such namespace, a warning is logged and we pick the first one
-    alphabetically.
-
-    Returns:
-        The name of the default namespace to resources in the given manifest source file.
-    """
-
-    namespace_resources = [x for x in source.resources if is_namespace_resource(x)]
-    use_namespace: str
-
-    if len(namespace_resources) == 0:
-        if fallback is not None:
-            return fallback
-        use_namespace = source.file.stem
-        if use_namespace.endswith(".nyl"):
-            use_namespace = use_namespace[:-4]
-        logger.warning(
-            "Manifest '{}' does not define a Namespace resource. Using '{}' as the default namespace.",
-            source.file,
-            use_namespace,
-        )
-        return use_namespace
-
-    if len(namespace_resources) == 1:
-        logger.debug("Manifest '{}' defines exactly one Namespace resource. Using '{}' as the default namespace.")
-        return namespace_resources[0]["metadata"]["name"]  # type: ignore[no-any-return]
-
-    default_namespaces = {
-        x["metadata"]["name"]
-        for x in namespace_resources
-        if x["metadata"].get("annotations", {}).get(DEFAULT_NAMESPACE_ANNOTATION, "false") == "true"
-    }
-
-    if len(default_namespaces) == 0:
-        use_namespace = sorted(x["metadata"]["name"] for x in namespace_resources)[0]
-        logger.warning(
-            "Manifest '{}' defines {} namespaces, but none of them have the `{}` label. Using the first one "
-            "alphabetically ({}) as the default namespace.",
-            source.file,
-            len(namespace_resources),
-            DEFAULT_NAMESPACE_ANNOTATION,
-            use_namespace,
-        )
-        return use_namespace
-
-    if len(default_namespaces) > 1:
-        logger.error(
-            "Manifest '{}' defines {} namespaces, but more than one of them have the `{}` label. "
-            "The following namespaces have the `{}` label: {}",
-            source.file,
-            len(namespace_resources),
-            DEFAULT_NAMESPACE_ANNOTATION,
-            ", ".join(default_namespaces),
-        )
-        exit(1)
-
-    return default_namespaces.pop()  # type: ignore[no-any-return]
