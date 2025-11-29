@@ -140,11 +140,12 @@ class KubernetesApplyService:
                     resources,
                     applyset=applyset.reference,
                     prune=prune,
+                    force_conflicts=True,
                 )
         else:
             # Apply without ApplySet
             if resources:
-                self.kubectl.apply(resources)
+                self.kubectl.apply(resources, force_conflicts=True)
 
     def diff_with_applyset(
         self,
@@ -164,7 +165,7 @@ class KubernetesApplyService:
         # Diff the resources
         if resources:
             if applyset:
-                self.kubectl.diff(resources, applyset=applyset.reference)
+                self.kubectl.diff(resources, applyset=applyset)
             else:
                 self.kubectl.diff(resources)
 

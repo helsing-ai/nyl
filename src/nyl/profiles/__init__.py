@@ -1,8 +1,9 @@
 import os
 import time
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any
 
 import requests
@@ -21,6 +22,14 @@ DEFAULT_PROFILE = "default"
 @dataclass
 class ActivatedProfile:
     kubeconfig: Path
+    _temp_dir: TemporaryDirectory[str] | None = field(default=None, repr=False)
+
+    def __enter__(self) -> "ActivatedProfile":
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        if self._temp_dir:
+            self._temp_dir.cleanup()
 
     @property
     def env(self) -> dict[str, str]:

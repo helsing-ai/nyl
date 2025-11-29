@@ -120,12 +120,11 @@ class ProfileService:
 
         # Write the trimmed kubeconfig to a temporary file
         tmpdir = TemporaryDirectory()
-        # Note: caller should manage cleanup
         temp_kubeconfig = Path(tmpdir.name) / "kubeconfig"
         temp_kubeconfig.write_text(yaml.dumps(kubeconfig_data))
         temp_kubeconfig.chmod(0o600)
 
-        return ActivatedProfile(kubeconfig=temp_kubeconfig)
+        return ActivatedProfile(kubeconfig=temp_kubeconfig, _temp_dir=tmpdir)
 
     def _trim_to_context(self, kubeconfig_data: dict, context_name: str) -> dict:
         """Trim kubeconfig to only include the specified context.

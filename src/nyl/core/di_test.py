@@ -89,7 +89,7 @@ def test_container_has_checks_registration():
 
     assert not container.has(MockDatabase)
 
-    container.register_factory(MockDatabase, lambda: MockDatabase())
+    container.register_factory(MockDatabase, MockDatabase)
 
     assert container.has(MockDatabase)
 
@@ -110,7 +110,7 @@ def test_container_create_scope_has_own_cache():
     parent = DIContainer()
 
     # Register factory in parent
-    parent.register_factory(MockDatabase, lambda: MockDatabase())
+    parent.register_factory(MockDatabase, MockDatabase)
 
     # Create two child scopes
     child1 = parent.create_scope()
@@ -148,7 +148,7 @@ def test_container_create_scope_can_override_parent():
 def test_container_clear_removes_all():
     """Test that clear() removes all registrations."""
     container = DIContainer()
-    container.register_factory(MockDatabase, lambda: MockDatabase())
+    container.register_factory(MockDatabase, MockDatabase)
     container.register_singleton(MockCache, MockCache())
 
     # Resolve to populate cache
@@ -179,7 +179,7 @@ def test_container_multiple_types():
 def test_container_parent_child_has_check():
     """Test that child's has() checks parent too."""
     parent = DIContainer()
-    parent.register_factory(MockDatabase, lambda: MockDatabase())
+    parent.register_factory(MockDatabase, MockDatabase)
 
     child = parent.create_scope()
 
@@ -187,7 +187,7 @@ def test_container_parent_child_has_check():
     assert child.has(MockDatabase)
 
     # Child registers its own type
-    child.register_factory(MockCache, lambda: MockCache())
+    child.register_factory(MockCache, MockCache)
 
     # Child has both
     assert child.has(MockDatabase)

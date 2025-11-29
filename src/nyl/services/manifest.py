@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from loguru import logger
 
@@ -68,7 +69,7 @@ class ManifestLoaderService:
 
         return result
 
-    def extract_local_variables(self, source: ManifestsWithSource) -> dict[str, any]:
+    def extract_local_variables(self, source: ManifestsWithSource) -> dict[str, Any]:
         """Extract local variables from a manifest.
 
         Local variables are objects without apiVersion/kind that have keys
