@@ -1,0 +1,5 @@
+[[entries]]
+id = "4e41292f-c1fa-4c27-890f-af356476f0e5"
+type = "breaking change"
+description = "Remove daemon functionality as it was never recommended and added complexity to the codebase"
+author = "@NiklasRosenstein"
