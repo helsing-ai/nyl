@@ -21,15 +21,16 @@ from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
-from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.resources.applyset import ApplySet
 from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
+from nyl.services.kubernetes_apply import KubernetesApplyService
 from nyl.services.manifest import ManifestLoaderService, ManifestsWithSource
 from nyl.services.namespace import NamespaceResolverService
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
-from nyl.tools.kubernetes import drop_empty_metadata_labels, populate_namespace_to_resources
+from nyl.tools.kubernetes import drop_empty_metadata_labels
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Resource, ResourceList
 
@@ -212,6 +213,7 @@ def template(
     # Use ManifestLoaderService to load manifests
     manifest_loader = ManifestLoaderService()
     namespace_resolver = NamespaceResolverService()
+    k8s_apply = KubernetesApplyService(kubectl=kubectl, kube_version=generator.kube_version)
     for source in manifest_loader.load_manifests(paths):
         logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
@@ -266,60 +268,18 @@ def template(
 
         source.resources, post_processors = PostProcessor.extract_from_list(source.resources)
 
-        # Find the namespaces that are defined in the file. If we find any resources without a namespace, we will
-        # inject that namespace name into them. Also find the applyset defined in the file.
-        namespaces: set[str] = set()
-        applyset: ApplySet | None = None
+        # Find the namespaces that are defined in the file
+        namespaces = k8s_apply.find_namespace_resources(source.resources)
 
-        for resource in list(source.resources):
-            if is_namespace_resource(resource):
-                namespaces.add(resource["metadata"]["name"])
-            elif ApplySet.matches(resource):
-                if applyset is not None:
-                    logger.opt(colors=True).error(
-                        "Multiple ApplySet resources defined in <yellow>{}</>, there can only be one per source.",
-                        source.file,
-                    )
-                    exit(1)
-                applyset = ApplySet.load(resource)
-                source.resources.remove(resource)
-
-        if not applyset and project.config.settings.generate_applysets:
-            if not current_default_namespace:
-                logger.opt(colors=True).error(
-                    "No default namespace defined for <yellow>{}</>, but it is required for the automatically "
-                    "generated nyl.io/v1/ApplySet resource (the ApplySet is named after the default namespace).",
-                    source.file,
-                )
-                exit(1)
-
-            applyset_name = current_default_namespace
-            applyset = ApplySet.new(applyset_name)
-            logger.opt(colors=True).info(
-                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).", source.file, applyset_name
-            )
+        # Find or create ApplySet
+        applyset = k8s_apply.find_or_create_applyset(
+            source,
+            namespace=current_default_namespace,
+            auto_generate=project.config.settings.generate_applysets,
+        )
 
         if applyset is not None:
-            applyset.set_group_kinds(source.resources)
-            # HACK: Kubectl 1.30 can't create the custom resource, so we need to create it. But it will also reject
-            #       using the custom resource unless it has the tooling label set appropriately. For more details, see
-            #       https://github.com/helsing-ai/nyl/issues/5.
-            applyset.tooling = f"kubectl/v{generator.kube_version}"
-            applyset.validate()
-
-            if apply:
-                # We need to ensure that ApplySet parent object exists before invoking `kubectl apply --applyset=...`.
-                logger.opt(colors=True).info(
-                    "Kubectl-apply ApplySet resource <yellow>{}</> from <cyan>{}</>.",
-                    applyset.reference,
-                    source.file,
-                )
-                kubectl.apply(ResourceList([applyset.dump()]), force_conflicts=True)
-            elif diff:
-                kubectl.diff(ResourceList([applyset.dump()]))
-            else:
-                print("---")
-                print(yaml.dumps(applyset.dump()))
+            k8s_apply.prepare_applyset(applyset, source.resources)
 
         # Validate resources.
         for resource in source.resources:
@@ -338,12 +298,10 @@ def template(
                 exit(1)
 
         # Tag resources as part of the current apply set, if any.
-        if applyset is not None and applyset_part_of:
-            for resource in source.resources:
-                if APPLYSET_LABEL_PART_OF not in (labels := resource["metadata"].setdefault("labels", {})):
-                    labels[APPLYSET_LABEL_PART_OF] = applyset.id
+        if applyset is not None:
+            k8s_apply.tag_resources_with_applyset(source.resources, applyset, applyset_part_of)
 
-        populate_namespace_to_resources(source.resources, current_default_namespace)
+        namespace_resolver.populate_namespaces(source.resources, current_default_namespace)
         drop_empty_metadata_labels(source.resources)
 
         # Now apply the post-processor.
@@ -351,20 +309,18 @@ def template(
 
         if apply:
             logger.info("Kubectl-apply {} resource(s) from '{}'", len(source.resources), source.file)
-            kubectl.apply(
-                manifests=source.resources,
-                applyset=applyset.reference if applyset else None,
+            k8s_apply.apply_with_applyset(
+                source.resources,
+                applyset,
+                source_file=str(source.file),
                 prune=True if applyset else False,
-                force_conflicts=True,
             )
         elif diff:
             logger.info("Kubectl-diff {} resource(s) from '{}'", len(source.resources), source.file)
-            kubectl.diff(manifests=source.resources, applyset=applyset)
+            k8s_apply.diff_with_applyset(source.resources, applyset)
         else:
             # If we're not going to be applying the resources immediately via `kubectl`, we print them to stdout.
-            for resource in source.resources:
-                print("---")
-                print(yaml.dumps(resource))
+            k8s_apply.output_yaml(source.resources, applyset)
 
     logger.log(
         "METRIC",
