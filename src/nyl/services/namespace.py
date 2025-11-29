@@ -97,7 +97,7 @@ class NamespaceResolverService:
             )
 
         # Exactly one default namespace found
-        return cast(str, default_namespaces.pop())
+        return default_namespaces.pop()
 
     def populate_namespaces(self, resources: ResourceList, namespace: str) -> None:
         """Populate the default namespace to resources that don't have one.

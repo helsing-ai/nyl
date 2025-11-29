@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any
 
 from kubernetes.client.api_client import ApiClient
 from loguru import logger
@@ -126,7 +127,7 @@ class ProfileService:
 
         return ActivatedProfile(kubeconfig=temp_kubeconfig, _temp_dir=tmpdir)
 
-    def _trim_to_context(self, kubeconfig_data: dict, context_name: str) -> dict:
+    def _trim_to_context(self, kubeconfig_data: dict[str, Any], context_name: str) -> dict[str, Any]:
         """Trim kubeconfig to only include the specified context.
 
         Args:
