@@ -37,9 +37,7 @@ def test_nyl_error_with_cause():
 
 def test_nyl_error_with_details():
     """Test NylError with additional details."""
-    error = NylError(
-        "File not found", details={"file": "/path/to/file.yaml", "checked_paths": 3}
-    )
+    error = NylError("File not found", details={"file": "/path/to/file.yaml", "checked_paths": 3})
 
     assert error.details["file"] == "/path/to/file.yaml"
     assert error.details["checked_paths"] == 3
@@ -105,9 +103,7 @@ def test_nyl_error_render_with_details():
     pytest.importorskip("rich")
     from rich.console import Console
 
-    error = NylError(
-        "Process failed", details={"pid": 12345, "exit_code": 1, "signal": "SIGTERM"}
-    )
+    error = NylError("Process failed", details={"pid": 12345, "exit_code": 1, "signal": "SIGTERM"})
     console = Console(file=StringIO(), force_terminal=True, width=80)
 
     error.render(console)

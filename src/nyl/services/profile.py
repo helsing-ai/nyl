@@ -1,7 +1,6 @@
 """Service for profile resolution and Kubernetes client management."""
 
 import os
-import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -66,10 +65,7 @@ class ProfileService:
             return None
 
         # Try Nyl profile first
-        if (
-            self.profile_manager
-            and profile_name in self.profile_manager.config.profiles
-        ):
+        if self.profile_manager and profile_name in self.profile_manager.config.profiles:
             with self.profile_manager:
                 activated = self.profile_manager.activate_profile(profile_name)
             logger.debug(f"Activated Nyl profile: {profile_name}")
@@ -91,9 +87,7 @@ class ProfileService:
 
         return None
 
-    def _resolve_from_kubeconfig(
-        self, context_name: str
-    ) -> ActivatedProfile:
+    def _resolve_from_kubeconfig(self, context_name: str) -> ActivatedProfile:
         """Resolve a context from the kubeconfig file.
 
         Args:
@@ -105,9 +99,7 @@ class ProfileService:
         Raises:
             ProfileNotFoundError: If context not found in kubeconfig
         """
-        kubeconfig_path = Path(
-            os.environ.get("KUBECONFIG", "~/.kube/config")
-        ).expanduser()
+        kubeconfig_path = Path(os.environ.get("KUBECONFIG", "~/.kube/config")).expanduser()
 
         if not kubeconfig_path.is_file():
             raise ProfileNotFoundError(
@@ -124,9 +116,7 @@ class ProfileService:
                 hint=f"Context '{context_name}' not found in kubeconfig",
             ) from e
 
-        logger.info(
-            f"Using kubeconfig context '{context_name}' from {kubeconfig_path}"
-        )
+        logger.info(f"Using kubeconfig context '{context_name}' from {kubeconfig_path}")
 
         # Write the trimmed kubeconfig to a temporary file
         tmpdir = TemporaryDirectory()
@@ -137,9 +127,7 @@ class ProfileService:
 
         return ActivatedProfile(kubeconfig=temp_kubeconfig)
 
-    def _trim_to_context(
-        self, kubeconfig_data: dict, context_name: str
-    ) -> dict:
+    def _trim_to_context(self, kubeconfig_data: dict, context_name: str) -> dict:
         """Trim kubeconfig to only include the specified context.
 
         Args:
@@ -154,9 +142,7 @@ class ProfileService:
         """
         # Find the context
         contexts = kubeconfig_data.get("contexts", [])
-        context = next(
-            (c for c in contexts if c.get("name") == context_name), None
-        )
+        context = next((c for c in contexts if c.get("name") == context_name), None)
         if not context:
             raise ValueError(f"Context '{context_name}' not found")
 

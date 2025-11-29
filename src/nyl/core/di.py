@@ -5,7 +5,7 @@ replaces the global singleton pattern. Each CLI invocation creates its own
 container, making the system more testable and maintainable.
 """
 
-from typing import Any, Callable, Generic, TypeVar, cast
+from typing import Any, Callable, TypeVar, cast
 
 T = TypeVar("T")
 

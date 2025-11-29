@@ -7,7 +7,6 @@ service layers without global state.
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from nyl.core.di import DIContainer
 from nyl.project.config import ProjectConfig

@@ -310,9 +310,7 @@ def test_validate_manifest_structure_missing_api_version(service):
 def test_validate_manifest_structure_missing_kind(service):
     """Test validation fails for missing kind."""
     source = ManifestsWithSource(
-        resources=ResourceList(
-            [Resource({"apiVersion": "v1", "metadata": {"name": "svc"}})]
-        ),
+        resources=ResourceList([Resource({"apiVersion": "v1", "metadata": {"name": "svc"}})]),
         file=Path("test.yaml"),
     )
 

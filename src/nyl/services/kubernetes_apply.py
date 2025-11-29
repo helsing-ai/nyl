@@ -7,7 +7,7 @@ from nyl.resources.applyset import ApplySet
 from nyl.services.manifest import ManifestsWithSource
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
-from nyl.tools.types import Resource, ResourceList
+from nyl.tools.types import ResourceList
 
 
 class KubernetesApplyService:
@@ -83,9 +83,7 @@ class KubernetesApplyService:
 
             applyset_name = namespace
             applyset = ApplySet.new(applyset_name)
-            logger.info(
-                f"Automatically creating ApplySet for {source.file} (name: {applyset_name})"
-            )
+            logger.info(f"Automatically creating ApplySet for {source.file} (name: {applyset_name})")
 
         return applyset
 
@@ -130,9 +128,7 @@ class KubernetesApplyService:
         """
         if applyset:
             # First, apply the ApplySet parent object
-            logger.info(
-                f"Kubectl-apply ApplySet resource {applyset.reference} from {source_file}"
-            )
+            logger.info(f"Kubectl-apply ApplySet resource {applyset.reference} from {source_file}")
             self.kubectl.apply(
                 ResourceList([applyset.dump()]),
                 force_conflicts=True,
@@ -213,9 +209,7 @@ class KubernetesApplyService:
                 if "labels" not in resource["metadata"]:
                     resource["metadata"]["labels"] = {}
 
-                resource["metadata"]["labels"][APPLYSET_LABEL_PART_OF] = (
-                    applyset.reference
-                )
+                resource["metadata"]["labels"][APPLYSET_LABEL_PART_OF] = applyset.reference
 
     def find_namespace_resources(self, resources: ResourceList) -> set[str]:
         """Find all namespace names defined in resources.
@@ -228,9 +222,6 @@ class KubernetesApplyService:
         """
         namespaces: set[str] = set()
         for resource in resources:
-            if (
-                resource.get("apiVersion") == "v1"
-                and resource.get("kind") == "Namespace"
-            ):
+            if resource.get("apiVersion") == "v1" and resource.get("kind") == "Namespace":
                 namespaces.add(resource["metadata"]["name"])
         return namespaces

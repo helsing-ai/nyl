@@ -14,9 +14,9 @@ from nyl.commands.template import (
     DEFAULT_NAMESPACE_ANNOTATION,
     is_namespace_resource,
 )
-from nyl.services.manifest import ManifestLoaderService, ManifestsWithSource
 from nyl.resources import ObjectMetadata
 from nyl.resources.helmchart import ChartRef, HelmChart, HelmChartSpec
+from nyl.services.manifest import ManifestLoaderService, ManifestsWithSource
 from nyl.tools.typer import new_typer
 from nyl.tools.types import ResourceList
 

@@ -1,7 +1,7 @@
 """Tests for KubernetesApplyService."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, call
+from unittest.mock import Mock
 
 import pytest
 
@@ -28,9 +28,7 @@ def service(mock_kubectl):
 def test_find_or_create_applyset_no_applyset_no_autogen(service):
     """Test that None is returned when no ApplySet and auto_generate=False."""
     source = ManifestsWithSource(
-        resources=ResourceList(
-            [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-        ),
+        resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
         file=Path("test.yaml"),
     )
 
@@ -104,9 +102,7 @@ def test_find_or_create_applyset_multiple_raises_error(service):
 def test_find_or_create_applyset_autogenerate_success(service):
     """Test auto-generating an ApplySet."""
     source = ManifestsWithSource(
-        resources=ResourceList(
-            [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-        ),
+        resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
         file=Path("test.yaml"),
     )
 
@@ -120,9 +116,7 @@ def test_find_or_create_applyset_autogenerate_success(service):
 def test_find_or_create_applyset_autogenerate_no_namespace_raises_error(service):
     """Test that auto-generate without namespace raises error."""
     source = ManifestsWithSource(
-        resources=ResourceList(
-            [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-        ),
+        resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
         file=Path("test.yaml"),
     )
 
@@ -154,9 +148,7 @@ def test_prepare_applyset(service):
 def test_apply_with_applyset_applies_applyset_first(service, mock_kubectl):
     """Test that ApplySet is applied before resources."""
     applyset = ApplySet.new("test-applyset")
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.apply_with_applyset(resources, applyset, source_file="test.yaml", prune=False)
 
@@ -174,9 +166,7 @@ def test_apply_with_applyset_applies_applyset_first(service, mock_kubectl):
 
 def test_apply_with_applyset_without_applyset(service, mock_kubectl):
     """Test applying resources without an ApplySet."""
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.apply_with_applyset(resources, applyset=None, source_file="test.yaml")
 
@@ -189,9 +179,7 @@ def test_apply_with_applyset_without_applyset(service, mock_kubectl):
 def test_apply_with_applyset_prune_enabled(service, mock_kubectl):
     """Test that prune flag is passed to kubectl."""
     applyset = ApplySet.new("test-applyset")
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.apply_with_applyset(resources, applyset, source_file="test.yaml", prune=True)
 
@@ -203,9 +191,7 @@ def test_apply_with_applyset_prune_enabled(service, mock_kubectl):
 def test_diff_with_applyset_diffs_both(service, mock_kubectl):
     """Test that diff is called for both ApplySet and resources."""
     applyset = ApplySet.new("test-applyset")
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.diff_with_applyset(resources, applyset)
 
@@ -215,9 +201,7 @@ def test_diff_with_applyset_diffs_both(service, mock_kubectl):
 
 def test_diff_with_applyset_without_applyset(service, mock_kubectl):
     """Test diff without an ApplySet."""
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.diff_with_applyset(resources, applyset=None)
 
@@ -228,9 +212,7 @@ def test_diff_with_applyset_without_applyset(service, mock_kubectl):
 def test_output_yaml_with_applyset(service, capsys):
     """Test YAML output includes ApplySet."""
     applyset = ApplySet.new("test-applyset")
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.output_yaml(resources, applyset)
 
@@ -245,9 +227,7 @@ def test_output_yaml_with_applyset(service, capsys):
 
 def test_output_yaml_without_applyset(service, capsys):
     """Test YAML output without ApplySet."""
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.output_yaml(resources, applyset=None)
 
@@ -279,15 +259,14 @@ def test_tag_resources_with_applyset(service):
 def test_tag_resources_with_applyset_part_of_false(service):
     """Test that labels are not added when applyset_part_of=False."""
     applyset = ApplySet.new("test-applyset")
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     service.tag_resources_with_applyset(resources, applyset, applyset_part_of=False)
 
     # Resources should not have the label
-    assert "labels" not in resources[0]["metadata"] or \
-           "applyset.kubernetes.io/part-of" not in resources[0]["metadata"].get("labels", {})
+    assert "labels" not in resources[0]["metadata"] or "applyset.kubernetes.io/part-of" not in resources[0][
+        "metadata"
+    ].get("labels", {})
 
 
 def test_find_namespace_resources(service):
@@ -307,9 +286,7 @@ def test_find_namespace_resources(service):
 
 def test_find_namespace_resources_empty(service):
     """Test finding namespaces when none exist."""
-    resources = ResourceList(
-        [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-    )
+    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
 
     result = service.find_namespace_resources(resources)
 

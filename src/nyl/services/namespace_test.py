@@ -19,9 +19,7 @@ def service():
 def test_resolve_default_namespace_no_namespace_resource_uses_fallback(service):
     """Test that fallback is used when no Namespace resources exist."""
     source = ManifestsWithSource(
-        resources=ResourceList(
-            [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-        ),
+        resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
         file=Path("test.yaml"),
     )
 
@@ -33,9 +31,7 @@ def test_resolve_default_namespace_no_namespace_resource_uses_fallback(service):
 def test_resolve_default_namespace_no_namespace_resource_uses_filename(service):
     """Test that filename stem is used when no Namespace and no fallback."""
     source = ManifestsWithSource(
-        resources=ResourceList(
-            [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-        ),
+        resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
         file=Path("my-application.yaml"),
     )
 
@@ -47,9 +43,7 @@ def test_resolve_default_namespace_no_namespace_resource_uses_filename(service):
 def test_resolve_default_namespace_strips_nyl_extension(service):
     """Test that .nyl suffix is stripped from filename."""
     source = ManifestsWithSource(
-        resources=ResourceList(
-            [Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]
-        ),
+        resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
         file=Path("my-app.nyl.yaml"),
     )
 
@@ -63,9 +57,7 @@ def test_resolve_default_namespace_single_namespace(service):
     source = ManifestsWithSource(
         resources=ResourceList(
             [
-                Resource(
-                    {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "production"}}
-                ),
+                Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "production"}}),
                 Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
             ]
         ),
@@ -82,9 +74,7 @@ def test_resolve_default_namespace_multiple_with_annotation(service):
     source = ManifestsWithSource(
         resources=ResourceList(
             [
-                Resource(
-                    {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "staging"}}
-                ),
+                Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "staging"}}),
                 Resource(
                     {
                         "apiVersion": "v1",
@@ -110,15 +100,9 @@ def test_resolve_default_namespace_multiple_no_annotation_uses_alphabetical(serv
     source = ManifestsWithSource(
         resources=ResourceList(
             [
-                Resource(
-                    {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "zebra"}}
-                ),
-                Resource(
-                    {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "alpha"}}
-                ),
-                Resource(
-                    {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "beta"}}
-                ),
+                Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "zebra"}}),
+                Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "alpha"}}),
+                Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "beta"}}),
             ]
         ),
         file=Path("test.yaml"),
@@ -173,16 +157,10 @@ def test_find_namespace_resources_finds_all(service):
     """Test finding all Namespace resources in a list."""
     resources = ResourceList(
         [
-            Resource(
-                {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "ns1"}}
-            ),
+            Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "ns1"}}),
             Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
-            Resource(
-                {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "ns2"}}
-            ),
-            Resource(
-                {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}
-            ),
+            Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "ns2"}}),
+            Resource({"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}),
         ]
     )
 
@@ -207,9 +185,7 @@ def test_find_namespace_resources_no_namespaces(service):
     resources = ResourceList(
         [
             Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
-            Resource(
-                {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}
-            ),
+            Resource({"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}),
         ]
     )
 
@@ -220,9 +196,7 @@ def test_find_namespace_resources_no_namespaces(service):
 
 def test_is_namespace_resource_true_for_namespace(service):
     """Test that v1/Namespace is recognized."""
-    resource = Resource(
-        {"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "test"}}
-    )
+    resource = Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "test"}})
 
     assert service._is_namespace_resource(resource)
 
@@ -231,9 +205,7 @@ def test_is_namespace_resource_false_for_other_kinds(service):
     """Test that non-Namespace resources are not recognized."""
     resources = [
         Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
-        Resource(
-            {"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}
-        ),
+        Resource({"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}),
         Resource({"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": "cm"}}),
     ]
 
@@ -243,9 +215,7 @@ def test_is_namespace_resource_false_for_other_kinds(service):
 
 def test_is_namespace_resource_false_for_wrong_api_version(service):
     """Test that Namespace with wrong apiVersion is not recognized."""
-    resource = Resource(
-        {"apiVersion": "custom/v1", "kind": "Namespace", "metadata": {"name": "test"}}
-    )
+    resource = Resource({"apiVersion": "custom/v1", "kind": "Namespace", "metadata": {"name": "test"}})
 
     assert not service._is_namespace_resource(resource)
 

@@ -70,9 +70,7 @@ class TemplatingService:
             )
 
         # Extract post-processors from the resource list
-        processed_resources, post_processors = PostProcessor.extract_from_list(
-            source.resources
-        )
+        processed_resources, post_processors = PostProcessor.extract_from_list(source.resources)
         source.resources = processed_resources
 
         return source.resources, post_processors
@@ -102,9 +100,7 @@ class TemplatingService:
                     # Evaluate the resource in isolation
                     resources_ = self.template_engine.evaluate(ResourceList([resource]))
                     # Ensure generated resources have the default namespace
-                    self.namespace_resolver.populate_namespaces(
-                        resources_, default_namespace
-                    )
+                    self.namespace_resolver.populate_namespaces(resources_, default_namespace)
                     return resources_
 
                 return executor.submit(worker)

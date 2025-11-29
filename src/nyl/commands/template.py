@@ -3,7 +3,6 @@ import json
 import os
 import time
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from textwrap import indent
@@ -21,11 +20,10 @@ from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
-from nyl.resources.applyset import ApplySet
 from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
 from nyl.services.kubernetes_apply import KubernetesApplyService
-from nyl.services.manifest import ManifestLoaderService, ManifestsWithSource
+from nyl.services.manifest import ManifestLoaderService
 from nyl.services.namespace import NamespaceResolverService
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
@@ -269,7 +267,7 @@ def template(
         source.resources, post_processors = PostProcessor.extract_from_list(source.resources)
 
         # Find the namespaces that are defined in the file
-        namespaces = k8s_apply.find_namespace_resources(source.resources)
+        k8s_apply.find_namespace_resources(source.resources)
 
         # Find or create ApplySet
         applyset = k8s_apply.find_or_create_applyset(
@@ -352,5 +350,3 @@ def is_namespace_resource(resource: Resource) -> bool:
     """
 
     return resource.get("apiVersion") == "v1" and resource.get("kind") == "Namespace"
-
-

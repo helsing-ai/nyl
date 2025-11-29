@@ -20,9 +20,7 @@ class NamespaceResolverService:
     - Raise error if multiple namespaces and no annotation
     """
 
-    def resolve_default_namespace(
-        self, source: ManifestsWithSource, fallback: str | None = None
-    ) -> str:
+    def resolve_default_namespace(self, source: ManifestsWithSource, fallback: str | None = None) -> str:
         """Determine the default namespace for a manifest file.
 
         Args:
@@ -68,10 +66,7 @@ class NamespaceResolverService:
         default_namespaces = {
             ns["metadata"]["name"]
             for ns in namespace_resources
-            if ns["metadata"]
-            .get("annotations", {})
-            .get(DEFAULT_NAMESPACE_ANNOTATION, "false")
-            == "true"
+            if ns["metadata"].get("annotations", {}).get(DEFAULT_NAMESPACE_ANNOTATION, "false") == "true"
         }
 
         # No namespace marked as default - use alphabetically first with warning
@@ -102,9 +97,7 @@ class NamespaceResolverService:
         # Exactly one default namespace found
         return default_namespaces.pop()
 
-    def populate_namespaces(
-        self, resources: ResourceList, namespace: str
-    ) -> None:
+    def populate_namespaces(self, resources: ResourceList, namespace: str) -> None:
         """Populate the default namespace to resources that don't have one.
 
         This delegates to the existing populate_namespace_to_resources function

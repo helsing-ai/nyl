@@ -56,9 +56,7 @@ class ManifestLoaderService:
         result = []
         for file in files:
             try:
-                resources = ResourceList(
-                    list(map(Resource, filter(None, yaml.loads_all(file.read_text()))))
-                )
+                resources = ResourceList(list(map(Resource, filter(None, yaml.loads_all(file.read_text())))))
                 result.append(ManifestsWithSource(resources, file))
             except Exception as e:
                 raise ManifestValidationError(
@@ -70,9 +68,7 @@ class ManifestLoaderService:
 
         return result
 
-    def extract_local_variables(
-        self, source: ManifestsWithSource
-    ) -> dict[str, any]:
+    def extract_local_variables(self, source: ManifestsWithSource) -> dict[str, any]:
         """Extract local variables from a manifest.
 
         Local variables are objects without apiVersion/kind that have keys
