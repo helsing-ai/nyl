@@ -201,9 +201,7 @@ class ProjectConfig:
 
             logger.trace("Project configuration '{}' is closer to '{}' than '{}'", config_file, cwd, over)
 
-        project = ProjectConfig.load(
-            config_file, api_client=api_client, init_secret_providers=init_secret_providers
-        )
+        project = ProjectConfig.load(config_file, api_client=api_client, init_secret_providers=init_secret_providers)
         if predicate(project):
             logger.trace("Project configuration '{}' takes precedence", config_file)
             return project
