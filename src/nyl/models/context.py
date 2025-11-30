@@ -1,23 +1,23 @@
-"""Execution context models for Nyl commands.
+"""Template context model for Nyl template command.
 
-These models encapsulate the shared state and configuration needed
-during command execution, making it easier to pass context through
-service layers without global state.
+This model encapsulates the shared state and configuration needed
+during template command execution.
 """
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from nyl.core.di import DIContainer
 from nyl.project.config import ProjectConfig
 
 
 @dataclass
-class ExecutionContext:
-    """Base execution context shared across all commands.
+class TemplateContext:
+    """Context for template command execution.
 
-    This context contains the fundamental dependencies and configuration
-    needed by any Nyl command execution.
+    Includes configuration specific to template rendering
+    and resource application.
     """
 
     container: DIContainer
@@ -28,20 +28,6 @@ class ExecutionContext:
 
     working_dir: Path
     """Current working directory for the command"""
-
-    def __post_init__(self) -> None:
-        """Validate the context after initialization."""
-        if not self.working_dir.exists():
-            raise ValueError(f"Working directory does not exist: {self.working_dir}")
-
-
-@dataclass
-class TemplateContext(ExecutionContext):
-    """Extended context for template command execution.
-
-    Includes additional configuration specific to template rendering
-    and resource application.
-    """
 
     profile_name: str | None = None
     """Name of the active profile, if any"""
@@ -64,11 +50,8 @@ class TemplateContext(ExecutionContext):
     default_namespace: str | None = None
     """Default namespace for resources"""
 
-    apply_mode: bool = False
-    """Whether to apply resources to cluster"""
-
-    diff_mode: bool = False
-    """Whether to show diff against cluster"""
+    mode: Literal["apply", "diff"] | None = None
+    """Execution mode: 'apply' to apply resources, 'diff' to show differences, None for dry-run"""
 
     prune: bool = False
     """Whether to prune resources not in manifest"""

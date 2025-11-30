@@ -149,7 +149,6 @@ def template(
         container,
         in_cluster=in_cluster,
         profile=profile if connect_with_profile else None,
-        working_dir=Path.cwd(),
     )
 
     # Resolve dependencies from container
@@ -187,6 +186,9 @@ def template(
     # Setup service layer
     setup_service_container(container, kubectl=kubectl)
 
+    # Determine execution mode from apply/diff flags
+    mode: Literal["apply", "diff"] | None = "apply" if apply else ("diff" if diff else None)
+
     # Create template context to encapsulate command execution state
     context = TemplateContext(
         container=container,
@@ -199,8 +201,7 @@ def template(
         inline=inline,
         jobs=jobs,
         default_namespace=default_namespace,
-        apply_mode=apply,
-        diff_mode=diff,
+        mode=mode,
         prune=False,  # Will be set per-source based on applyset
     )
 
