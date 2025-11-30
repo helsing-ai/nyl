@@ -113,7 +113,9 @@ def test_resolve_default_namespace_multiple_no_annotation_uses_alphabetical(serv
     assert result == "alpha"
 
 
-def test_resolve_default_namespace_multiple_with_multiple_annotations_raises_error(service: NamespaceResolverService) -> None:
+def test_resolve_default_namespace_multiple_with_multiple_annotations_raises_error(
+    service: NamespaceResolverService,
+) -> None:
     """Test that error is raised when multiple namespaces have the default annotation."""
     source = ManifestsWithSource(
         resources=ResourceList(
