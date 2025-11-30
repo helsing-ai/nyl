@@ -274,12 +274,15 @@ service = container.resolve("MyService")  # This won't work!
 - ✅ Extracted 5 service classes with 450+ lines of business logic
 - ✅ Migrated all commands to use request-scoped containers
 - ✅ Integrated `ExecutionContext` and `TemplateContext` throughout commands
-- ✅ Removed global `PROVIDER` singleton from command layer
+- ✅ Removed global `PROVIDER` singleton completely
+- ✅ Migrated `ProjectConfig` and `SecretsConfig` to use `ApiClient` instead of `DependenciesProvider`
+- ✅ All secret providers updated to use `ApiClient` parameter
+- ✅ Removed old `tools/di.py` completely - single DI system throughout
 - ✅ All 65+ tests passing with clean type checks
 
 ### Current State
 
-Commands using the new DI system:
+All commands use the new DI system:
 - `template.py` - Uses `TemplateContext`
 - `run.py` - Uses `ExecutionContext`
 - `profile.py` - Uses `ExecutionContext`
@@ -287,14 +290,10 @@ Commands using the new DI system:
 - `tun.py` - Uses `ExecutionContext`
 - `secrets.py` - Uses `ExecutionContext`
 
-### Backward Compatibility
-
-The old `DependenciesProvider` system (`src/nyl/tools/di.py`) is kept for backward compatibility with:
-
-- `ProjectConfig.load()` - Still expects `DependenciesProvider`
-- `SecretsConfig.load()` - Still expects `DependenciesProvider`
-
-The `container_setup.py` module creates temporary adapters that bridge the new `DIContainer` to the old `DependenciesProvider` for these config modules. This allows gradual migration without breaking existing code.
+All configuration loading uses `ApiClient` directly:
+- `ProjectConfig.load(api_client=...)` - Passes `ApiClient` to secret providers
+- `SecretsConfig.load(api_client=...)` - Passes `ApiClient` to secret providers
+- `SecretProvider.init(config_file, api_client=...)` - All providers accept optional `ApiClient`
 
 ## Testing
 

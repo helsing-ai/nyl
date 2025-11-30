@@ -25,7 +25,7 @@ app: Typer = new_typer(help=__doc__)
 
 LOG_TIME_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>"
 LOG_LEVEL_FORMAT = "<level>{level: <8}</level>"
-LOG_DETAILS_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>"
+LOG_DETAILS_FORMAT = "<cyan>{name}</cyan>:<cyadn>{function}</cyan>:<cyan>{line}</cyan>"
 LOG_MESSAGE_FORMAT = "<level>{message}</level>"
 
 

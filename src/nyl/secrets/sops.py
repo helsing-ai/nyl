@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import Iterable
 
 from databind.core import Union
+from kubernetes.client.api_client import ApiClient
 from loguru import logger
 
 from nyl.secrets import SecretProvider, SecretValue
-from nyl.tools.di import DependenciesProvider
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
 
@@ -97,7 +97,7 @@ class SopsFile(SecretProvider):
 
     # SecretProvider
 
-    def init(self, config_file: Path, dependencies: DependenciesProvider) -> None:
+    def init(self, config_file: Path, api_client: ApiClient | None = None) -> None:
         self.path = (config_file.parent / self.path).absolute()
 
     def keys(self) -> Iterable[str]:

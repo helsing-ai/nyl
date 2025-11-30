@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+from kubernetes.client.api_client import ApiClient
 from loguru import logger
 
 from nyl.secrets import SecretProvider
-from nyl.tools.di import DependenciesProvider
 from nyl.tools.fs import find_config_file
 from nyl.tools.loads import loadf
 
@@ -18,7 +18,7 @@ class SecretsConfig:
 
     @staticmethod
     def load(
-        file: Path | None = None, /, *, cwd: Path | None = None, dependencies: DependenciesProvider | None = None
+        file: Path | None = None, /, *, cwd: Path | None = None, api_client: ApiClient | None = None
     ) -> "SecretsConfig":
         """
         Load the secrets configuration from the given or the default configuration file. If the configuration file does
@@ -34,9 +34,7 @@ class SecretsConfig:
                 :class:`SecretsConfig` is returned with a :class:`NullSecretsProvider` under the `default` key.
             cwd: The working directory from which to discover the default configuration file if no *file* argument
                 is specified or is set to :const:`None`.
-            dependencies: A dependency provider that is passed to :meth:`SecretProvider.init`. If not specified, it
-                will default to an empty provider, but it may cause that not all :class:`SecretProvider` implementations
-                can be used.
+            api_client: Optional Kubernetes API client for providers that need cluster access.
         """
 
         from databind.json import load as deser
@@ -52,14 +50,11 @@ class SecretsConfig:
                 over=file,
                 cwd=cwd,
                 predicate=lambda cfg: bool(cfg.config.secrets),
-                dependencies=dependencies,
+                api_client=api_client,
             )
             if project:
                 logger.debug("Using secrets from project configuration ({}).", project.file)
                 return SecretsConfig(project.file, project.config.secrets)
-
-        if dependencies is None:
-            dependencies = DependenciesProvider.default()
 
         if file is None:
             logger.debug("Found no Nyl secrets configuration file.")
@@ -68,5 +63,5 @@ class SecretsConfig:
             logger.debug("Loading secrets configuration from '{}'.", file)
             providers = deser(loadf(file), dict[str, SecretProvider], filename=str(file))
             for provider in providers.values():
-                provider.init(file, dependencies)
+                provider.init(file, api_client)
             return SecretsConfig(file, providers)

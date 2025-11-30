@@ -2,6 +2,10 @@
 
 This module provides functions to configure DIContainer instances with
 all the dependencies needed by Nyl commands.
+
+The setup functions configure containers with base dependencies (ProfileManager,
+ProjectConfig, SecretsConfig, ApiClient) and service layer dependencies
+(ManifestLoaderService, NamespaceResolverService, KubernetesApplyService).
 """
 
 from pathlib import Path
@@ -50,24 +54,17 @@ def setup_base_container(
 
     # Register ProjectConfig
     def _load_project_config() -> ProjectConfig:
-        # ProjectConfig.load expects a DependenciesProvider, but we're migrating away from that
-        # For now, create a temporary adapter
-        from nyl.tools.di import DependenciesProvider
-
-        temp_provider = DependenciesProvider.default()
-        temp_provider.set(ProfileManager, container.resolve(ProfileManager))
-        return ProjectConfig.load(dependencies=temp_provider)
+        # Pass ApiClient if available so secret providers can be initialized
+        api_client = container.resolve(ApiClient) if container.has(ApiClient) else None
+        return ProjectConfig.load(api_client=api_client)
 
     container.register_factory(ProjectConfig, _load_project_config)
 
     # Register SecretsConfig
     def _load_secrets_config() -> SecretsConfig:
-        from nyl.tools.di import DependenciesProvider
-
-        temp_provider = DependenciesProvider.default()
-        temp_provider.set(ProfileManager, container.resolve(ProfileManager))
-        temp_provider.set(ProjectConfig, container.resolve(ProjectConfig))
-        return SecretsConfig.load(dependencies=temp_provider)
+        # Pass ApiClient if available so secret providers can be initialized
+        api_client = container.resolve(ApiClient) if container.has(ApiClient) else None
+        return SecretsConfig.load(api_client=api_client)
 
     container.register_factory(SecretsConfig, _load_secrets_config)
 
