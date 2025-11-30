@@ -20,9 +20,14 @@ class DIContainer:
     - Type-safe resolution
 
     Example:
+        >>> class Database:
+        ...     def __init__(self, url: str):
+        ...         self.url = url
+        ...
         >>> container = DIContainer()
         >>> container.register_factory(Database, lambda: Database(url="..."))
         >>> db = container.resolve(Database)
+        >>> assert db.url == "..."
     """
 
     def __init__(self, parent: "DIContainer | None" = None):
