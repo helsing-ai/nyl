@@ -9,7 +9,7 @@ from textwrap import dedent
 from loguru import logger
 from typer import Argument, Option, Typer
 
-from nyl.commands import PROVIDER
+from nyl.core import DIContainer, setup_base_container
 from nyl.project.config import ProjectConfig
 from nyl.tools.typer import new_typer
 
@@ -130,5 +130,8 @@ def component(
     directory).
     """
 
-    components_path = PROVIDER.get(ProjectConfig).get_components_path()
+    container = DIContainer()
+    setup_base_container(container)
+
+    components_path = container.resolve(ProjectConfig).get_components_path()
     chart(components_path / api_version / kind)

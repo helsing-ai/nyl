@@ -8,12 +8,11 @@ from textwrap import indent
 from typing import Any, Literal, Optional, cast
 
 from kubernetes.client.api_client import ApiClient
-from kubernetes.config.incluster_config import load_incluster_config
-from kubernetes.config.kube_config import load_kube_config
 from loguru import logger
 from typer import Argument, Option
 
-from nyl.commands import PROVIDER, ApiClientConfig, app
+from nyl.commands import app
+from nyl.core import DIContainer, setup_base_container, setup_service_container
 from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
@@ -42,37 +41,6 @@ class OnLookupFailure(str, Enum):
 
     def to_literal(self) -> Literal["Error", "CreatePlaceholder", "SkipResource"]:
         return cast(Any, self.name)  # type: ignore[no-any-return]
-
-
-def get_incluster_kubernetes_client() -> ApiClient:
-    logger.info("Using in-cluster configuration.")
-    load_incluster_config()
-    return ApiClient()
-
-
-def get_profile_kubernetes_client(profiles: ProfileManager, profile: str | None) -> ApiClient:
-    """
-    Create a Kubernetes :class:`ApiClient` from the selected *profile*.
-
-    If no *profile* is specified, but the profile manager contains at least one profile, the *profile* argument will
-    default to the value of :data:`DEFAULT_PROFILE` (which is `"default"`). Otherwise, if no profile is selected and
-    none is configured, the standard Kubernetes config loading is used (i.e. try `KUBECONFIG` and then
-    `~/.kube/config`).
-    """
-
-    with profiles:
-        # If no profile to activate is specified, and there are no profiles defined, we're not activating a
-        # a profile. It should be valid to use Nyl without a `nyl-profiles.yaml` file.
-        if profile is not None or profiles.config.profiles:
-            profile = profile or DEFAULT_PROFILE
-            active = profiles.activate_profile(profile)
-            load_kube_config(str(active.kubeconfig))
-        else:
-            logger.opt(colors=True).info(
-                "No <yellow>nyl-profiles.yaml</> file found, using default kubeconfig and context."
-            )
-            load_kube_config()
-    return ApiClient()
 
 
 @app.command()
@@ -172,20 +140,22 @@ def template(
         logger.error("The --apply and --diff options cannot be combined.")
         exit(1)
 
-    kubectl = Kubectl()
-    kubectl.env["KUBECTL_APPLYSET"] = "true"
-    atexit.register(kubectl.cleanup)
+    # Create DI container for this command execution
+    container = DIContainer()
 
-    # TODO: Allow that no Kubernetes configuration is available. This is needed if you want to run Nyl as an ArgoCD
-    #       plugin without granting it access to the Kubernetes API. Most relevant bits of information that Nyl requires
-    #       about the cluster are passed via the environment variables.
-    #       See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
-    PROVIDER.set(
-        ApiClientConfig, ApiClientConfig(in_cluster=in_cluster, profile=profile if connect_with_profile else None)
+    # Setup base dependencies (ProfileManager, ProjectConfig, SecretsConfig, ApiClient)
+    setup_base_container(
+        container,
+        in_cluster=in_cluster,
+        profile=profile if connect_with_profile else None,
+        working_dir=Path.cwd(),
     )
-    client = PROVIDER.get(ApiClient)
 
-    project = PROVIDER.get(ProjectConfig)
+    # Resolve dependencies from container
+    client = container.resolve(ApiClient)
+    project = container.resolve(ProjectConfig)
+    secrets = container.resolve(SecretsConfig)
+
     if generate_applysets is not None:
         project.config.settings.generate_applysets = generate_applysets
 
@@ -195,7 +165,9 @@ def template(
     if cache_dir is None:
         cache_dir = state_dir / "cache"
 
-    secrets = PROVIDER.get(SecretsConfig)
+    kubectl = Kubectl()
+    kubectl.env["KUBECTL_APPLYSET"] = "true"
+    atexit.register(kubectl.cleanup)
 
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,
@@ -207,10 +179,17 @@ def template(
         kube_api_versions=os.getenv("KUBE_API_VERSIONS"),
     )
 
-    # Use ManifestLoaderService to load manifests
-    manifest_loader = ManifestLoaderService()
-    namespace_resolver = NamespaceResolverService()
-    k8s_apply = KubernetesApplyService(kubectl=kubectl, kube_version=generator.kube_version)
+    # Register command-specific dependencies in the container
+    container.register_singleton(DispatchingGenerator, generator)
+    container.register_singleton(Kubectl, kubectl)
+
+    # Setup service layer
+    setup_service_container(container, kubectl=kubectl)
+
+    # Resolve services from container
+    manifest_loader = container.resolve(ManifestLoaderService)
+    namespace_resolver = container.resolve(NamespaceResolverService)
+    k8s_apply = container.resolve(KubernetesApplyService)
     for source in manifest_loader.load_manifests(paths):
         logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
@@ -227,7 +206,7 @@ def template(
         # However, if the default profile does not exist, we don't want to raise an error, as this would be a
         # breaking change for users who upgrade Nyl without having a default profile defined.
         # If a profile *was* specified and it doesn't exist, we *do* want to raise an error.
-        profile_config = PROVIDER.get(ProfileManager).config.profiles.get(profile or DEFAULT_PROFILE)
+        profile_config = container.resolve(ProfileManager).config.profiles.get(profile or DEFAULT_PROFILE)
         if profile_config is not None:
             vars(template_engine.values).update(profile_config.values)
         elif profile is not None:

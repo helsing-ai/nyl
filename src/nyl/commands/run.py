@@ -5,7 +5,7 @@ import sys
 from loguru import logger
 from typer import Argument, Option
 
-from nyl.commands import PROVIDER
+from nyl.core import DIContainer, setup_base_container
 from nyl.profiles import ProfileManager
 from nyl.services.profile import ProfileService
 from nyl.tools.logging import lazy_str
@@ -40,7 +40,11 @@ def run(
     `nyl-profiles.yaml` configuration or from the same-named context in the global kubeconfig.
     """
 
-    manager = PROVIDER.get(ProfileManager)
+    # Create DI container for this command execution
+    container = DIContainer()
+    setup_base_container(container)
+
+    manager = container.resolve(ProfileManager)
     profile_service = ProfileService(manager)
 
     # Use ProfileService to resolve profile or kubeconfig context

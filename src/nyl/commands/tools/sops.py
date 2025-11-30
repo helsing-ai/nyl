@@ -10,7 +10,7 @@ from typing import Optional
 from loguru import logger
 from typer import Option, Typer
 
-from nyl.commands import PROVIDER
+from nyl.core import DIContainer, setup_base_container
 from nyl.secrets.config import SecretsConfig
 from nyl.secrets.sops import SopsFile, detect_sops_format
 from nyl.tools.fs import shorter_path
@@ -47,7 +47,9 @@ def re_encrypt(
     """
 
     if file is None:
-        secrets = PROVIDER.get(SecretsConfig)
+        container = DIContainer()
+        setup_base_container(container)
+        secrets = container.resolve(SecretsConfig)
         if isinstance(impl := secrets.providers[provider], SopsFile):
             file = impl.path
         else:

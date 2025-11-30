@@ -7,20 +7,14 @@ import json
 import os
 import shlex
 import sys
-from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Optional
 
-from kubernetes.client.api_client import ApiClient
 from loguru import logger
 from typer import Option, Typer
 
 from nyl import __version__
-from nyl.profiles import ProfileManager
-from nyl.project.config import ProjectConfig
-from nyl.secrets.config import SecretsConfig
-from nyl.tools.di import DependenciesProvider
 from nyl.tools.logging import lazy_str
 from nyl.tools.pyroscope import init_pyroscope, tag_wrapper
 from nyl.tools.shell import pretty_cmd
@@ -29,11 +23,8 @@ from nyl.tools.url import url_extract_basic_auth
 
 app: Typer = new_typer(help=__doc__)
 
-# A global instance that we use for dependency injection.
-PROVIDER = DependenciesProvider.default()
-
 LOG_TIME_FORMAT = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green>"
-LOG_LEVEL_FORAMT = "<level>{level: <8}</level>"
+LOG_LEVEL_FORMAT = "<level>{level: <8}</level>"
 LOG_DETAILS_FORMAT = "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan>"
 LOG_MESSAGE_FORMAT = "<level>{message}</level>"
 
@@ -45,15 +36,6 @@ class LogLevel(str, Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
-
-
-# Retrieving the Kubernetes API client depends on whether in-cluster configuration should be used or not.
-@dataclass(kw_only=True)
-class ApiClientConfig:
-    in_cluster: bool
-    " Load the in-cluster configuration if enabled; forego any Nyl profile configuration. "
-    profile: str | None
-    " If not loading the in-cluster configuration, use the given Nyl profile. Otherwise, use the default kubeconfig. "
 
 
 @app.callback()
@@ -70,9 +52,9 @@ def _callback(
     log_file: Optional[Path] = Option(None, help="Additionally log to the given file."),
 ) -> None:
     if log_details:
-        fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_DETAILS_FORMAT} | {LOG_MESSAGE_FORMAT}"
+        fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORMAT} | {LOG_DETAILS_FORMAT} | {LOG_MESSAGE_FORMAT}"
     else:
-        fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORAMT} | {LOG_MESSAGE_FORMAT}"
+        fmt = f"{LOG_TIME_FORMAT} | {LOG_LEVEL_FORMAT} | {LOG_MESSAGE_FORMAT}"
 
     logger.remove()
     logger.level("METRIC", 40, "<green><bold>")
@@ -100,18 +82,6 @@ def _callback(
     if "NYL_PYROSCOPE_URL" in log_env:
         log_env["NYL_PYROSCOPE_URL"] = url_extract_basic_auth(log_env["NYL_PYROSCOPE_URL"], mask=True)[0]
     logger.debug("Nyl-relevant environment variables: {}", lazy_str(json.dumps, log_env, indent=2))
-
-    PROVIDER.set_lazy(ProfileManager, lambda: ProfileManager.load(required=False))
-    PROVIDER.set_lazy(SecretsConfig, lambda: SecretsConfig.load(dependencies=PROVIDER))
-    PROVIDER.set_lazy(ProjectConfig, lambda: ProjectConfig.load(dependencies=PROVIDER))
-    PROVIDER.set_lazy(
-        ApiClient,
-        lambda: template.get_incluster_kubernetes_client()
-        if PROVIDER.get(ApiClientConfig).in_cluster
-        else template.get_profile_kubernetes_client(
-            PROVIDER.get(ProfileManager), PROVIDER.get(ApiClientConfig).profile
-        ),
-    )
 
 
 @app.command()
