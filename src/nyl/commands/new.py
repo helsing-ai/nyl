@@ -10,7 +10,6 @@ from loguru import logger
 from typer import Argument, Option, Typer
 
 from nyl.core import DIContainer, setup_base_container
-from nyl.models.context import ExecutionContext
 from nyl.project.config import ProjectConfig
 from nyl.tools.typer import new_typer
 
@@ -134,12 +133,5 @@ def component(
     container = DIContainer()
     setup_base_container(container)
 
-    # Create execution context to encapsulate command state
-    context = ExecutionContext(
-        container=container,
-        project_config=container.resolve(ProjectConfig),
-        working_dir=Path.cwd(),
-    )
-
-    components_path = context.container.resolve(ProjectConfig).get_components_path()
+    components_path = container.resolve(ProjectConfig).get_components_path()
     chart(components_path / api_version / kind)

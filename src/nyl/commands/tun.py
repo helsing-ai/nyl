@@ -10,10 +10,8 @@ from rich.table import Table
 from typer import Argument, Typer
 
 from nyl.core import DIContainer, setup_base_container
-from nyl.models.context import ExecutionContext
 from nyl.profiles import ProfileManager, get_tunnel_spec
 from nyl.profiles.tunnel import TunnelManager, TunnelSpec, TunnelStatus
-from nyl.project.config import ProjectConfig
 from nyl.tools.fs import shorter_path
 from nyl.tools.typer import new_typer
 
@@ -29,14 +27,7 @@ def status(all: bool = False) -> None:
     container = DIContainer()
     setup_base_container(container)
 
-    # Create execution context to encapsulate command state
-    context = ExecutionContext(
-        container=container,
-        project_config=container.resolve(ProjectConfig),
-        working_dir=Path.cwd(),
-    )
-
-    config = context.container.resolve(ProfileManager).config
+    config = container.resolve(ProfileManager).config
 
     table = Table()
     table.add_column("Source", style="blue")
@@ -99,14 +90,7 @@ def start(profile_name: str = Argument("default", envvar="NYL_PROFILE")) -> None
     container = DIContainer()
     setup_base_container(container)
 
-    # Create execution context to encapsulate command state
-    context = ExecutionContext(
-        container=container,
-        project_config=container.resolve(ProjectConfig),
-        working_dir=Path.cwd(),
-    )
-
-    config = context.container.resolve(ProfileManager).config
+    config = container.resolve(ProfileManager).config
 
     try:
         profile = config.profiles[profile_name]
@@ -145,14 +129,7 @@ def stop(profile_name: str = Argument("default", envvar="NYL_PROFILE"), all: boo
     container = DIContainer()
     setup_base_container(container)
 
-    # Create execution context to encapsulate command state
-    context = ExecutionContext(
-        container=container,
-        project_config=container.resolve(ProjectConfig),
-        working_dir=Path.cwd(),
-    )
-
-    config = context.container.resolve(ProfileManager).config
+    config = container.resolve(ProfileManager).config
 
     with TunnelManager() as manager:
         manager.close_tunnel(TunnelSpec.Locator(str(config.file), profile_name))

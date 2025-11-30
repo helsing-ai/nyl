@@ -4,14 +4,11 @@ Interact with the secrets providers configured in `nyl-secrets.yaml`.
 
 import json
 import json as _json
-from pathlib import Path
 
 from loguru import logger
 from typer import Option, Typer
 
 from nyl.core import DIContainer, setup_base_container
-from nyl.models.context import ExecutionContext
-from nyl.project.config import ProjectConfig
 from nyl.secrets import SecretProvider
 from nyl.secrets.config import SecretsConfig
 from nyl.tools.typer import new_typer
@@ -20,7 +17,6 @@ app: Typer = new_typer(name="secrets", help=__doc__)
 
 # Module-level container and context shared between callback and commands
 _container: DIContainer | None = None
-_context: ExecutionContext | None = None
 _current_provider_name: str | None = None
 
 
@@ -43,17 +39,10 @@ def callback(
     Interact with the secrets providers configured in `nyl-secrets.yaml`.
     """
 
-    global _container, _context, _current_provider_name
+    global _container, _current_provider_name
 
     _container = DIContainer()
     setup_base_container(_container, profile=profile)
-
-    # Create execution context to encapsulate command state
-    _context = ExecutionContext(
-        container=_container,
-        project_config=_container.resolve(ProjectConfig),
-        working_dir=Path.cwd(),
-    )
 
     _current_provider_name = provider
 
