@@ -1,12 +1,15 @@
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from loguru import logger
 from typer import Argument, Option
 
 from nyl.core import DIContainer, setup_base_container
+from nyl.models.context import ExecutionContext
 from nyl.profiles import ProfileManager
+from nyl.project.config import ProjectConfig
 from nyl.services.profile import ProfileService
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
@@ -44,7 +47,14 @@ def run(
     container = DIContainer()
     setup_base_container(container)
 
-    manager = container.resolve(ProfileManager)
+    # Create execution context to encapsulate command state
+    context = ExecutionContext(
+        container=container,
+        project_config=container.resolve(ProjectConfig),
+        working_dir=Path.cwd(),
+    )
+
+    manager = context.container.resolve(ProfileManager)
     profile_service = ProfileService(manager)
 
     # Use ProfileService to resolve profile or kubeconfig context

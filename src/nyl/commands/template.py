@@ -14,6 +14,7 @@ from typer import Argument, Option
 from nyl.commands import app
 from nyl.core import DIContainer, setup_base_container, setup_service_container
 from nyl.generator.dispatch import DispatchingGenerator
+from nyl.models.context import TemplateContext
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
@@ -186,10 +187,28 @@ def template(
     # Setup service layer
     setup_service_container(container, kubectl=kubectl)
 
-    # Resolve services from container
-    manifest_loader = container.resolve(ManifestLoaderService)
-    namespace_resolver = container.resolve(NamespaceResolverService)
-    k8s_apply = container.resolve(KubernetesApplyService)
+    # Create template context to encapsulate command execution state
+    context = TemplateContext(
+        container=container,
+        project_config=project,
+        working_dir=Path.cwd(),
+        profile_name=profile,
+        secrets_provider_name=secrets_provider,
+        state_dir=state_dir,
+        cache_dir=cache_dir,
+        inline=inline,
+        jobs=jobs,
+        default_namespace=default_namespace,
+        apply_mode=apply,
+        diff_mode=diff,
+        prune=False,  # Will be set per-source based on applyset
+    )
+
+    # Resolve services from context container
+    manifest_loader = context.container.resolve(ManifestLoaderService)
+    namespace_resolver = context.container.resolve(NamespaceResolverService)
+    k8s_apply = context.container.resolve(KubernetesApplyService)
+
     for source in manifest_loader.load_manifests(paths):
         logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
 
@@ -206,7 +225,7 @@ def template(
         # However, if the default profile does not exist, we don't want to raise an error, as this would be a
         # breaking change for users who upgrade Nyl without having a default profile defined.
         # If a profile *was* specified and it doesn't exist, we *do* want to raise an error.
-        profile_config = container.resolve(ProfileManager).config.profiles.get(profile or DEFAULT_PROFILE)
+        profile_config = context.container.resolve(ProfileManager).config.profiles.get(profile or DEFAULT_PROFILE)
         if profile_config is not None:
             vars(template_engine.values).update(profile_config.values)
         elif profile is not None:

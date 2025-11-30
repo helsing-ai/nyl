@@ -1,0 +1,2 @@
+- Run Python SDL commands via `uv run`
+- Do not run ruff or mypy directly, use `tire lint (--fix)`, `tire fmt` and `tire check` respectively.

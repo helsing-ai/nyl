@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh:*)",
+      "Bash(uv:*)",
+      "Bash(git:*)",
+      "Bash(pytest:*)",
+      "Bash(tire check:*)",
+      "Bash(tire fmt:*)",
+      "Bash(tire lint:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
