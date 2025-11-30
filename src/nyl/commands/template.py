@@ -249,9 +249,6 @@ def template(
             source, current_default_namespace, inline=inline, jobs=jobs
         )
 
-        # Find the namespaces that are defined in the file
-        k8s_apply.find_namespace_resources(source.resources)
-
         # Find or create ApplySet
         applyset = k8s_apply.find_or_create_applyset(
             source,

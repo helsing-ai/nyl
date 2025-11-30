@@ -211,18 +211,3 @@ class KubernetesApplyService:
                     resource["metadata"]["labels"] = {}
 
                 resource["metadata"]["labels"][APPLYSET_LABEL_PART_OF] = applyset.reference
-
-    def find_namespace_resources(self, resources: ResourceList) -> set[str]:
-        """Find all namespace names defined in resources.
-
-        Args:
-            resources: Resources to search
-
-        Returns:
-            Set of namespace names
-        """
-        namespaces: set[str] = set()
-        for resource in resources:
-            if resource.get("apiVersion") == "v1" and resource.get("kind") == "Namespace":
-                namespaces.add(resource["metadata"]["name"])
-        return namespaces

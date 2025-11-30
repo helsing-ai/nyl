@@ -254,18 +254,3 @@ def test_tag_resources_with_applyset(service: KubernetesApplyService) -> None:
     for resource in resources:
         assert "labels" in resource["metadata"]
         assert "applyset.kubernetes.io/part-of" in resource["metadata"]["labels"]
-
-
-def test_find_namespace_resources(service: KubernetesApplyService) -> None:
-    """Test finding namespace resources."""
-    resources = ResourceList(
-        [
-            Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "ns1"}}),
-            Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
-            Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "ns2"}}),
-        ]
-    )
-
-    result = service.find_namespace_resources(resources)
-
-    assert result == {"ns1", "ns2"}
