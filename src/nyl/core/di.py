@@ -1,7 +1,7 @@
 """Dependency injection container for Nyl.
 
 This module provides a request-scoped dependency injection container that
-replaces the global singleton pattern. Each CLI invocation creates its own
+replaced the global singleton pattern. Each CLI invocation creates its own
 container, making the system more testable and maintainable.
 """
 

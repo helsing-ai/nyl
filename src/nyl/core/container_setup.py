@@ -8,7 +8,6 @@ ProjectConfig, SecretsConfig, ApiClient) and service layer dependencies
 (ManifestLoaderService, NamespaceResolverService, KubernetesApplyService).
 """
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from kubernetes.client.api_client import ApiClient
@@ -30,7 +29,6 @@ def setup_base_container(
     *,
     in_cluster: bool = False,
     profile: str | None = None,
-    working_dir: Path | None = None,
 ) -> None:
     """Register base dependencies in the container.
 
@@ -44,10 +42,7 @@ def setup_base_container(
         container: The container to register dependencies in
         in_cluster: Whether to use in-cluster Kubernetes configuration
         profile: Optional profile name to use
-        working_dir: Working directory for the command
     """
-    if working_dir is None:
-        working_dir = Path.cwd()
 
     # Register ProfileManager
     container.register_factory(ProfileManager, lambda: ProfileManager.load(required=False))
@@ -135,9 +130,7 @@ def setup_service_container(
         if container.has(DispatchingGenerator):
             kube_version = container.resolve(DispatchingGenerator).kube_version
         else:
-            import os
-
-            kube_version = os.getenv("KUBE_VERSION", "v1.28.0")
+            kube_version = kubectl_instance.version()["gitVersion"]
 
         return KubernetesApplyService(kubectl=kubectl_instance, kube_version=kube_version)
 
