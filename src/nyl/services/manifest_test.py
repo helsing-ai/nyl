@@ -1,6 +1,7 @@
 """Tests for ManifestLoaderService."""
 
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -11,19 +12,19 @@ from nyl.tools.types import Resource, ResourceList
 
 
 @pytest.fixture
-def temp_manifest_dir():
+def temp_manifest_dir() -> Generator[Path, None, None]:
     """Create a temporary directory for test manifests."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
 
 
 @pytest.fixture
-def service():
+def service() -> ManifestLoaderService:
     """Create a ManifestLoaderService instance."""
     return ManifestLoaderService()
 
 
-def test_load_manifests_single_file(temp_manifest_dir, service):
+def test_load_manifests_single_file(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test loading a single manifest file."""
     manifest_file = temp_manifest_dir / "deployment.yaml"
     manifest_file.write_text("""
@@ -44,7 +45,7 @@ spec:
     assert result[0].resources[0]["metadata"]["name"] == "my-app"
 
 
-def test_load_manifests_from_directory(temp_manifest_dir, service):
+def test_load_manifests_from_directory(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test loading all manifests from a directory."""
     # Create multiple manifest files
     (temp_manifest_dir / "app1.yaml").write_text("""
@@ -68,7 +69,7 @@ metadata:
     assert "ConfigMap" in kinds
 
 
-def test_load_manifests_skips_nyl_prefixed_files(temp_manifest_dir, service):
+def test_load_manifests_skips_nyl_prefixed_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test that files starting with 'nyl-' are skipped."""
     (temp_manifest_dir / "app.yaml").write_text("""
 apiVersion: v1
@@ -86,7 +87,7 @@ some: config
     assert result[0].file.name == "app.yaml"
 
 
-def test_load_manifests_skips_hidden_files(temp_manifest_dir, service):
+def test_load_manifests_skips_hidden_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test that hidden files (starting with '.') are skipped."""
     (temp_manifest_dir / "app.yaml").write_text("""
 apiVersion: v1
@@ -107,7 +108,7 @@ metadata:
     assert result[0].file.name == "app.yaml"
 
 
-def test_load_manifests_skips_underscore_files(temp_manifest_dir, service):
+def test_load_manifests_skips_underscore_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test that files starting with '_' are skipped."""
     (temp_manifest_dir / "app.yaml").write_text("""
 apiVersion: v1
@@ -128,7 +129,7 @@ metadata:
     assert result[0].file.name == "app.yaml"
 
 
-def test_load_manifests_only_loads_yaml_files(temp_manifest_dir, service):
+def test_load_manifests_only_loads_yaml_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test that only .yaml files are loaded."""
     (temp_manifest_dir / "app.yaml").write_text("""
 apiVersion: v1
@@ -145,7 +146,7 @@ metadata:
     assert result[0].file.name == "app.yaml"
 
 
-def test_load_manifests_multiple_resources_in_file(temp_manifest_dir, service):
+def test_load_manifests_multiple_resources_in_file(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test loading a file with multiple YAML documents."""
     manifest_file = temp_manifest_dir / "multi.yaml"
     manifest_file.write_text("""
@@ -173,7 +174,7 @@ metadata:
     assert kinds == ["Namespace", "Service", "Deployment"]
 
 
-def test_load_manifests_empty_directory_returns_empty_list(temp_manifest_dir, service):
+def test_load_manifests_empty_directory_returns_empty_list(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test that loading from empty directory returns empty list."""
     result = service.load_manifests([temp_manifest_dir])
 
@@ -181,7 +182,7 @@ def test_load_manifests_empty_directory_returns_empty_list(temp_manifest_dir, se
     # Note: Warning is logged but we don't test it here since loguru doesn't integrate with caplog by default
 
 
-def test_load_manifests_invalid_yaml_raises_error(temp_manifest_dir, service):
+def test_load_manifests_invalid_yaml_raises_error(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test that invalid YAML raises ManifestValidationError."""
     manifest_file = temp_manifest_dir / "invalid.yaml"
     # Create truly invalid YAML with syntax errors
@@ -202,7 +203,7 @@ bad syntax here [[[
     assert "invalid.yaml" in str(exc_info.value)
 
 
-def test_extract_local_variables_basic(service):
+def test_extract_local_variables_basic(service: ManifestLoaderService) -> None:
     """Test extracting local variables from manifest."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -222,7 +223,7 @@ def test_extract_local_variables_basic(service):
     assert source.resources[0]["kind"] == "Service"
 
 
-def test_extract_local_variables_invalid_keys_raises_error(service):
+def test_extract_local_variables_invalid_keys_raises_error(service: ManifestLoaderService) -> None:
     """Test that local variables with non-$ keys raise error."""
     source = ManifestsWithSource(
         resources=ResourceList([Resource({"$valid": "value", "invalid": "key"})]),
@@ -236,7 +237,7 @@ def test_extract_local_variables_invalid_keys_raises_error(service):
     assert "invalid" in str(exc_info.value)
 
 
-def test_extract_local_variables_no_variables(service):
+def test_extract_local_variables_no_variables(service: ManifestLoaderService) -> None:
     """Test extracting when there are no local variables."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -253,7 +254,7 @@ def test_extract_local_variables_no_variables(service):
     assert len(source.resources) == 1
 
 
-def test_extract_local_variables_multiple_definitions(service):
+def test_extract_local_variables_multiple_definitions(service: ManifestLoaderService) -> None:
     """Test extracting multiple local variable definitions."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -272,7 +273,7 @@ def test_extract_local_variables_multiple_definitions(service):
     assert len(source.resources) == 1
 
 
-def test_validate_manifest_structure_valid(service):
+def test_validate_manifest_structure_valid(service: ManifestLoaderService) -> None:
     """Test validation passes for valid manifests."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -294,7 +295,7 @@ def test_validate_manifest_structure_valid(service):
     service.validate_manifest_structure(source)
 
 
-def test_validate_manifest_structure_missing_api_version(service):
+def test_validate_manifest_structure_missing_api_version(service: ManifestLoaderService) -> None:
     """Test validation fails for missing apiVersion."""
     source = ManifestsWithSource(
         resources=ResourceList([Resource({"kind": "Service", "metadata": {"name": "svc"}})]),
@@ -307,7 +308,7 @@ def test_validate_manifest_structure_missing_api_version(service):
     assert "missing 'apiVersion' field" in str(exc_info.value)
 
 
-def test_validate_manifest_structure_missing_kind(service):
+def test_validate_manifest_structure_missing_kind(service: ManifestLoaderService) -> None:
     """Test validation fails for missing kind."""
     source = ManifestsWithSource(
         resources=ResourceList([Resource({"apiVersion": "v1", "metadata": {"name": "svc"}})]),
@@ -320,7 +321,7 @@ def test_validate_manifest_structure_missing_kind(service):
     assert "missing 'kind' field" in str(exc_info.value)
 
 
-def test_discover_files_mixed_input(temp_manifest_dir, service):
+def test_discover_files_mixed_input(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test file discovery with both files and directories."""
     # Create a subdirectory
     subdir = temp_manifest_dir / "subdir"

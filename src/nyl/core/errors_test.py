@@ -1,13 +1,14 @@
 """Tests for structured error types."""
 
 from io import StringIO
+from typing import cast
 
 import pytest
 
 from nyl.core.errors import NylError
 
 
-def test_nyl_error_basic():
+def test_nyl_error_basic() -> None:
     """Test basic NylError creation."""
     error = NylError("Something went wrong")
 
@@ -18,7 +19,7 @@ def test_nyl_error_basic():
     assert error.details == {}
 
 
-def test_nyl_error_with_hint():
+def test_nyl_error_with_hint() -> None:
     """Test NylError with hint."""
     error = NylError("Operation failed", hint="Try using --force flag")
 
@@ -26,7 +27,7 @@ def test_nyl_error_with_hint():
     assert error.hint == "Try using --force flag"
 
 
-def test_nyl_error_with_cause():
+def test_nyl_error_with_cause() -> None:
     """Test NylError with underlying cause."""
     cause = ValueError("Invalid input")
     error = NylError("Validation failed", cause=cause)
@@ -35,7 +36,7 @@ def test_nyl_error_with_cause():
     assert "ValueError" in str(error)
 
 
-def test_nyl_error_with_details():
+def test_nyl_error_with_details() -> None:
     """Test NylError with additional details."""
     error = NylError("File not found", details={"file": "/path/to/file.yaml", "checked_paths": 3})
 
@@ -45,7 +46,7 @@ def test_nyl_error_with_details():
     assert "/path/to/file.yaml" in error_str
 
 
-def test_nyl_error_with_all_fields():
+def test_nyl_error_with_all_fields() -> None:
     """Test NylError with all fields populated."""
     cause = FileNotFoundError("No such file")
     error = NylError(
@@ -67,7 +68,7 @@ def test_nyl_error_with_all_fields():
     assert "FileNotFoundError" in error_str
 
 
-def test_nyl_error_render_basic():
+def test_nyl_error_render_basic() -> None:
     """Test rendering NylError with rich (basic)."""
     pytest.importorskip("rich")  # Skip if rich not installed
     from rich.console import Console
@@ -77,12 +78,12 @@ def test_nyl_error_render_basic():
 
     error.render(console)
 
-    output = console.file.getvalue()
+    output = cast(StringIO, console.file).getvalue()
     assert "Test error message" in output
     assert "Error:" in output
 
 
-def test_nyl_error_render_with_hint():
+def test_nyl_error_render_with_hint() -> None:
     """Test rendering NylError with hint."""
     pytest.importorskip("rich")
     from rich.console import Console
@@ -92,13 +93,13 @@ def test_nyl_error_render_with_hint():
 
     error.render(console)
 
-    output = console.file.getvalue()
+    output = cast(StringIO, console.file).getvalue()
     assert "Operation failed" in output
     assert "Hint:" in output
     assert "Try running with --verbose" in output
 
 
-def test_nyl_error_render_with_details():
+def test_nyl_error_render_with_details() -> None:
     """Test rendering NylError with details."""
     pytest.importorskip("rich")
     from rich.console import Console
@@ -108,14 +109,14 @@ def test_nyl_error_render_with_details():
 
     error.render(console)
 
-    output = console.file.getvalue()
+    output = cast(StringIO, console.file).getvalue()
     assert "Process failed" in output
     assert "Details:" in output
     assert "12345" in output
     assert "SIGTERM" in output
 
 
-def test_nyl_error_render_with_cause():
+def test_nyl_error_render_with_cause() -> None:
     """Test rendering NylError with cause."""
     pytest.importorskip("rich")
     from rich.console import Console
@@ -126,14 +127,14 @@ def test_nyl_error_render_with_cause():
 
     error.render(console)
 
-    output = console.file.getvalue()
+    output = cast(StringIO, console.file).getvalue()
     assert "High-level error" in output
     assert "Caused by:" in output
     assert "RuntimeError" in output
     assert "Underlying issue" in output
 
 
-def test_nyl_error_inheritance():
+def test_nyl_error_inheritance() -> None:
     """Test that NylError can be subclassed."""
 
     class CustomError(NylError):
@@ -149,5 +150,6 @@ def test_nyl_error_inheritance():
     assert isinstance(error, NylError)
     assert isinstance(error, Exception)
     assert "my-deployment" in error.message
+    assert error.hint is not None
     assert "my-deployment" in error.hint
     assert error.details["resource"] == "my-deployment"

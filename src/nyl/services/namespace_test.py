@@ -11,12 +11,12 @@ from nyl.tools.types import Resource, ResourceList
 
 
 @pytest.fixture
-def service():
+def service() -> NamespaceResolverService:
     """Create a NamespaceResolverService instance."""
     return NamespaceResolverService()
 
 
-def test_resolve_default_namespace_no_namespace_resource_uses_fallback(service):
+def test_resolve_default_namespace_no_namespace_resource_uses_fallback(service: NamespaceResolverService) -> None:
     """Test that fallback is used when no Namespace resources exist."""
     source = ManifestsWithSource(
         resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
@@ -28,7 +28,7 @@ def test_resolve_default_namespace_no_namespace_resource_uses_fallback(service):
     assert result == "my-fallback"
 
 
-def test_resolve_default_namespace_no_namespace_resource_uses_filename(service):
+def test_resolve_default_namespace_no_namespace_resource_uses_filename(service: NamespaceResolverService) -> None:
     """Test that filename stem is used when no Namespace and no fallback."""
     source = ManifestsWithSource(
         resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
@@ -40,7 +40,7 @@ def test_resolve_default_namespace_no_namespace_resource_uses_filename(service):
     assert result == "my-application"
 
 
-def test_resolve_default_namespace_strips_nyl_extension(service):
+def test_resolve_default_namespace_strips_nyl_extension(service: NamespaceResolverService) -> None:
     """Test that .nyl suffix is stripped from filename."""
     source = ManifestsWithSource(
         resources=ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})]),
@@ -52,7 +52,7 @@ def test_resolve_default_namespace_strips_nyl_extension(service):
     assert result == "my-app"
 
 
-def test_resolve_default_namespace_single_namespace(service):
+def test_resolve_default_namespace_single_namespace(service: NamespaceResolverService) -> None:
     """Test that single Namespace resource name is used."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -69,7 +69,7 @@ def test_resolve_default_namespace_single_namespace(service):
     assert result == "production"
 
 
-def test_resolve_default_namespace_multiple_with_annotation(service):
+def test_resolve_default_namespace_multiple_with_annotation(service: NamespaceResolverService) -> None:
     """Test that annotated namespace is used when multiple exist."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -95,7 +95,7 @@ def test_resolve_default_namespace_multiple_with_annotation(service):
     assert result == "production"
 
 
-def test_resolve_default_namespace_multiple_no_annotation_uses_alphabetical(service):
+def test_resolve_default_namespace_multiple_no_annotation_uses_alphabetical(service: NamespaceResolverService) -> None:
     """Test that first alphabetical namespace is used when multiple exist without annotation."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -113,7 +113,7 @@ def test_resolve_default_namespace_multiple_no_annotation_uses_alphabetical(serv
     assert result == "alpha"
 
 
-def test_resolve_default_namespace_multiple_with_multiple_annotations_raises_error(service):
+def test_resolve_default_namespace_multiple_with_multiple_annotations_raises_error(service: NamespaceResolverService) -> None:
     """Test that error is raised when multiple namespaces have the default annotation."""
     source = ManifestsWithSource(
         resources=ResourceList(
@@ -153,7 +153,7 @@ def test_resolve_default_namespace_multiple_with_multiple_annotations_raises_err
     assert error.details.get("namespaces_found") is not None
 
 
-def test_find_namespace_resources_finds_all(service):
+def test_find_namespace_resources_finds_all(service: NamespaceResolverService) -> None:
     """Test finding all Namespace resources in a list."""
     resources = ResourceList(
         [
@@ -171,7 +171,7 @@ def test_find_namespace_resources_finds_all(service):
     assert result[1]["metadata"]["name"] == "ns2"
 
 
-def test_find_namespace_resources_empty_list(service):
+def test_find_namespace_resources_empty_list(service: NamespaceResolverService) -> None:
     """Test finding namespaces in empty list."""
     resources = ResourceList([])
 
@@ -180,7 +180,7 @@ def test_find_namespace_resources_empty_list(service):
     assert len(result) == 0
 
 
-def test_find_namespace_resources_no_namespaces(service):
+def test_find_namespace_resources_no_namespaces(service: NamespaceResolverService) -> None:
     """Test finding namespaces when none exist."""
     resources = ResourceList(
         [
@@ -194,14 +194,14 @@ def test_find_namespace_resources_no_namespaces(service):
     assert len(result) == 0
 
 
-def test_is_namespace_resource_true_for_namespace(service):
+def test_is_namespace_resource_true_for_namespace(service: NamespaceResolverService) -> None:
     """Test that v1/Namespace is recognized."""
     resource = Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "test"}})
 
     assert service._is_namespace_resource(resource)
 
 
-def test_is_namespace_resource_false_for_other_kinds(service):
+def test_is_namespace_resource_false_for_other_kinds(service: NamespaceResolverService) -> None:
     """Test that non-Namespace resources are not recognized."""
     resources = [
         Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
@@ -213,14 +213,14 @@ def test_is_namespace_resource_false_for_other_kinds(service):
         assert not service._is_namespace_resource(resource)
 
 
-def test_is_namespace_resource_false_for_wrong_api_version(service):
+def test_is_namespace_resource_false_for_wrong_api_version(service: NamespaceResolverService) -> None:
     """Test that Namespace with wrong apiVersion is not recognized."""
     resource = Resource({"apiVersion": "custom/v1", "kind": "Namespace", "metadata": {"name": "test"}})
 
     assert not service._is_namespace_resource(resource)
 
 
-def test_populate_namespaces_adds_namespace_to_resources(service):
+def test_populate_namespaces_adds_namespace_to_resources(service: NamespaceResolverService) -> None:
     """Test that populate_namespaces adds namespace to resources without one."""
     resources = ResourceList(
         [
@@ -249,7 +249,7 @@ def test_populate_namespaces_adds_namespace_to_resources(service):
     assert resources[1]["metadata"]["namespace"] == "my-namespace"
 
 
-def test_populate_namespaces_preserves_existing_namespace(service):
+def test_populate_namespaces_preserves_existing_namespace(service: NamespaceResolverService) -> None:
     """Test that populate_namespaces doesn't override existing namespaces."""
     resources = ResourceList(
         [
@@ -280,7 +280,7 @@ def test_populate_namespaces_preserves_existing_namespace(service):
     assert resources[1]["metadata"]["namespace"] == "my-namespace"
 
 
-def test_resolve_with_annotation_value_false_not_treated_as_default(service):
+def test_resolve_with_annotation_value_false_not_treated_as_default(service: NamespaceResolverService) -> None:
     """Test that annotation with 'false' value doesn't mark namespace as default."""
     source = ManifestsWithSource(
         resources=ResourceList(

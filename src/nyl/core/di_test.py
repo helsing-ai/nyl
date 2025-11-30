@@ -30,7 +30,7 @@ class MockService:
         self.db = db
 
 
-def test_container_register_and_resolve_factory():
+def test_container_register_and_resolve_factory() -> None:
     """Test basic factory registration and resolution."""
     container = DIContainer()
     container.register_factory(MockDatabase, lambda: MockDatabase("prod://db"))
@@ -41,12 +41,12 @@ def test_container_register_and_resolve_factory():
     assert db.url == "prod://db"
 
 
-def test_container_factory_creates_singleton():
+def test_container_factory_creates_singleton() -> None:
     """Test that factory only creates one instance."""
     container = DIContainer()
     call_count = 0
 
-    def factory():
+    def factory() -> MockDatabase:
         nonlocal call_count
         call_count += 1
         return MockDatabase()
@@ -60,7 +60,7 @@ def test_container_factory_creates_singleton():
     assert call_count == 1
 
 
-def test_container_register_and_resolve_singleton():
+def test_container_register_and_resolve_singleton() -> None:
     """Test singleton instance registration."""
     container = DIContainer()
     db = MockDatabase("singleton://db")
@@ -73,7 +73,7 @@ def test_container_register_and_resolve_singleton():
     assert resolved.connected
 
 
-def test_container_resolve_missing_type_raises_key_error():
+def test_container_resolve_missing_type_raises_key_error() -> None:
     """Test that resolving unregistered type raises KeyError."""
     container = DIContainer()
 
@@ -83,7 +83,7 @@ def test_container_resolve_missing_type_raises_key_error():
     assert "MockDatabase" in str(exc_info.value)
 
 
-def test_container_has_checks_registration():
+def test_container_has_checks_registration() -> None:
     """Test the has() method for checking registrations."""
     container = DIContainer()
 
@@ -94,7 +94,7 @@ def test_container_has_checks_registration():
     assert container.has(MockDatabase)
 
 
-def test_container_create_scope_inherits_from_parent():
+def test_container_create_scope_inherits_from_parent() -> None:
     """Test that child scopes can resolve from parent."""
     parent = DIContainer()
     parent.register_factory(MockDatabase, lambda: MockDatabase("parent://db"))
@@ -105,7 +105,7 @@ def test_container_create_scope_inherits_from_parent():
     assert db.url == "parent://db"
 
 
-def test_container_create_scope_has_own_cache():
+def test_container_create_scope_has_own_cache() -> None:
     """Test that child scopes have independent instance caches."""
     parent = DIContainer()
 
@@ -128,7 +128,7 @@ def test_container_create_scope_has_own_cache():
     assert child1.resolve(MockCache) is not child2.resolve(MockCache)
 
 
-def test_container_create_scope_can_override_parent():
+def test_container_create_scope_can_override_parent() -> None:
     """Test that child scope can override parent registrations."""
     parent = DIContainer()
     parent.register_factory(MockDatabase, lambda: MockDatabase("parent://db"))
@@ -145,7 +145,7 @@ def test_container_create_scope_can_override_parent():
     assert parent_db.url == "parent://db"
 
 
-def test_container_clear_removes_all():
+def test_container_clear_removes_all() -> None:
     """Test that clear() removes all registrations."""
     container = DIContainer()
     container.register_factory(MockDatabase, MockDatabase)
@@ -163,7 +163,7 @@ def test_container_clear_removes_all():
     assert not container.has(MockCache)
 
 
-def test_container_multiple_types():
+def test_container_multiple_types() -> None:
     """Test container with multiple registered types."""
     container = DIContainer()
     container.register_factory(MockDatabase, lambda: MockDatabase("multi://db"))
@@ -176,7 +176,7 @@ def test_container_multiple_types():
     assert cache.ttl == 600
 
 
-def test_container_parent_child_has_check():
+def test_container_parent_child_has_check() -> None:
     """Test that child's has() checks parent too."""
     parent = DIContainer()
     parent.register_factory(MockDatabase, MockDatabase)
