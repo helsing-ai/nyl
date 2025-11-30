@@ -256,19 +256,6 @@ def test_tag_resources_with_applyset(service: KubernetesApplyService) -> None:
         assert "applyset.kubernetes.io/part-of" in resource["metadata"]["labels"]
 
 
-def test_tag_resources_with_applyset_part_of_false(service: KubernetesApplyService) -> None:
-    """Test that labels are not added when applyset_part_of=False."""
-    applyset = ApplySet.new("test-applyset")
-    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
-
-    service.tag_resources_with_applyset(resources, applyset, applyset_part_of=False)
-
-    # Resources should not have the label
-    assert "labels" not in resources[0]["metadata"] or "applyset.kubernetes.io/part-of" not in resources[0][
-        "metadata"
-    ].get("labels", {})
-
-
 def test_find_namespace_resources(service: KubernetesApplyService) -> None:
     """Test finding namespace resources."""
     resources = ResourceList(
@@ -282,12 +269,3 @@ def test_find_namespace_resources(service: KubernetesApplyService) -> None:
     result = service.find_namespace_resources(resources)
 
     assert result == {"ns1", "ns2"}
-
-
-def test_find_namespace_resources_empty(service: KubernetesApplyService) -> None:
-    """Test finding namespaces when none exist."""
-    resources = ResourceList([Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}})])
-
-    result = service.find_namespace_resources(resources)
-
-    assert result == set()

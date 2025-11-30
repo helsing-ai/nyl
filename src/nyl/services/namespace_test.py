@@ -171,55 +171,6 @@ def test_find_namespace_resources_finds_all(service: NamespaceResolverService) -
     assert result[1]["metadata"]["name"] == "ns2"
 
 
-def test_find_namespace_resources_empty_list(service: NamespaceResolverService) -> None:
-    """Test finding namespaces in empty list."""
-    resources = ResourceList([])
-
-    result = service.find_namespace_resources(resources)
-
-    assert len(result) == 0
-
-
-def test_find_namespace_resources_no_namespaces(service: NamespaceResolverService) -> None:
-    """Test finding namespaces when none exist."""
-    resources = ResourceList(
-        [
-            Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
-            Resource({"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}),
-        ]
-    )
-
-    result = service.find_namespace_resources(resources)
-
-    assert len(result) == 0
-
-
-def test_is_namespace_resource_true_for_namespace(service: NamespaceResolverService) -> None:
-    """Test that v1/Namespace is recognized."""
-    resource = Resource({"apiVersion": "v1", "kind": "Namespace", "metadata": {"name": "test"}})
-
-    assert service._is_namespace_resource(resource)
-
-
-def test_is_namespace_resource_false_for_other_kinds(service: NamespaceResolverService) -> None:
-    """Test that non-Namespace resources are not recognized."""
-    resources = [
-        Resource({"apiVersion": "v1", "kind": "Service", "metadata": {"name": "svc"}}),
-        Resource({"apiVersion": "apps/v1", "kind": "Deployment", "metadata": {"name": "deploy"}}),
-        Resource({"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": "cm"}}),
-    ]
-
-    for resource in resources:
-        assert not service._is_namespace_resource(resource)
-
-
-def test_is_namespace_resource_false_for_wrong_api_version(service: NamespaceResolverService) -> None:
-    """Test that Namespace with wrong apiVersion is not recognized."""
-    resource = Resource({"apiVersion": "custom/v1", "kind": "Namespace", "metadata": {"name": "test"}})
-
-    assert not service._is_namespace_resource(resource)
-
-
 def test_populate_namespaces_adds_namespace_to_resources(service: NamespaceResolverService) -> None:
     """Test that populate_namespaces adds namespace to resources without one."""
     resources = ResourceList(

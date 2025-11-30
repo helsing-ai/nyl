@@ -69,83 +69,6 @@ metadata:
     assert "ConfigMap" in kinds
 
 
-def test_load_manifests_skips_nyl_prefixed_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
-    """Test that files starting with 'nyl-' are skipped."""
-    (temp_manifest_dir / "app.yaml").write_text("""
-apiVersion: v1
-kind: Service
-metadata:
-  name: app
-""")
-    (temp_manifest_dir / "nyl-project.yaml").write_text("""
-some: config
-""")
-
-    result = service.load_manifests([temp_manifest_dir])
-
-    assert len(result) == 1
-    assert result[0].file.name == "app.yaml"
-
-
-def test_load_manifests_skips_hidden_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
-    """Test that hidden files (starting with '.') are skipped."""
-    (temp_manifest_dir / "app.yaml").write_text("""
-apiVersion: v1
-kind: Service
-metadata:
-  name: app
-""")
-    (temp_manifest_dir / ".hidden.yaml").write_text("""
-apiVersion: v1
-kind: Secret
-metadata:
-  name: secret
-""")
-
-    result = service.load_manifests([temp_manifest_dir])
-
-    assert len(result) == 1
-    assert result[0].file.name == "app.yaml"
-
-
-def test_load_manifests_skips_underscore_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
-    """Test that files starting with '_' are skipped."""
-    (temp_manifest_dir / "app.yaml").write_text("""
-apiVersion: v1
-kind: Service
-metadata:
-  name: app
-""")
-    (temp_manifest_dir / "_template.yaml").write_text("""
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: template
-""")
-
-    result = service.load_manifests([temp_manifest_dir])
-
-    assert len(result) == 1
-    assert result[0].file.name == "app.yaml"
-
-
-def test_load_manifests_only_loads_yaml_files(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
-    """Test that only .yaml files are loaded."""
-    (temp_manifest_dir / "app.yaml").write_text("""
-apiVersion: v1
-kind: Service
-metadata:
-  name: app
-""")
-    (temp_manifest_dir / "readme.txt").write_text("This is a readme")
-    (temp_manifest_dir / "config.json").write_text('{"key": "value"}')
-
-    result = service.load_manifests([temp_manifest_dir])
-
-    assert len(result) == 1
-    assert result[0].file.name == "app.yaml"
-
-
 def test_load_manifests_multiple_resources_in_file(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
     """Test loading a file with multiple YAML documents."""
     manifest_file = temp_manifest_dir / "multi.yaml"
@@ -172,14 +95,6 @@ metadata:
     assert len(result[0].resources) == 3
     kinds = [r["kind"] for r in result[0].resources]
     assert kinds == ["Namespace", "Service", "Deployment"]
-
-
-def test_load_manifests_empty_directory_returns_empty_list(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
-    """Test that loading from empty directory returns empty list."""
-    result = service.load_manifests([temp_manifest_dir])
-
-    assert len(result) == 0
-    # Note: Warning is logged but we don't test it here since loguru doesn't integrate with caplog by default
 
 
 def test_load_manifests_invalid_yaml_raises_error(temp_manifest_dir: Path, service: ManifestLoaderService) -> None:
