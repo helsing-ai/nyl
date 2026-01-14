@@ -4,8 +4,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from databind.core import Union
-
-from nyl.tools.di import DependenciesProvider
+from kubernetes.client.api_client import ApiClient
 
 SecretValue = dict[str, Any] | list[Any] | str | int | float | bool | None
 """
@@ -21,7 +20,7 @@ class SecretProvider(ABC):
     """
 
     @abstractmethod
-    def init(self, config_file: Path, dependencies: DependenciesProvider) -> None:
+    def init(self, config_file: Path, api_client: ApiClient | None = None) -> None:
         """
         Called after loading the provider configuration from a configuration file. The file's path is provided to
         allow the provider to resolve relative paths.
@@ -29,8 +28,7 @@ class SecretProvider(ABC):
         Args:
             config_file: The file that the configuration is loaded from. This is useful to allow configuration
                 parameters that are relative paths to be converted to absolute paths.
-            dependencies: Any extraneous dependencies that may be required for the provider are passed through
-                this interface, up to one per type.
+            api_client: Optional Kubernetes API client for providers that need cluster access.
         """
 
     @abstractmethod

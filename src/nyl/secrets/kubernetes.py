@@ -10,7 +10,6 @@ from kubernetes.client.exceptions import ApiException
 from loguru import logger
 
 from nyl.secrets import SecretProvider, SecretValue
-from nyl.tools.di import DependenciesProvider
 
 
 @Union.register(SecretProvider, name="KubernetesSecret")
@@ -43,8 +42,10 @@ class KubernetesSecretProvider(SecretProvider):
 
     # SecretProvider
 
-    def init(self, config_file: Path, dependencies: DependenciesProvider) -> None:
-        self._api = CoreV1Api(api_client=dependencies.get(ApiClient))
+    def init(self, config_file: Path, api_client: ApiClient | None = None) -> None:
+        if api_client is None:
+            raise ValueError("KubernetesSecretProvider requires an ApiClient")
+        self._api = CoreV1Api(api_client=api_client)
 
     def keys(self) -> Iterable[str]:
         return self.load().keys()

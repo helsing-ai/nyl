@@ -2,11 +2,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Literal
 
+from kubernetes.client.api_client import ApiClient
 from loguru import logger
 
 from nyl.profiles.config import Profile
 from nyl.secrets import SecretProvider
-from nyl.tools.di import DependenciesProvider
 from nyl.tools.fs import distance_to_cwd, find_config_file
 from nyl.tools.loads import loadf
 
@@ -113,7 +113,7 @@ class ProjectConfig:
         file: Path | None = None,
         /,
         *,
-        dependencies: DependenciesProvider | None = None,
+        api_client: ApiClient | None = None,
         init_secret_providers: bool = True,
     ) -> "ProjectConfig":
         """
@@ -124,9 +124,7 @@ class ProjectConfig:
             file: The file to loads the project configuration from. If not specified, the file is automatically
                 discovered using :meth:`ProjectConfig.find()` by traversing the filesystem hierarchy. If no file is
                 found, an empty project configuration will be returned.
-            dependencies: A dependency provider for the initialization of the :class:`SecretProvider`s defined in the
-                project. If not specified, an empty provider is used, but this may mean not all implementations of
-                :class:`SecretProvider` can be used.
+            api_client: Optional Kubernetes API client for providers that need cluster access.
             init_secret_providers: Whether to initialize secret providers. Usually this should be left enabled, but
                 for cases where you're not interested in the providers, you can turn this off.
         """
@@ -152,10 +150,8 @@ class ProjectConfig:
 
         # Make sure the secrets are initialized.
         if init_secret_providers:
-            if dependencies is None:
-                dependencies = DependenciesProvider.default()
             for provider in project.secrets.values():
-                provider.init(file, dependencies)
+                provider.init(file, api_client)
 
         return ProjectConfig(file, project)
 
@@ -165,7 +161,7 @@ class ProjectConfig:
         over: Path | None,
         cwd: Path | None = None,
         predicate: Callable[["ProjectConfig"], bool],
-        dependencies: DependenciesProvider | None = None,
+        api_client: ApiClient | None = None,
         init_secret_providers: bool = True,
     ) -> "ProjectConfig | None":
         """
@@ -183,7 +179,7 @@ class ProjectConfig:
             cwd: The current working directory. Defaults to the current working directory.
             predicate: The predicate that the project configuration must satisfy to take precedence. This is checked
                 if the project configuration file is closer than the given configuration file.
-            dependencies: See :meth:`ProjectConfig.load`.
+            api_client: See :meth:`ProjectConfig.load`.
             init_secret_providers: See :meth:`ProjectConfig.load`.
 
         Returns:
@@ -205,9 +201,7 @@ class ProjectConfig:
 
             logger.trace("Project configuration '{}' is closer to '{}' than '{}'", config_file, cwd, over)
 
-        project = ProjectConfig.load(
-            config_file, dependencies=dependencies, init_secret_providers=init_secret_providers
-        )
+        project = ProjectConfig.load(config_file, api_client=api_client, init_secret_providers=init_secret_providers)
         if predicate(project):
             logger.trace("Project configuration '{}' takes precedence", config_file)
             return project
