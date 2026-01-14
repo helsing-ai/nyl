@@ -600,7 +600,7 @@ requires-dist = [
     { name = "pyroscope-io", specifier = ">=0.8.11" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "requests", specifier = ">=2.32.3" },
-    { name = "stablehash", specifier = ">=0.2.1,<0.3.0" },
+    { name = "stablehash", specifier = ">=0.3.0,<0.4.0" },
     { name = "structured-templates", specifier = ">=0.1.1" },
     { name = "typer", specifier = ">=0.12.3" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
@@ -901,11 +901,11 @@ wheels = [
 
 [[package]]
 name = "stablehash"
-version = "0.2.4"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fa/5e/83cdbf1a86bbda61bfe149362182f06938a2afeb2b256838fbd806ffe16a/stablehash-0.2.4.tar.gz", hash = "sha256:2392536bdf6a7b0de0dacbac5d5e1cfcb034dfc05be5c1c06bfb5d012858c9b5", size = 10485, upload-time = "2025-08-04T09:54:15.996Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/01/159196c21db96a7adde6d52e7691762ef873a708c6d56ea4e8bd99ba8392/stablehash-0.3.0.tar.gz", hash = "sha256:31d89697683c664487b6f995759aa14bc65bb9de31ad8beca5e99c8678b66baf", size = 8166, upload-time = "2025-10-27T10:30:03.632Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1b/27/d5dad9e240bf0bee6bff10910f2b19ff41fe8f994d300ffc9e35069dfa8f/stablehash-0.2.4-py3-none-any.whl", hash = "sha256:fa811ef261c6ba2fb507525f05326601849e764ce4aa7bb64c74fd973475abb7", size = 6209, upload-time = "2025-08-04T09:54:14.979Z" },
+    { url = "https://files.pythonhosted.org/packages/7b/7a/4eb9fc77dececb5478f1d105b6b6c5a64706aa0715134b0bf50a1081406f/stablehash-0.3.0-py3-none-any.whl", hash = "sha256:82b59223e7c5c9b6df42dd4d3f1dbdc1356ecf80102405f5355dc287b28b77f6", size = 7354, upload-time = "2025-10-27T10:30:02.294Z" },
 ]
 
 [[package]]
