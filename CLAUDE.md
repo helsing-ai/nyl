@@ -1,0 +1,1 @@
+- Lint code with `tire lint`, format with `tire fmt (--fix)` and type-check with `tire check`
