@@ -46,11 +46,21 @@ class OnLookupFailure(str, Enum):
 
 @app.command()
 def template(
-    paths: list[Path] = Argument(..., help="The YAML file(s) to render. Can be a directory."),
-    profile: Optional[str] = Option(None, envvar="NYL_PROFILE", help="The Nyl profile to use."),
-    secrets_provider: str = Option("default", "--secrets", envvar="NYL_SECRETS", help="The secrets provider to use."),
+    paths: list[Path] = Argument(
+        ..., help="The YAML file(s) to render. Can be a directory."
+    ),
+    profile: Optional[str] = Option(
+        None, envvar="NYL_PROFILE", help="The Nyl profile to use."
+    ),
+    secrets_provider: str = Option(
+        "default",
+        "--secrets",
+        envvar="NYL_SECRETS",
+        help="The secrets provider to use.",
+    ),
     in_cluster: bool = Option(
-        False, help="Use the in-cluster Kubernetes configuration. The --profile option is ignored."
+        False,
+        help="Use the in-cluster Kubernetes configuration. The --profile option is ignored.",
     ),
     apply: bool = Option(
         False,
@@ -94,7 +104,9 @@ def template(
         envvar="NYL_TEMPLATE_JOBS",
     ),
     state_dir: Optional[Path] = Option(
-        None, help="The directory to store state in (such as kubeconfig files).", envvar="NYL_STATE_DIR"
+        None,
+        help="The directory to store state in (such as kubeconfig files).",
+        envvar="NYL_STATE_DIR",
     ),
     cache_dir: Optional[Path] = Option(
         None,
@@ -117,10 +129,15 @@ def template(
         profile = os.environ["ARGOCD_ENV_NYL_PROFILE"]
         connect_with_profile = False
 
-    if paths == [Path(".")] and (env_paths := os.getenv("ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT")) is not None:
+    if (
+        paths == [Path(".")]
+        and (env_paths := os.getenv("ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT")) is not None
+    ):
         paths = [Path(p) for p in env_paths.split(",")]
         if not paths:
-            logger.error("<cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</> is set, but empty.")
+            logger.error(
+                "<cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</> is set, but empty."
+            )
             exit(1)
         logger.opt(colors=True).info(
             "Using paths from <cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</>: <blue>{}</>",
@@ -211,7 +228,9 @@ def template(
     k8s_apply = context.container.resolve(KubernetesApplyService)
 
     for source in manifest_loader.load_manifests(paths):
-        logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
+        logger.opt(colors=True).info(
+            "Rendering manifests from <blue>{}</>.", source.file
+        )
 
         template_engine = NylTemplateEngine(
             secrets.providers[secrets_provider],
@@ -240,14 +259,28 @@ def template(
             setattr(template_engine.values, key, value)
 
         # Begin populating the default namespace to resources.
-        current_default_namespace = namespace_resolver.resolve_default_namespace(source, default_namespace)
-        namespace_resolver.populate_namespaces(source.resources, current_default_namespace)
-
-        # Use TemplatingService to evaluate templates and handle inline resource generation
-        templating_service = TemplatingService(template_engine, generator, namespace_resolver)
-        source.resources, post_processors = templating_service.evaluate_template(
-            source, current_default_namespace, inline=inline, jobs=jobs
+        current_default_namespace = namespace_resolver.resolve_default_namespace(
+            source, default_namespace
         )
+        namespace_resolver.populate_namespaces(
+            source.resources, current_default_namespace
+        )
+
+        # Use TemplatingService to evaluate templates and generate inline resources
+        templating_service = TemplatingService(
+            template_engine=template_engine,
+            generator=generator,
+            namespace_resolver=namespace_resolver,
+        )
+        source.resources, post_processors = templating_service.evaluate_template(
+            source,
+            default_namespace=current_default_namespace,
+            inline=inline,
+            jobs=jobs,
+        )
+
+        # Find the namespaces that are defined in the file
+        k8s_apply.find_namespace_resources(source.resources)
 
         # Find or create ApplySet
         applyset = k8s_apply.find_or_create_applyset(
@@ -264,7 +297,9 @@ def template(
             # Inline resources often don't have metadata and they are not persisted to the cluster, hence
             # we don't need to process them here.
             if NylResource.matches(resource, API_VERSION_INLINE):
-                assert not inline, "Inline resources should have been processed by this timepdm lint."
+                assert not inline, (
+                    "Inline resources should have been processed by this time."
+                )
                 continue
 
             if "metadata" not in resource:
@@ -277,16 +312,26 @@ def template(
 
         # Tag resources as part of the current apply set, if any.
         if applyset is not None:
-            k8s_apply.tag_resources_with_applyset(source.resources, applyset, applyset_part_of)
+            k8s_apply.tag_resources_with_applyset(
+                source.resources, applyset, applyset_part_of
+            )
 
-        namespace_resolver.populate_namespaces(source.resources, current_default_namespace)
+        namespace_resolver.populate_namespaces(
+            source.resources, current_default_namespace
+        )
         drop_empty_metadata_labels(source.resources)
 
         # Now apply the post-processor.
-        source.resources = PostProcessor.apply_all(source.resources, post_processors, source.file)
+        source.resources = PostProcessor.apply_all(
+            source.resources, post_processors, source.file
+        )
 
         if apply:
-            logger.info("Kubectl-apply {} resource(s) from '{}'", len(source.resources), source.file)
+            logger.info(
+                "Kubectl-apply {} resource(s) from '{}'",
+                len(source.resources),
+                source.file,
+            )
             k8s_apply.apply_with_applyset(
                 source.resources,
                 applyset,
@@ -294,7 +339,11 @@ def template(
                 prune=True if applyset else False,
             )
         elif diff:
-            logger.info("Kubectl-diff {} resource(s) from '{}'", len(source.resources), source.file)
+            logger.info(
+                "Kubectl-diff {} resource(s) from '{}'",
+                len(source.resources),
+                source.file,
+            )
             k8s_apply.diff_with_applyset(source.resources, applyset)
         else:
             # If we're not going to be applying the resources immediately via `kubectl`, we print them to stdout.
@@ -309,7 +358,12 @@ def template(
                 "data": {
                     "duration_seconds": time.perf_counter() - start_time,
                     "inputs": [
-                        str(p.absolute().relative_to(project.file.parent) if project.file else p) for p in paths
+                        str(
+                            p.absolute().relative_to(project.file.parent)
+                            if project.file
+                            else p
+                        )
+                        for p in paths
                     ],
                     # See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
                     "argocd_app_name": os.getenv("ARGOCD_APP_NAME"),
@@ -317,7 +371,9 @@ def template(
                     "argocd_app_project_name": os.getenv("ARGOCD_APP_PROJECT_NAME"),
                     "argocd_app_revision": os.getenv("ARGOCD_APP_REVISION"),
                     "argocd_app_source_path": os.getenv("ARGOCD_APP_SOURCE_PATH"),
-                    "argocd_app_source_repo_url": os.getenv("ARGOCD_APP_SOURCE_REPO_URL"),
+                    "argocd_app_source_repo_url": os.getenv(
+                        "ARGOCD_APP_SOURCE_REPO_URL"
+                    ),
                 },
             }
         ),
