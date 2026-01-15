@@ -50,7 +50,7 @@ RUN curl -sSfLo /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releas
 FROM fetch-bin-base AS helm-bin
 # Find Helm releases at https://github.com/helm/helm/releases
 # renovate: datasource=github-releases depName=helm packageName=helm/helm
-ARG HELM_VERSION=v3.19.4
+ARG HELM_VERSION=v3.19.5
 RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
     && chmod 700 get_helm.sh \
     && ./get_helm.sh --version $HELM_VERSION \
