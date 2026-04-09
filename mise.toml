@@ -1,10 +1,10 @@
 [tools]
 "cargo:tire" = "0.1.2"
 kyverno = "1.14.4"
-uv = "0.9.25"
-sops = "3.11.0"
-helm = "3.19.5"
-kubectl = "1.35.0"
+uv = "0.11.6"
+sops = "3.12.2"
+helm = "3.20.2"
+kubectl = "1.35.3"
 "pipx:slap-cli" = "1.15.0"
 
 [tasks.build-docs]
