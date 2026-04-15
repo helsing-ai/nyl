@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/configure-pages@v5
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v4
       - name: Build docs
         run: mise run build-docs
       - name: Upload Artifact
