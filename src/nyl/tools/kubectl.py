@@ -5,15 +5,18 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 import yaml
 from loguru import logger
 
-from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.resources.applyset import APPLYSET_LABEL_PART_OF
 from nyl.tools.logging import lazy_str
 from nyl.tools.shell import pretty_cmd
-from nyl.tools.types import ResourceList
+from nyl.tools.types import Resource, ResourceList
+
+if TYPE_CHECKING:
+    from nyl.resources.applyset import ApplySet
 
 
 @dataclass
@@ -90,35 +93,66 @@ class Kubectl:
         manifests: ResourceList,
         force_conflicts: bool = False,
         server_side: bool = True,
-        applyset: str | None = None,
-        prune: bool = False,
     ) -> None:
         """
         Apply the given manifests to the cluster.
         """
 
-        env = self.env
         command = ["kubectl", "apply", "-f", "-"]
         if server_side:
             command.append("--server-side")
-        if applyset:
-            env = env.copy()
-            env["KUBECTL_APPLYSET"] = "true"
-            command.extend(["--applyset", applyset])
-        if prune:
-            command.append("--prune")
         if force_conflicts:
             command.append("--force-conflicts")
 
         logger.debug("Applying manifests with command: $ {command}", command=lazy_str(pretty_cmd, command))
-        status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **env})
+
+        status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **self.env})
         if status.returncode:
             raise KubectlError(status.returncode)
+
+    def delete(self, resource: Resource) -> bool:
+        """
+        Delete a single resource from the cluster.
+
+        Args:
+            resource: The resource to delete.
+
+        Returns:
+            True if the resource was deleted, False if it didn't exist.
+        """
+        api_version = resource.get("apiVersion", "")
+        kind = resource.get("kind", "")
+        metadata = resource.get("metadata", {})
+        name = metadata.get("name", "")
+        namespace = metadata.get("namespace")
+
+        # Build the resource identifier
+        if "/" in api_version:
+            # For resources like apps/v1 Deployment, the type is "deployment.apps"
+            group = api_version.split("/")[0]
+            resource_type = f"{kind.lower()}.{group}"
+        else:
+            # For core v1 resources like Pod, the type is just the kind
+            resource_type = kind.lower()
+
+        command = ["kubectl", "delete", resource_type, name]
+        if namespace:
+            command.extend(["-n", namespace])
+
+        logger.debug("Deleting resource with command: $ {command}", command=lazy_str(pretty_cmd, command))
+        status = subprocess.run(command, capture_output=True, text=True, env={**os.environ, **self.env})
+
+        if status.returncode == 0:
+            return True
+        elif "NotFound" in status.stderr:
+            return False
+        else:
+            raise KubectlError(status.returncode, status.stderr)
 
     def diff(
         self,
         manifests: ResourceList,
-        applyset: ApplySet | None = None,
+        applyset: "ApplySet | None" = None,
         on_error: Literal["raise", "return"] = "raise",
     ) -> Literal["no-diff", "diff", "error"]:
         """

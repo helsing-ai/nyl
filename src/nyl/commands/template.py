@@ -21,7 +21,7 @@ from nyl.generator.dispatch import DispatchingGenerator
 from nyl.profiles import DEFAULT_PROFILE, ProfileManager
 from nyl.project.config import ProjectConfig
 from nyl.resources import API_VERSION_INLINE, NylResource
-from nyl.resources.applyset import APPLYSET_LABEL_PART_OF, ApplySet
+from nyl.resources.applyset import ApplySet, ApplySetContext, ApplySetManager
 from nyl.resources.postprocessor import PostProcessor
 from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
@@ -173,11 +173,6 @@ def template(
         )
         exit(1)
 
-    if apply:
-        # When running with --apply, we must ensure that the --applyset-part-of option is disabled, as it would cause
-        # an error when passing the generated manifests to `kubectl apply --applyset=...`.
-        applyset_part_of = False
-
     if apply and diff:
         logger.error("The --apply and --diff options cannot be combined.")
         exit(1)
@@ -288,59 +283,46 @@ def template(
         source.resources, post_processors = PostProcessor.extract_from_list(source.resources)
 
         # Find the namespaces that are defined in the file. If we find any resources without a namespace, we will
-        # inject that namespace name into them. Also find the applyset defined in the file.
+        # inject that namespace name into them.
         namespaces: set[str] = set()
-        applyset: ApplySet | None = None
 
         for resource in list(source.resources):
             if is_namespace_resource(resource):
                 namespaces.add(resource["metadata"]["name"])
-            elif ApplySet.matches(resource):
-                if applyset is not None:
-                    logger.opt(colors=True).error(
-                        "Multiple ApplySet resources defined in <yellow>{}</>, there can only be one per source.",
-                        source.file,
-                    )
-                    exit(1)
-                applyset = ApplySet.load(resource)
-                source.resources.remove(resource)
 
-        if not applyset and project.config.settings.generate_applysets:
+        # Create an ApplySet if configured to do so
+        applyset: ApplySet | None = None
+        if project.config.settings.generate_applysets:
             if not current_default_namespace:
                 logger.opt(colors=True).error(
                     "No default namespace defined for <yellow>{}</>, but it is required for the automatically "
-                    "generated nyl.io/v1/ApplySet resource (the ApplySet is named after the default namespace).",
+                    "generated ApplySet ConfigMap (the ApplySet is named after the default namespace).",
                     source.file,
                 )
                 exit(1)
 
-            applyset_name = current_default_namespace
-            applyset = ApplySet.new(applyset_name)
+            applyset_name = f"nyl.applyset.{current_default_namespace}"
+            applyset = ApplySet.new(applyset_name, current_default_namespace)
+
+            # Build context information for the ApplySet from environment
+            applyset.context = ApplySetContext.from_environment(files=[str(source.file)])
+
             logger.opt(colors=True).info(
-                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).", source.file, applyset_name
+                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>, namespace: <cyan>{}</>).",
+                source.file,
+                applyset_name,
+                current_default_namespace,
             )
+
+        # Create the ApplySetManager to handle apply/diff operations
+        applyset_manager = ApplySetManager(
+            client=client, applyset=applyset, add_part_of_labels=applyset_part_of
+        )
 
         if applyset is not None:
             applyset.set_group_kinds(source.resources)
-            # HACK: Kubectl 1.30 can't create the custom resource, so we need to create it. But it will also reject
-            #       using the custom resource unless it has the tooling label set appropriately. For more details, see
-            #       https://github.com/helsing-ai/nyl/issues/5.
             applyset.tooling = f"kubectl/v{generator.kube_version}"
             applyset.validate()
-
-            if apply:
-                # We need to ensure that ApplySet parent object exists before invoking `kubectl apply --applyset=...`.
-                logger.opt(colors=True).info(
-                    "Kubectl-apply ApplySet resource <yellow>{}</> from <cyan>{}</>.",
-                    applyset.reference,
-                    source.file,
-                )
-                kubectl.apply(ResourceList([applyset.dump()]), force_conflicts=True)
-            elif diff:
-                kubectl.diff(ResourceList([applyset.dump()]))
-            else:
-                print("---")
-                print(yaml.dumps(applyset.dump()))
 
         # Validate resources.
         for resource in source.resources:
@@ -358,32 +340,59 @@ def template(
                 )
                 exit(1)
 
-        # Tag resources as part of the current apply set, if any.
-        if applyset is not None and applyset_part_of:
-            for resource in source.resources:
-                if APPLYSET_LABEL_PART_OF not in (labels := resource["metadata"].setdefault("labels", {})):
-                    labels[APPLYSET_LABEL_PART_OF] = applyset.id
-
         populate_namespace_to_resources(source.resources, current_default_namespace)
         drop_empty_metadata_labels(source.resources)
 
         # Now apply the post-processor.
         source.resources = PostProcessor.apply_all(source.resources, post_processors, source.file)
 
+        # Prepare resources with ApplySet (adds part-of labels and includes ConfigMap)
+        resources_to_apply = applyset_manager.prepare_resources(source.resources)
+
+        # Find deleted resources (resources that exist in cluster but not in manifest)
+        deleted_resources = applyset_manager.get_deleted_resources(source.resources)
+
         if apply:
-            logger.info("Kubectl-apply {} resource(s) from '{}'", len(source.resources), source.file)
+            logger.info("Kubectl-apply {} resource(s) from '{}'", len(resources_to_apply), source.file)
+            # Note: We don't use kubectl's --applyset flag because it has limitations with multi-namespace deployments.
+            # Instead, we manually set the applyset.kubernetes.io/part-of label on all resources and include the
+            # ApplySet ConfigMap with the rest of the resources.
             kubectl.apply(
-                manifests=source.resources,
-                applyset=applyset.reference if applyset else None,
-                prune=True if applyset else False,
+                manifests=resources_to_apply,
                 force_conflicts=True,
             )
+
+            # Delete resources that are no longer in the manifest
+            if deleted_resources:
+                logger.info("Deleting {} resource(s) that are no longer in the manifest", len(deleted_resources))
+                for resource in deleted_resources:
+                    metadata = resource.get("metadata", {})
+                    resource_name = f"{resource.get('kind', 'unknown')}/{metadata.get('name', 'unknown')}"
+                    if metadata.get("namespace"):
+                        resource_name = f"{metadata['namespace']}/{resource_name}"
+                    logger.opt(colors=True).info("Deleting <red>{}</>", resource_name)
+                    try:
+                        kubectl.delete(resource)
+                    except Exception as e:
+                        logger.warning("Failed to delete {}: {}", resource_name, e)
+
         elif diff:
-            logger.info("Kubectl-diff {} resource(s) from '{}'", len(source.resources), source.file)
-            kubectl.diff(manifests=source.resources, applyset=applyset)
+            logger.info("Kubectl-diff {} resource(s) from '{}'", len(resources_to_apply), source.file)
+            kubectl.diff(manifests=resources_to_apply, applyset=applyset)
+
+            # Show deleted resources in diff output
+            if deleted_resources:
+                print("\n# Resources to be DELETED (no longer in manifest):")
+                for resource in deleted_resources:
+                    metadata = resource.get("metadata", {})
+                    resource_name = f"{resource.get('kind', 'unknown')}/{metadata.get('name', 'unknown')}"
+                    if metadata.get("namespace"):
+                        resource_name = f"{metadata['namespace']}/{resource_name}"
+                    print(f"# - {resource_name}")
+
         else:
             # If we're not going to be applying the resources immediately via `kubectl`, we print them to stdout.
-            for resource in source.resources:
+            for resource in resources_to_apply:
                 print("---")
                 print(yaml.dumps(resource))
 
