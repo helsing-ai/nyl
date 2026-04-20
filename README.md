@@ -15,6 +15,7 @@ For some features, additional programs must be available:
 - [helm](https://helm.sh/) for rendering Helm charts
 - [kyverno](https://kyverno.io/docs/kyverno-cli/) ^1.13.x when using the Nyl `PostProcessor` resource
 - [sops](https://github.com/getsops/sops) when using the SOPS secrets provider
+- [vault](https://www.vaultproject.io/) when using the Vault secrets provider (optional - only for local development)
 
 ## Local development
 

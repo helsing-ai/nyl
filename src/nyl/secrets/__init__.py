@@ -74,4 +74,4 @@ class SecretProvider(ABC):
         """
 
 
-from . import config, kubernetes, sops  # noqa
+from . import config, kubernetes, sops, vault  # noqa

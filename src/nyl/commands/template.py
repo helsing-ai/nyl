@@ -27,7 +27,10 @@ from nyl.secrets.config import SecretsConfig
 from nyl.templating import NylTemplateEngine
 from nyl.tools import yaml
 from nyl.tools.kubectl import Kubectl
-from nyl.tools.kubernetes import drop_empty_metadata_labels, populate_namespace_to_resources
+from nyl.tools.kubernetes import (
+    drop_empty_metadata_labels,
+    populate_namespace_to_resources,
+)
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Resource, ResourceList
 
@@ -60,7 +63,9 @@ def get_incluster_kubernetes_client() -> ApiClient:
     return ApiClient()
 
 
-def get_profile_kubernetes_client(profiles: ProfileManager, profile: str | None) -> ApiClient:
+def get_profile_kubernetes_client(
+    profiles: ProfileManager, profile: str | None
+) -> ApiClient:
     """
     Create a Kubernetes :class:`ApiClient` from the selected *profile*.
 
@@ -87,11 +92,21 @@ def get_profile_kubernetes_client(profiles: ProfileManager, profile: str | None)
 
 @app.command()
 def template(
-    paths: list[Path] = Argument(..., help="The YAML file(s) to render. Can be a directory."),
-    profile: Optional[str] = Option(None, envvar="NYL_PROFILE", help="The Nyl profile to use."),
-    secrets_provider: str = Option("default", "--secrets", envvar="NYL_SECRETS", help="The secrets provider to use."),
+    paths: list[Path] = Argument(
+        ..., help="The YAML file(s) to render. Can be a directory."
+    ),
+    profile: Optional[str] = Option(
+        None, envvar="NYL_PROFILE", help="The Nyl profile to use."
+    ),
+    secrets_provider: str = Option(
+        "default",
+        "--secrets",
+        envvar="NYL_SECRETS",
+        help="The secrets provider to use.",
+    ),
     in_cluster: bool = Option(
-        False, help="Use the in-cluster Kubernetes configuration. The --profile option is ignored."
+        False,
+        help="Use the in-cluster Kubernetes configuration. The --profile option is ignored.",
     ),
     apply: bool = Option(
         False,
@@ -135,7 +150,9 @@ def template(
         envvar="NYL_TEMPLATE_JOBS",
     ),
     state_dir: Optional[Path] = Option(
-        None, help="The directory to store state in (such as kubeconfig files).", envvar="NYL_STATE_DIR"
+        None,
+        help="The directory to store state in (such as kubeconfig files).",
+        envvar="NYL_STATE_DIR",
     ),
     cache_dir: Optional[Path] = Option(
         None,
@@ -158,10 +175,15 @@ def template(
         profile = os.environ["ARGOCD_ENV_NYL_PROFILE"]
         connect_with_profile = False
 
-    if paths == [Path(".")] and (env_paths := os.getenv("ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT")) is not None:
+    if (
+        paths == [Path(".")]
+        and (env_paths := os.getenv("ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT")) is not None
+    ):
         paths = [Path(p) for p in env_paths.split(",")]
         if not paths:
-            logger.error("<cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</> is set, but empty.")
+            logger.error(
+                "<cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</> is set, but empty."
+            )
             exit(1)
         logger.opt(colors=True).info(
             "Using paths from <cyan>ARGOCD_ENV_NYL_CMP_TEMPLATE_INPUT</>: <blue>{}</>",
@@ -191,7 +213,10 @@ def template(
     #       about the cluster are passed via the environment variables.
     #       See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
     PROVIDER.set(
-        ApiClientConfig, ApiClientConfig(in_cluster=in_cluster, profile=profile if connect_with_profile else None)
+        ApiClientConfig,
+        ApiClientConfig(
+            in_cluster=in_cluster, profile=profile if connect_with_profile else None
+        ),
     )
     client = PROVIDER.get(ApiClient)
 
@@ -207,6 +232,43 @@ def template(
 
     secrets = PROVIDER.get(SecretsConfig)
 
+    # Generate Nyl JWT tokens for Vault providers that use Nyl JWT authentication
+    # This needs to be done before the secrets are used, in the ArgoCD context
+    if "ARGOCD_APP_NAME" in os.environ:
+        from nyl.secrets.vault import VaultSecretProvider
+        from nyl.tools.jwt import generate_nyl_jwt_from_argocd_env
+
+        for provider_name, provider in secrets.providers.items():
+            if (
+                isinstance(provider, VaultSecretProvider)
+                and provider.jwt_auth_method == "nyl"
+            ):
+                # Get the signing key from the provider config or environment
+                signing_key = provider.jwt_signing_key or os.getenv(
+                    "NYL_VAULT_JWT_SIGNING_KEY"
+                )
+                if not signing_key:
+                    logger.error(
+                        "Vault provider '{}' is configured with jwt_auth_method='nyl' but no signing key is available. "
+                        "Please set jwt_signing_key in the provider configuration or NYL_VAULT_JWT_SIGNING_KEY environment variable.",
+                        provider_name,
+                    )
+                    exit(1)
+
+                try:
+                    token = generate_nyl_jwt_from_argocd_env(provider.url, signing_key)
+                    provider.set_nyl_jwt_token(token)
+                    logger.debug(
+                        "Generated Nyl JWT token for Vault provider '{}'", provider_name
+                    )
+                except Exception as exc:
+                    logger.error(
+                        "Failed to generate Nyl JWT token for Vault provider '{}': {}",
+                        provider_name,
+                        exc,
+                    )
+                    exit(1)
+
     generator = DispatchingGenerator.default(
         cache_dir=cache_dir,
         search_path=project.config.settings.search_path,
@@ -218,7 +280,9 @@ def template(
     )
 
     for source in load_manifests(paths):
-        logger.opt(colors=True).info("Rendering manifests from <blue>{}</>.", source.file)
+        logger.opt(colors=True).info(
+            "Rendering manifests from <blue>{}</>.", source.file
+        )
 
         template_engine = NylTemplateEngine(
             secrets.providers[secrets_provider],
@@ -233,7 +297,9 @@ def template(
         # However, if the default profile does not exist, we don't want to raise an error, as this would be a
         # breaking change for users who upgrade Nyl without having a default profile defined.
         # If a profile *was* specified and it doesn't exist, we *do* want to raise an error.
-        profile_config = PROVIDER.get(ProfileManager).config.profiles.get(profile or DEFAULT_PROFILE)
+        profile_config = PROVIDER.get(ProfileManager).config.profiles.get(
+            profile or DEFAULT_PROFILE
+        )
         if profile_config is not None:
             vars(template_engine.values).update(profile_config.values)
         elif profile is not None:
@@ -263,7 +329,9 @@ def template(
             source.resources.remove(resource)
 
         # Begin populating the default namespace to resources.
-        current_default_namespace = get_default_namespace_for_manifest(source, default_namespace)
+        current_default_namespace = get_default_namespace_for_manifest(
+            source, default_namespace
+        )
         populate_namespace_to_resources(source.resources, current_default_namespace)
 
         source.resources = template_engine.evaluate(source.resources)
@@ -273,7 +341,9 @@ def template(
                 def new_generation(resource: Resource) -> Future[ResourceList]:
                     def worker() -> ResourceList:
                         resources_ = template_engine.evaluate(ResourceList([resource]))
-                        populate_namespace_to_resources(resources_, current_default_namespace)
+                        populate_namespace_to_resources(
+                            resources_, current_default_namespace
+                        )
                         return resources_
 
                     return executor.submit(worker)
@@ -285,7 +355,9 @@ def template(
                     skip_resources=[PostProcessor],
                 )
 
-        source.resources, post_processors = PostProcessor.extract_from_list(source.resources)
+        source.resources, post_processors = PostProcessor.extract_from_list(
+            source.resources
+        )
 
         # Find the namespaces that are defined in the file. If we find any resources without a namespace, we will
         # inject that namespace name into them. Also find the applyset defined in the file.
@@ -317,7 +389,9 @@ def template(
             applyset_name = current_default_namespace
             applyset = ApplySet.new(applyset_name)
             logger.opt(colors=True).info(
-                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).", source.file, applyset_name
+                "Automatically creating ApplySet for <blue>{}</> (name: <magenta>{}</>).",
+                source.file,
+                applyset_name,
             )
 
         if applyset is not None:
@@ -347,7 +421,9 @@ def template(
             # Inline resources often don't have metadata and they are not persisted to the cluster, hence
             # we don't need to process them here.
             if NylResource.matches(resource, API_VERSION_INLINE):
-                assert not inline, "Inline resources should have been processed by this timepdm lint."
+                assert not inline, (
+                    "Inline resources should have been processed by this timepdm lint."
+                )
                 continue
 
             if "metadata" not in resource:
@@ -361,17 +437,25 @@ def template(
         # Tag resources as part of the current apply set, if any.
         if applyset is not None and applyset_part_of:
             for resource in source.resources:
-                if APPLYSET_LABEL_PART_OF not in (labels := resource["metadata"].setdefault("labels", {})):
+                if APPLYSET_LABEL_PART_OF not in (
+                    labels := resource["metadata"].setdefault("labels", {})
+                ):
                     labels[APPLYSET_LABEL_PART_OF] = applyset.id
 
         populate_namespace_to_resources(source.resources, current_default_namespace)
         drop_empty_metadata_labels(source.resources)
 
         # Now apply the post-processor.
-        source.resources = PostProcessor.apply_all(source.resources, post_processors, source.file)
+        source.resources = PostProcessor.apply_all(
+            source.resources, post_processors, source.file
+        )
 
         if apply:
-            logger.info("Kubectl-apply {} resource(s) from '{}'", len(source.resources), source.file)
+            logger.info(
+                "Kubectl-apply {} resource(s) from '{}'",
+                len(source.resources),
+                source.file,
+            )
             kubectl.apply(
                 manifests=source.resources,
                 applyset=applyset.reference if applyset else None,
@@ -379,7 +463,11 @@ def template(
                 force_conflicts=True,
             )
         elif diff:
-            logger.info("Kubectl-diff {} resource(s) from '{}'", len(source.resources), source.file)
+            logger.info(
+                "Kubectl-diff {} resource(s) from '{}'",
+                len(source.resources),
+                source.file,
+            )
             kubectl.diff(manifests=source.resources, applyset=applyset)
         else:
             # If we're not going to be applying the resources immediately via `kubectl`, we print them to stdout.
@@ -396,7 +484,12 @@ def template(
                 "data": {
                     "duration_seconds": time.perf_counter() - start_time,
                     "inputs": [
-                        str(p.absolute().relative_to(project.file.parent) if project.file else p) for p in paths
+                        str(
+                            p.absolute().relative_to(project.file.parent)
+                            if project.file
+                            else p
+                        )
+                        for p in paths
                     ],
                     # See https://argo-cd.readthedocs.io/en/stable/user-guide/build-environment/
                     "argocd_app_name": os.getenv("ARGOCD_APP_NAME"),
@@ -404,7 +497,9 @@ def template(
                     "argocd_app_project_name": os.getenv("ARGOCD_APP_PROJECT_NAME"),
                     "argocd_app_revision": os.getenv("ARGOCD_APP_REVISION"),
                     "argocd_app_source_path": os.getenv("ARGOCD_APP_SOURCE_PATH"),
-                    "argocd_app_source_repo_url": os.getenv("ARGOCD_APP_SOURCE_REPO_URL"),
+                    "argocd_app_source_repo_url": os.getenv(
+                        "ARGOCD_APP_SOURCE_REPO_URL"
+                    ),
                 },
             }
         ),
@@ -444,7 +539,9 @@ def load_manifests(paths: list[Path]) -> list[ManifestsWithSource]:
 
     result = []
     for file in files:
-        resources = ResourceList(list(map(Resource, filter(None, yaml.loads_all(file.read_text())))))
+        resources = ResourceList(
+            list(map(Resource, filter(None, yaml.loads_all(file.read_text()))))
+        )
         result.append(ManifestsWithSource(resources, file))
 
     return result
@@ -501,7 +598,9 @@ def is_namespace_resource(resource: Resource) -> bool:
     return resource.get("apiVersion") == "v1" and resource.get("kind") == "Namespace"
 
 
-def get_default_namespace_for_manifest(source: ManifestsWithSource, fallback: str | None = None) -> str:
+def get_default_namespace_for_manifest(
+    source: ManifestsWithSource, fallback: str | None = None
+) -> str:
     """
     Given the contents of a manifest file, determine the fallback namespace to apply to resources that have been
     recorded without a namespace.
@@ -541,13 +640,18 @@ def get_default_namespace_for_manifest(source: ManifestsWithSource, fallback: st
         return use_namespace
 
     if len(namespace_resources) == 1:
-        logger.debug("Manifest '{}' defines exactly one Namespace resource. Using '{}' as the default namespace.")
+        logger.debug(
+            "Manifest '{}' defines exactly one Namespace resource. Using '{}' as the default namespace."
+        )
         return namespace_resources[0]["metadata"]["name"]  # type: ignore[no-any-return]
 
     default_namespaces = {
         x["metadata"]["name"]
         for x in namespace_resources
-        if x["metadata"].get("annotations", {}).get(DEFAULT_NAMESPACE_ANNOTATION, "false") == "true"
+        if x["metadata"]
+        .get("annotations", {})
+        .get(DEFAULT_NAMESPACE_ANNOTATION, "false")
+        == "true"
     }
 
     if len(default_namespaces) == 0:
