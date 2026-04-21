@@ -9,10 +9,16 @@ from textwrap import indent
 from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
+from kubernetes.client.api_client import ApiClient
 
 from nyl.generator import Generator
 from nyl.resources.helmchart import ChartRef, HelmChart, ReleaseMetadata
 from nyl.tools import yaml
+from nyl.tools.argocd_repo_credentials import (
+    apply_credential_to_git_url,
+    find_matching_credential,
+    query_argocd_repository_credentials,
+)
 from nyl.tools.kubernetes import populate_namespace_to_resources
 from nyl.tools.shell import pretty_cmd
 from nyl.tools.types import ResourceList
@@ -46,6 +52,9 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
     the latest capabilities can be used by the Helm chart. Helm would usually look this up automatically with the
     `--validate` flag.
     """
+
+    client: ApiClient | None = None
+    """ Kubernetes API client for querying ArgoCD repository credentials. """
 
     def _materialize_chart(self, chart_ref: ChartRef) -> ChartRepositoryVersion:
         repository: str | None = None
@@ -104,6 +113,28 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
             # Clone the repository and find the chart in the repository.
             parsed = urlparse(chart_ref.git)
             without_query_params = parsed._replace(query="").geturl()
+            
+            # Try to get ArgoCD repository credentials for this Git URL
+            git_url_with_auth = without_query_params
+            if self.client:
+                try:
+                    credentials = query_argocd_repository_credentials(self.client)
+                    matching_credential = find_matching_credential(without_query_params, credentials)
+                    if matching_credential:
+                        if matching_credential.is_https:
+                            logger.debug("Using ArgoCD HTTPS repository credential for {}", without_query_params)
+                            git_url_with_auth = apply_credential_to_git_url(without_query_params, matching_credential)
+                        elif matching_credential.is_ssh:
+                            logger.info("ArgoCD SSH repository credential found for {} but SSH key authentication "
+                                      "is not fully implemented. Using original URL.", without_query_params)
+                        else:
+                            logger.debug("ArgoCD repository credential found for {} but no authentication method available", 
+                                       without_query_params)
+                    else:
+                        logger.debug("No ArgoCD repository credential found for {}", without_query_params)
+                except Exception as e:
+                    logger.warning("Failed to query ArgoCD repository credentials: {}", e)
+            
             hashed = hashlib.md5(without_query_params.encode()).hexdigest()
             clone_dir = self.git_repo_cache_dir / f"{hashed}-{PosixPath(parsed.path).name}"
             if clone_dir.exists():
@@ -112,7 +143,7 @@ class HelmChartGenerator(Generator[HelmChart], resource_type=HelmChart):
                 cwd = clone_dir
             else:
                 logger.debug("Cloning {} to {}", without_query_params, clone_dir)
-                command = ["git", "clone", without_query_params, str(clone_dir)]
+                command = ["git", "clone", git_url_with_auth, str(clone_dir)]
                 cwd = None
             subprocess.check_call(command, cwd=cwd, stdout=sys.stderr)
 

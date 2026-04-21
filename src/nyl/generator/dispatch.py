@@ -79,6 +79,7 @@ class DispatchingGenerator(Generator[Resource], resource_type=Resource):
             working_dir=working_dir,
             kube_version=kube_version,
             api_versions=kube_api_versions,
+            client=client,
         )
 
         return DispatchingGenerator(

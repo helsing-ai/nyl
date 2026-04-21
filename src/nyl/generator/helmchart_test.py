@@ -1,12 +1,14 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Iterator
+from unittest.mock import Mock, patch
 
 import pytest
 
 from nyl.generator.helmchart import HelmChartGenerator
 from nyl.resources import ObjectMetadata
 from nyl.resources.helmchart import ChartRef, HelmChart, HelmChartSpec
+from nyl.tools.argocd_repo_credentials import RepoCredential
 from nyl.tools.testing import TESTDATA_PATH
 
 CHART_PATH = TESTDATA_PATH / "helm-test-chart"
@@ -17,6 +19,15 @@ def generator() -> Iterator[HelmChartGenerator]:
     with TemporaryDirectory() as _tmp:
         tmp = Path(_tmp)
         yield HelmChartGenerator(tmp, tmp, [], tmp, "1.31", set())
+
+
+@pytest.fixture
+def generator_with_client() -> Iterator[HelmChartGenerator]:
+    """Generator with a mock Kubernetes client for testing ArgoCD credentials."""
+    with TemporaryDirectory() as _tmp:
+        tmp = Path(_tmp)
+        mock_client = Mock()
+        yield HelmChartGenerator(tmp, tmp, [], tmp, "1.31", set(), client=mock_client)
 
 
 def test_helmchart_resource_overrides_labels(generator: HelmChartGenerator) -> None:
@@ -43,3 +54,96 @@ def test_helmchart_resource_overrides_labels(generator: HelmChartGenerator) -> N
         "app.kubernetes.io/version": "1.0.0",
         "team": "testing",
     }
+
+
+def test_helmchart_git_with_argocd_credentials(generator_with_client: HelmChartGenerator) -> None:
+    """
+    Test that HelmChart with git source uses ArgoCD repository credentials when available.
+    """
+    # Mock the credential query to return a test credential
+    test_credential = RepoCredential(
+        url="https://github.com/myorg/",
+        username="testuser",
+        password="testtoken"
+    )
+    
+    with patch('nyl.generator.helmchart.query_argocd_repository_credentials') as mock_query, \
+         patch('nyl.generator.helmchart.find_matching_credential') as mock_find, \
+         patch('nyl.generator.helmchart.apply_credential_to_git_url') as mock_apply, \
+         patch('nyl.generator.helmchart.subprocess.check_call') as mock_subprocess:
+        
+        # Setup mocks
+        mock_query.return_value = [test_credential]
+        mock_find.return_value = test_credential
+        mock_apply.return_value = "https://testuser:testtoken@github.com/myorg/test-repo.git"
+        
+        # Create chart reference with Git URL
+        chart_ref = ChartRef(git="https://github.com/myorg/test-repo.git")
+        
+        # Call the _materialize_chart method
+        generator_with_client._materialize_chart(chart_ref)
+        
+        # Verify that ArgoCD credentials were queried
+        mock_query.assert_called_once_with(generator_with_client.client)
+        
+        # Verify that credential matching was attempted
+        mock_find.assert_called_once_with("https://github.com/myorg/test-repo.git", [test_credential])
+        
+        # Verify that credentials were applied to the URL
+        mock_apply.assert_called_once_with("https://github.com/myorg/test-repo.git", test_credential)
+        
+        # Verify that git clone was called with the authenticated URL
+        mock_subprocess.assert_called()
+        clone_call = mock_subprocess.call_args_list[0]
+        assert "https://testuser:testtoken@github.com/myorg/test-repo.git" in clone_call[0][0]
+
+
+def test_helmchart_git_without_argocd_credentials(generator_with_client: HelmChartGenerator) -> None:
+    """
+    Test that HelmChart with git source falls back to original URL when no ArgoCD credentials are found.
+    """
+    with patch('nyl.generator.helmchart.query_argocd_repository_credentials') as mock_query, \
+         patch('nyl.generator.helmchart.find_matching_credential') as mock_find, \
+         patch('nyl.generator.helmchart.subprocess.check_call') as mock_subprocess:
+        
+        # Setup mocks - no credentials found
+        mock_query.return_value = []
+        mock_find.return_value = None
+        
+        # Create chart reference with Git URL
+        chart_ref = ChartRef(git="https://github.com/myorg/test-repo.git")
+        
+        # Call the _materialize_chart method
+        generator_with_client._materialize_chart(chart_ref)
+        
+        # Verify that ArgoCD credentials were queried
+        mock_query.assert_called_once_with(generator_with_client.client)
+        
+        # Verify that credential matching was attempted
+        mock_find.assert_called_once_with("https://github.com/myorg/test-repo.git", [])
+        
+        # Verify that git clone was called with the original URL
+        mock_subprocess.assert_called()
+        clone_call = mock_subprocess.call_args_list[0]
+        assert "https://github.com/myorg/test-repo.git" in clone_call[0][0]
+
+
+def test_helmchart_git_without_client() -> None:
+    """
+    Test that HelmChart with git source works without Kubernetes client (no ArgoCD credential lookup).
+    """
+    with TemporaryDirectory() as _tmp:
+        tmp = Path(_tmp)
+        generator_no_client = HelmChartGenerator(tmp, tmp, [], tmp, "1.31", set(), client=None)
+        
+        with patch('nyl.generator.helmchart.subprocess.check_call') as mock_subprocess:
+            # Create chart reference with Git URL
+            chart_ref = ChartRef(git="https://github.com/myorg/test-repo.git")
+            
+            # Call the _materialize_chart method
+            generator_no_client._materialize_chart(chart_ref)
+            
+            # Verify that git clone was called with the original URL
+            mock_subprocess.assert_called()
+            clone_call = mock_subprocess.call_args_list[0]
+            assert "https://github.com/myorg/test-repo.git" in clone_call[0][0]
