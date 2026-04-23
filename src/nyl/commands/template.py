@@ -30,6 +30,7 @@ from nyl.tools.kubectl import Kubectl
 from nyl.tools.kubernetes import drop_empty_metadata_labels, populate_namespace_to_resources
 from nyl.tools.logging import lazy_str
 from nyl.tools.types import Resource, ResourceList
+from nyl.tools.argocd import detect_argocd_context, create_destination_client
 
 DEFAULT_NAMESPACE_ANNOTATION = "nyl.io/is-default-namespace"
 
@@ -193,7 +194,30 @@ def template(
     PROVIDER.set(
         ApiClientConfig, ApiClientConfig(in_cluster=in_cluster, profile=profile if connect_with_profile else None)
     )
-    client = PROVIDER.get(ApiClient)
+    
+    # Check if running in ArgoCD context and try to create destination cluster client
+    argocd_context = detect_argocd_context()
+    if argocd_context:
+        logger.info("Detected ArgoCD context: app={}/{}, project={}", 
+                   argocd_context.app_namespace, argocd_context.app_name, argocd_context.project_name)
+        
+        # Get the local ArgoCD cluster client first
+        argocd_client = PROVIDER.get(ApiClient)
+        
+        # Try to create destination cluster client
+        destination_client = create_destination_client(argocd_client, argocd_context)
+        if destination_client:
+            logger.info("Using destination cluster client for lookups")
+            client = destination_client
+        else:
+            raise RuntimeError(
+                f"Failed to create destination cluster client for ArgoCD application "
+                f"{argocd_context.app_namespace}/{argocd_context.app_name}. "
+                f"Please ensure the destination cluster is properly configured in ArgoCD."
+            )
+    else:
+        # Not in ArgoCD context, use normal client
+        client = PROVIDER.get(ApiClient)
 
     project = PROVIDER.get(ProjectConfig)
     if generate_applysets is not None:
