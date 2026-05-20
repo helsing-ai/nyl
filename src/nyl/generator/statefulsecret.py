@@ -14,13 +14,17 @@ class StatefulSecretGenerator(Generator[StatefulSecret], resource_type=StatefulS
 
     def generate(self, /, res: StatefulSecret) -> ResourceList:
         # TODO: Look up existing secret state.
+        metadata: dict[str, object] = {"name": res.metadata.name}
+        if res.metadata.namespace is not None:
+            metadata["namespace"] = res.metadata.namespace
         return ResourceList(
             [
                 Resource(
                     {
                         "apiVersion": "v1",
                         "kind": "Secret",
-                        "metadata": {"name": res.metadata.name},
+                        "metadata": metadata,
+                        "type": res.type,
                         "stringData": {k: v for k, v in res.stringData.items()},
                     }
                 )
