@@ -28,7 +28,7 @@ class KyvernoSpec:
     inlinePolicies: dict[str, KyvernoPolicyDocument] = field(default_factory=dict)
     """
     A mapping of policy name to the Kyverno policy document. Allows specifying Kyverno policies to be applied
-    to the generated manifests inline.
+    to the generated resources inline.
     """
 
 
@@ -94,7 +94,7 @@ class PostProcessorSpec:
 @dataclass(kw_only=True)
 class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
     """
-    Configuration for post-processing Kubernetes manifests in a file. Note that the post-processing is always
+    Configuration for post-processing Kubernetes resources from a manifest file. Note that the post-processing is always
     scoped to the file that the processor is defined in. Post processors will be applied after all inline resources
     are reconciled.
 
@@ -124,7 +124,7 @@ class PostProcessor(NylResource, api_version=API_VERSION_INLINE):
 
             if policy_files:
                 logger.info(
-                    "Applying {} Kyverno {} to manifests from '{}': {}",
+                    "Applying {} Kyverno {} to resources from '{}': {}",
                     len(policy_files),
                     "policy" if len(policy_files) == 1 else "policies",
                     source_file.name,
@@ -168,7 +168,7 @@ def apply_kyverno_policies(
         manifest_file = tmp / "manifest.yaml"
         manifest_file.write_text(yaml.safe_dump_all(resources))
 
-        # Create an output directory for Kyverno to write the mutated manifests to.
+        # Create an output directory for Kyverno to write the mutated resources to.
         output_dir = tmp / "output"
         output_dir.mkdir()
 
@@ -186,7 +186,7 @@ def apply_kyverno_policies(
 
         if result.returncode != 0:
             logger.error("Kyverno stdout:\n{}", result.stdout.decode())
-            raise RuntimeError("Kyverno failed to apply policies to manifests. See logs for more details")
+            raise RuntimeError("Kyverno failed to apply policies to resources. See logs for more details")
         else:
             logger.debug("Kyverno stdout:\n{}", result.stdout.decode())
 
@@ -195,7 +195,7 @@ def apply_kyverno_policies(
             list(chain(*(filter(None, yaml.safe_load_all(file.read_text())) for file in output_dir.iterdir())))
         )
         if len(new_resources) != len(resources):
-            # Showing identifies for manifests that have been added or removed is not very helpful because
+            # Showing identifiers for resources that have been added or removed is not very helpful because
             # Kyverno will add `namespace: default` to those without the field, which changes the identifier.
             raise RuntimeError(
                 "Unexpected behaviour of `kyverno apply` command: The number of resources generated in the "

@@ -32,7 +32,7 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
 
     Nyl's ApplySet resource is not namespaces.
 
-    When loading manifests from a file, Nyl looks for an ApplySet resource to determine if the manifests are to be
+    When loading manifests from a file, Nyl looks for an ApplySet resource to determine if the resources are to be
     associated with an ApplySet.
     """
 
@@ -152,15 +152,15 @@ class ApplySet(NylResource, api_version=API_VERSION_K8S):
             self.metadata.annotations = {}
         self.metadata.annotations[APPLYSET_ANNOTATION_CONTAINS_GROUP_KINDS] = ",".join(sorted(value))
 
-    def set_group_kinds(self, manifests: ResourceList) -> None:
+    def set_group_kinds(self, resources: ResourceList) -> None:
         """
-        Set the kinds of resources that are part of the ApplySet based on the specified manifests.
+        Set the kinds of resources that are part of the ApplySet based on the specified resources.
         """
 
         kinds = set()
-        for manifest in manifests:
-            if "kind" in manifest:
-                kinds.add(get_canonical_resource_kind_name(manifest["apiVersion"], manifest["kind"]))
+        for resource in resources:
+            if "kind" in resource:
+                kinds.add(get_canonical_resource_kind_name(resource["apiVersion"], resource["kind"]))
         self.contains_group_kinds = list(kinds)
 
     def validate(self) -> None:

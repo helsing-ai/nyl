@@ -1,5 +1,5 @@
 """
-This package contains everything related to the generation of Kubernetes manifests via Nyl.
+This package contains everything related to the generation of Kubernetes resources via Nyl.
 """
 
 from abc import ABC, abstractmethod
@@ -29,7 +29,7 @@ class Generator(ABC, Generic[T]):
     @abstractmethod
     def generate(self, /, resource: T) -> ResourceList:
         """
-        Evaluate a Nyl resource and return a list of the generated Kubernetes manifests.
+        Evaluate a Nyl resource and return a list of the generated Kubernetes resources.
         """
 
         raise NotImplementedError

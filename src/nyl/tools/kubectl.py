@@ -87,14 +87,14 @@ class Kubectl:
 
     def apply(
         self,
-        manifests: ResourceList,
+        resources: ResourceList,
         force_conflicts: bool = False,
         server_side: bool = True,
         applyset: str | None = None,
         prune: bool = False,
     ) -> None:
         """
-        Apply the given manifests to the cluster.
+        Apply the given resources to the cluster.
         """
 
         env = self.env
@@ -110,22 +110,22 @@ class Kubectl:
         if force_conflicts:
             command.append("--force-conflicts")
 
-        logger.debug("Applying manifests with command: $ {command}", command=lazy_str(pretty_cmd, command))
-        status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True, env={**os.environ, **env})
+        logger.debug("Applying resources with command: $ {command}", command=lazy_str(pretty_cmd, command))
+        status = subprocess.run(command, input=yaml.safe_dump_all(resources), text=True, env={**os.environ, **env})
         if status.returncode:
             raise KubectlError(status.returncode)
 
     def diff(
         self,
-        manifests: ResourceList,
+        resources: ResourceList,
         applyset: ApplySet | None = None,
         on_error: Literal["raise", "return"] = "raise",
     ) -> Literal["no-diff", "diff", "error"]:
         """
-        Diff the given manifests against the cluster.
+        Diff the given resources against the cluster.
 
         Args:
-            manifests: The input manifests.
+            resources: The input resources.
             on_error: What to do if the diff command fails. If "raise", raise a KubectlError. If "return", return the
                 status code.
             applyset: The applyset to use for the diff. This can only be combined with the `prune` option.
@@ -143,8 +143,8 @@ class Kubectl:
         if match_labels:
             command.extend(["-l", ",".join(f"{k}={v}" for k, v in match_labels.items())])
 
-        logger.debug("Diffing manifests with command: $ {command}", command=lazy_str(pretty_cmd, command))
-        status = subprocess.run(command, input=yaml.safe_dump_all(manifests), text=True)
+        logger.debug("Diffing resources with command: $ {command}", command=lazy_str(pretty_cmd, command))
+        status = subprocess.run(command, input=yaml.safe_dump_all(resources), text=True)
         if status.returncode == 1:
             return "diff"
         elif status.returncode == 0:

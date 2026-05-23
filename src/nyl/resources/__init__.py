@@ -40,18 +40,18 @@ class NylResource(ABC):
             cls.KIND = kind or cls.__name__
 
     @classmethod
-    def load(cls, manifest: Resource) -> "Self":
+    def load(cls, resource: Resource) -> "Self":
         """
         Load a Nyl resource from a manifest. If called directly on `NylResource`, this will deserialize into the
-        appropriate subclass based on the `kind` field in the manifest. If the method is instead called on a subclass
-        directly, the subclass will be used to deserialize the manifest.
+        appropriate subclass based on the `kind` field in the resource. If the method is instead called on a subclass
+        directly, the subclass will be used to deserialize the resource.
         """
 
-        if manifest.get("apiVersion") not in (API_VERSION_K8S, API_VERSION_INLINE):
-            raise ValueError(f"Unsupported apiVersion: {manifest.get('apiVersion')!r}")
+        if resource.get("apiVersion") not in (API_VERSION_K8S, API_VERSION_INLINE):
+            raise ValueError(f"Unsupported apiVersion: {resource.get('apiVersion')!r}")
 
         if cls is NylResource:
-            kind = manifest["kind"]
+            kind = resource["kind"]
             module_name = __name__ + "." + kind.lower()
             try:
                 module = __import__(module_name, fromlist=[kind])
@@ -61,32 +61,32 @@ class NylResource(ABC):
                 raise ValueError(f"Unsupported resource kind: {kind}")
 
         else:
-            if manifest["kind"] != cls.KIND:
-                raise ValueError(f"Expected kind {cls.KIND!r}, got {manifest['kind']!r}")
+            if resource["kind"] != cls.KIND:
+                raise ValueError(f"Expected kind {cls.KIND!r}, got {resource['kind']!r}")
             subcls = cls
 
-        manifest = Resource(manifest)
-        manifest.pop("apiVersion")
-        manifest.pop("kind")
+        resource = Resource(resource)
+        resource.pop("apiVersion")
+        resource.pop("kind")
 
-        return cast(Self, deser(manifest, subcls))
+        return cast(Self, deser(resource, subcls))
 
     @classmethod
-    def maybe_load(cls, manifest: Resource) -> "Self | None":
+    def maybe_load(cls, resource: Resource) -> "Self | None":
         """
-        Maybe load the manifest into a NylResource if the `apiVersion` matches. If the resource kind is not supported,
+        Maybe load the resource into a NylResource if the `apiVersion` matches. If the resource kind is not supported,
         an error will be raised. If this is called on a subclass of `NylResource`, the subclass's kind will also be
         checked.
         """
 
-        if cls.matches(manifest):
-            return cls.load(manifest)
+        if cls.matches(resource):
+            return cls.load(resource)
         return None
 
     @classmethod
-    def matches(cls, manifest: Resource, apiVersion: str | Collection[str] | None = None) -> bool:
+    def matches(cls, resource: Resource, apiVersion: str | Collection[str] | None = None) -> bool:
         """
-        Check if the manifest is a NylResource of the correct `apiVersion` and possibly `kind` (if called on a
+        Check if the resource is a NylResource of the correct `apiVersion` and possibly `kind` (if called on a
         `NylResource` subclass).
         """
 
@@ -95,23 +95,23 @@ class NylResource(ABC):
         elif isinstance(apiVersion, str):
             apiVersion = {apiVersion}
 
-        if manifest.get("apiVersion") not in apiVersion:
+        if resource.get("apiVersion") not in apiVersion:
             return False
 
-        if cls is not NylResource and manifest["kind"] != cls.KIND:
+        if cls is not NylResource and resource["kind"] != cls.KIND:
             return False
 
         return True
 
     def dump(self) -> Resource:
         """
-        Dump the resource to a manifest.
+        Dump the resource to a resource document.
         """
 
-        manifest = cast(Resource, ser(self, type(self), settings=[SerializeDefaults(False)]))
-        manifest["apiVersion"] = self.API_VERSION
-        manifest["kind"] = self.KIND
-        return Resource(manifest)
+        resource = cast(Resource, ser(self, type(self), settings=[SerializeDefaults(False)]))
+        resource["apiVersion"] = self.API_VERSION
+        resource["kind"] = self.KIND
+        return Resource(resource)
 
 
 @dataclass
