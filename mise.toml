@@ -3,7 +3,7 @@
 kyverno = "1.14.4"
 uv = "0.11.6"
 sops = "3.12.2"
-helm = "3.20.2"
+helm = "4.2.4"
 kubectl = "1.35.3"
 "pipx:slap-cli" = "1.15.0"
 
